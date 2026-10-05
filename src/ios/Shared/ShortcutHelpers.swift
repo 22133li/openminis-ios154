@@ -165,3 +165,17 @@ final class ShortcutNotificationDelegate: NSObject, UNUserNotificationCenterDele
         completionHandler([.banner, .sound])
     }
 }
+
+// iOS 15 backport: extracted from deleted SendPromptIntent
+extension ShortcutHelpers {
+    static func extractResponseText(from vm: AIChatViewModel) -> String {
+        guard let lastAssistant = vm.messages.last(where: { $0.role == .assistant && !$0.isInternalBridge }) else {
+            return "No response."
+        }
+        let textBlocks = lastAssistant.blocks
+            .filter { $0.kind == .text }
+            .map { $0.content }
+        let text = textBlocks.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? "No response." : text
+    }
+}

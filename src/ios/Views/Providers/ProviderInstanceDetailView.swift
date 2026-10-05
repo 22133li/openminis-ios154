@@ -1395,7 +1395,7 @@ struct ModelEntryDetailSheet: View {
                             // stays visible while editing. Single-line +
                             // trailing alignment lost the cursor past the row
                             // edge with no horizontal autoscroll.
-                            TextField("model-id", text: $modelId, axis: .vertical)
+                            TextField("model-id", text: $modelId)
                                 .font(.system(.body, design: .monospaced))
                                 .multilineTextAlignment(.trailing)
                                 .textInputAutocapitalization(.never)

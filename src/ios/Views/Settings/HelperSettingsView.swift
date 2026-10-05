@@ -216,7 +216,7 @@ struct SubAgentEditorView: View {
                     if isBuiltIn {
                         Text(existing?.displayDescription ?? descriptionText).foregroundStyle(.secondary)
                     } else {
-                        TextField(AppLocalized("Description"), text: $descriptionText, axis: .vertical)
+                        TextField(AppLocalized("Description"), text: $descriptionText)
                             .lineLimit(2...4)
                         counter(descriptionText.count, SubAgentLimits.descriptionMaxLength)
                     }
@@ -229,7 +229,7 @@ struct SubAgentEditorView: View {
                 }
 
                 Section {
-                    TextField(AppLocalized("Instructions"), text: $instructions, axis: .vertical)
+                    TextField(AppLocalized("Instructions"), text: $instructions)
                         .lineLimit(4...12)
                     counter(instructions.count, SubAgentLimits.instructionsMaxLength)
                 } header: {

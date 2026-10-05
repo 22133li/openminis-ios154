@@ -1032,7 +1032,7 @@ extension AIChatViewModel {
                 guard !Task.isCancelled, let self, child.isProcessing,
                       job.state == .running else { return }
                 let info = SessionActivityTracker.shared.sessionToolInfo[childId]
-                let lastMessage = SendPromptIntent.extractResponseText(from: child)
+                let lastMessage = ShortcutHelpers.extractResponseText(from: child)
                 let signature = "\(info?.toolName ?? "")|\(info?.toolStatus ?? "")|\(info?.loopIteration ?? 0)|\(lastMessage.prefix(200))"
                 if onlyOnChange, signature == job.lastProgressSignature {
                     logger.info("[delegate_task] progress \(job.id.prefix(8)) unchanged — skipped")

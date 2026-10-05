@@ -128,7 +128,7 @@ struct BrowserManagementView: View {
                     }
                 }
             }
-            TextField("Enter custom user agent...", text: $customUA, axis: .vertical)
+            TextField("Enter custom user agent...", text: $customUA)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .lineLimit(2...4)

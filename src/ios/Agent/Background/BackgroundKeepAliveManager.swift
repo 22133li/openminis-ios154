@@ -879,6 +879,7 @@ final class BackgroundKeepAliveManager: NSObject, ObservableObject, CLLocationMa
         let isBackground = wasBackground ?? (UIApplication.shared.applicationState != .active)
         guard isBackground else { return }
 
+        let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
 
         let category = UNNotificationCategory(

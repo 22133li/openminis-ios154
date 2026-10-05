@@ -115,7 +115,7 @@ struct MCPFormSheet: View {
                 }
 
                 Section(AppLocalized("Note (shown to the agent)")) {
-                    TextField(AppLocalized("Optional description"), text: $note, axis: .vertical)
+                    TextField(AppLocalized("Optional description"), text: $note)
                         .lineLimit(1...4)
                 }
             }
