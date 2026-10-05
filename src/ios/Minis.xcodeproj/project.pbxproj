@@ -238,7 +238,6 @@
 		E5F200003 /* AssistantBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F200013 /* AssistantBlockView.swift */; };
 		E5F200004 /* ChatMessageViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F200014 /* ChatMessageViews.swift */; };
 		E5F200005 /* ChatInputBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F200015 /* ChatInputBar.swift */; };
-		E5F200006 /* ModelSelectionEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F200016 /* ModelSelectionEntity.swift */; };
 		E5F2000FA /* TextFadeAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F2000FB /* TextFadeAnimator.swift */; };
 		E5F2009A1 /* EquatableContextMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F2009B1 /* EquatableContextMenu.swift */; };
 		E5F200AA1 /* MemoryWriteRevoker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F200AB1 /* MemoryWriteRevoker.swift */; };
@@ -386,7 +385,6 @@
 		E5SCH0002 /* ScheduledOffload.m in Sources */ = {isa = PBXBuildFile; fileRef = E5SCH0012 /* ScheduledOffload.m */; };
 		E5SCH0003 /* ScheduledOffloadBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SCH0013 /* ScheduledOffloadBridge.swift */; };
 		E5SCH0004 /* HelperSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SCH0014 /* HelperSettingsView.swift */; };
-		E5SD00009 /* ShortcutRunTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SD00019 /* ShortcutRunTracker.swift */; };
 		E5SDS0001 /* SessionDeletionSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SDS0011 /* SessionDeletionSupport.swift */; };
 		E5SHV0001 /* SharedFolderVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SHV0101 /* SharedFolderVisibility.swift */; };
 		E5SHV0002 /* SharedFolderVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SHV0101 /* SharedFolderVisibility.swift */; };
@@ -398,18 +396,6 @@
 		E5SUB0002 /* SubAgentDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SUB0001 /* SubAgentDefinition.swift */; };
 		E5SUB0011 /* SubAgentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SUB0010 /* SubAgentStore.swift */; };
 		E5SVP0021 /* ShadowVoiceProviderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SVP0031 /* ShadowVoiceProviderDetailView.swift */; };
-		E5T000001 /* SessionEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000011 /* SessionEntity.swift */; };
-		E5T000002 /* ListSessionsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000012 /* ListSessionsIntent.swift */; };
-		E5T000003 /* SendPromptIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000013 /* SendPromptIntent.swift */; };
-		E5T000004 /* OpenSessionIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000014 /* OpenSessionIntent.swift */; };
-		E5T000005 /* MinisShortcutsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000015 /* MinisShortcutsProvider.swift */; };
-		E5T000006 /* SendPromptResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000016 /* SendPromptResult.swift */; };
-		E5T000007 /* GetSessionStatusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000017 /* GetSessionStatusIntent.swift */; };
-		E5T000008 /* QuickTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000018 /* QuickTaskIntent.swift */; };
-		E5T000009 /* FollowUpSessionIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000019 /* FollowUpSessionIntent.swift */; };
-		E5T00000A /* RetryRunIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T00001A /* RetryRunIntent.swift */; };
-		E5T00000B /* UserMessageEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T00001B /* UserMessageEntity.swift */; };
-		E5T0000A1 /* AskMinisIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T0000A2 /* AskMinisIntent.swift */; };
 		E5TLC0001 /* ThinkingLevelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5TLC0002 /* ThinkingLevelCatalog.swift */; };
 		E5TLS0001 /* ToolsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5TLS0011 /* ToolsSettingsView.swift */; };
 		E5TRC001 /* ThinkingRuleCoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5TRC002 /* ThinkingRuleCoding.swift */; };
@@ -923,7 +909,6 @@
 		E5F200013 /* AssistantBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantBlockView.swift; sourceTree = "<group>"; };
 		E5F200014 /* ChatMessageViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageViews.swift; sourceTree = "<group>"; };
 		E5F200015 /* ChatInputBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatInputBar.swift; sourceTree = "<group>"; };
-		E5F200016 /* ModelSelectionEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelSelectionEntity.swift; sourceTree = "<group>"; };
 		E5F2000FB /* TextFadeAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFadeAnimator.swift; sourceTree = "<group>"; };
 		E5F2009B1 /* EquatableContextMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquatableContextMenu.swift; sourceTree = "<group>"; };
 		E5F200AB1 /* MemoryWriteRevoker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryWriteRevoker.swift; sourceTree = "<group>"; };
@@ -1109,7 +1094,6 @@
 		E5SCH0012 /* ScheduledOffload.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ScheduledOffload.m; sourceTree = "<group>"; };
 		E5SCH0013 /* ScheduledOffloadBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledOffloadBridge.swift; sourceTree = "<group>"; };
 		E5SCH0014 /* HelperSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperSettingsView.swift; sourceTree = "<group>"; };
-		E5SD00019 /* ShortcutRunTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRunTracker.swift; sourceTree = "<group>"; };
 		E5SDS0011 /* SessionDeletionSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDeletionSupport.swift; sourceTree = "<group>"; };
 		E5SHV0101 /* SharedFolderVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFolderVisibility.swift; sourceTree = "<group>"; };
 		E5SHV0103 /* SharedFoldersSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFoldersSettingsView.swift; sourceTree = "<group>"; };
@@ -1120,18 +1104,6 @@
 		E5SUB0001 /* SubAgentDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubAgentDefinition.swift; sourceTree = "<group>"; };
 		E5SUB0010 /* SubAgentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubAgentStore.swift; sourceTree = "<group>"; };
 		E5SVP0031 /* ShadowVoiceProviderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowVoiceProviderDetailView.swift; sourceTree = "<group>"; };
-		E5T000011 /* SessionEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionEntity.swift; sourceTree = "<group>"; };
-		E5T000012 /* ListSessionsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListSessionsIntent.swift; sourceTree = "<group>"; };
-		E5T000013 /* SendPromptIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendPromptIntent.swift; sourceTree = "<group>"; };
-		E5T000014 /* OpenSessionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSessionIntent.swift; sourceTree = "<group>"; };
-		E5T000015 /* MinisShortcutsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinisShortcutsProvider.swift; sourceTree = "<group>"; };
-		E5T000016 /* SendPromptResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendPromptResult.swift; sourceTree = "<group>"; };
-		E5T000017 /* GetSessionStatusIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetSessionStatusIntent.swift; sourceTree = "<group>"; };
-		E5T000018 /* QuickTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTaskIntent.swift; sourceTree = "<group>"; };
-		E5T000019 /* FollowUpSessionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowUpSessionIntent.swift; sourceTree = "<group>"; };
-		E5T00001A /* RetryRunIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryRunIntent.swift; sourceTree = "<group>"; };
-		E5T00001B /* UserMessageEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserMessageEntity.swift; sourceTree = "<group>"; };
-		E5T0000A2 /* AskMinisIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskMinisIntent.swift; sourceTree = "<group>"; };
 		E5TLC0002 /* ThinkingLevelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinkingLevelCatalog.swift; sourceTree = "<group>"; };
 		E5TLS0011 /* ToolsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolsSettingsView.swift; sourceTree = "<group>"; };
 		E5TRC002 /* ThinkingRuleCoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ThinkingRuleCoding.swift; path = Thinking/ThinkingRuleCoding.swift; sourceTree = "<group>"; };
@@ -2005,20 +1977,6 @@
 		E5T000030 /* Intents */ = {
 			isa = PBXGroup;
 			children = (
-				E5T000011 /* SessionEntity.swift */,
-				E5T000012 /* ListSessionsIntent.swift */,
-				E5T000013 /* SendPromptIntent.swift */,
-				E5T0000A2 /* AskMinisIntent.swift */,
-				E5F200016 /* ModelSelectionEntity.swift */,
-				E5T000014 /* OpenSessionIntent.swift */,
-				E5T000015 /* MinisShortcutsProvider.swift */,
-				E5T000016 /* SendPromptResult.swift */,
-				E5T000017 /* GetSessionStatusIntent.swift */,
-				E5T000018 /* QuickTaskIntent.swift */,
-				E5T000019 /* FollowUpSessionIntent.swift */,
-				E5SD00019 /* ShortcutRunTracker.swift */,
-				E5T00001A /* RetryRunIntent.swift */,
-				E5T00001B /* UserMessageEntity.swift */,
 			);
 			path = Intents;
 			sourceTree = "<group>";
@@ -2916,12 +2874,6 @@
 				E54100001 /* SessionDataSimulator.swift in Sources */,
 				E54200001 /* MessageListTestView.swift in Sources */,
 				E5V100001 /* MessageListLayout.swift in Sources */,
-				E5T000001 /* SessionEntity.swift in Sources */,
-				E5T000002 /* ListSessionsIntent.swift in Sources */,
-				E5T000003 /* SendPromptIntent.swift in Sources */,
-				E5T0000A1 /* AskMinisIntent.swift in Sources */,
-				E5F200006 /* ModelSelectionEntity.swift in Sources */,
-				E5T000004 /* OpenSessionIntent.swift in Sources */,
 				E5W000031 /* WebAppShortcut.swift in Sources */,
 				EAB000051 /* SyncMigrationDetailView.swift in Sources */,
 				EAB000071 /* UploadPolicy.swift in Sources */,
@@ -2932,14 +2884,6 @@
 				E5W000036 /* WebAppIconCache.swift in Sources */,
 				E5W000037 /* WebAppPathClassifier.swift in Sources */,
 				E5W000038 /* WebAppAddToHomeSheet.swift in Sources */,
-				E5T000005 /* MinisShortcutsProvider.swift in Sources */,
-				E5T000006 /* SendPromptResult.swift in Sources */,
-				E5T000007 /* GetSessionStatusIntent.swift in Sources */,
-				E5T000008 /* QuickTaskIntent.swift in Sources */,
-				E5T000009 /* FollowUpSessionIntent.swift in Sources */,
-				E5SD00009 /* ShortcutRunTracker.swift in Sources */,
-				E5T00000A /* RetryRunIntent.swift in Sources */,
-				E5T00000B /* UserMessageEntity.swift in Sources */,
 				E5F000001 /* ISHExecutionCoordinator.swift in Sources */,
 				E5F000002 /* MinisFsRouter.swift in Sources */,
 				E5CR00001 /* ShellCommandRingBuffer.swift in Sources */,
