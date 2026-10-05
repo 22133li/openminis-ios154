@@ -3208,7 +3208,6 @@
 				8B886DA8A270E8FB58A9A1FA /* SpeechPlayerControl.swift in Sources */,
 				7A49962E84F115865D41B933 /* AudioSessionCoordinator.swift in Sources */,
 				C0B1AF9A75C90C3C178A8804 /* VoiceTextSanitizer.swift in Sources */,
-			,
 				E5BP0002 /* ShapeBackport.swift in Sources */,
 				E5BP0004 /* LabeledContentBackport.swift in Sources */,
 				E5BP0006 /* GeometryChangeBackport.swift in Sources */,
