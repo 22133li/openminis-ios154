@@ -5868,7 +5868,6 @@ private struct SheetOverlayView: View {
             // page) that hides the page's bar for good. Pin visible so the
             // bridged state can never be "hidden"; a no-op where the bar is
             // already shown.
-            .toolbar(.visible, for: .navigationBar)
             .sheet(item: $toolPresenter.sheetData) { data in
                 // [T-agent-tool-sheet-unified] Every tool block — the agent
                 // block included — opens the same live sheet (this is the

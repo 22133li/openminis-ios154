@@ -159,7 +159,7 @@ struct SpeechPlayerControl: View {
     private func scheduleRecompute() {
         recomputeTask?.cancel()
         recomputeTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(250))
+            try? await Task.sleep(nanoseconds: 250000000)
             guard !Task.isCancelled else { return }
             recompute()
         }

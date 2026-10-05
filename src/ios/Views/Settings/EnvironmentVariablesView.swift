@@ -146,7 +146,7 @@ struct EnvironmentVariablesView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.key)
                     .font(.system(.body, design: .monospaced))
-                    .fontWeight(.medium)
+                    
                 Text(isRevealed ? currentValue : String(repeating: "\u{2022}", count: min(currentValue.count, 20)))
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.secondary)

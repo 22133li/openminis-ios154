@@ -15,6 +15,7 @@
 		E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0007 /* LocalizedStringResourceBackport.swift */; };
 		E5BP0010 /* ShortcutHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0009 /* ShortcutHelpers.swift */; };
 		E5BP0012 /* ShortcutRunTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0011 /* ShortcutRunTracker.swift */; };
+		E5BP0014 /* MissingSymbolsBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0013 /* MissingSymbolsBackport.swift */; };
 		2A4FD49F872431D703328384 /* VoiceOutputPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 424510790AF3FB2452D3CCE3 /* VoiceOutputPlayer.swift */; };
 		30390D7AA90818BD4BDCE784 /* VoiceProviderTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F3D1138DBE516F31D76ABF4 /* VoiceProviderTemplate.swift */; };
 		33643CC21B9402F949D76C3C /* VoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84758F712C9B9178FA9D0EF2 /* VoiceProvider.swift */; };
@@ -634,6 +635,7 @@
 		E5BP0007 /* LocalizedStringResourceBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedStringResourceBackport.swift; sourceTree = "<group>"; };
 		E5BP0009 /* ShortcutHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutHelpers.swift; sourceTree = "<group>"; };
 		E5BP0011 /* ShortcutRunTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRunTracker.swift; sourceTree = "<group>"; };
+		E5BP0013 /* MissingSymbolsBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingSymbolsBackport.swift; sourceTree = "<group>"; };
 		0F5379380323FA8C6477708C /* GroupSlotPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GroupSlotPicker.swift; sourceTree = "<group>"; };
 		16FF3462D09402F14B610CD6 /* VoiceWaveformView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceWaveformView.swift; sourceTree = "<group>"; };
 		28E23EA0E199D6D50EBC76F2 /* VoiceLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceLog.swift; sourceTree = "<group>"; };
@@ -1889,6 +1891,7 @@
 				E5BP0007 /* LocalizedStringResourceBackport.swift */,
 				E5BP0009 /* ShortcutHelpers.swift */,
 				E5BP0011 /* ShortcutRunTracker.swift */,
+				E5BP0013 /* MissingSymbolsBackport.swift */,
 );
 			path = Shared;
 			sourceTree = "<group>";
@@ -3213,7 +3216,8 @@
 				E5BP0006 /* GeometryChangeBackport.swift in Sources */,
 				E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */,
 				E5BP0010 /* ShortcutHelpers.swift in Sources */,
-				E5BP0012 /* ShortcutRunTracker.swift in Sources */);
+				E5BP0012 /* ShortcutRunTracker.swift in Sources */,
+				E5BP0014 /* MissingSymbolsBackport.swift in Sources */);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E5E000041 /* Sources */ = {

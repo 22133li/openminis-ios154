@@ -217,7 +217,7 @@ final class SpeechCapsulePlacement: ObservableObject {
     func setRectDebounced(_ key: String, _ rect: CGRect?) {
         debounceTasks[key]?.cancel()
         debounceTasks[key] = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(200))
+            try? await Task.sleep(nanoseconds: 200000000)
             guard !Task.isCancelled else { return }
             self?.setRect(key, rect)
         }

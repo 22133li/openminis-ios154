@@ -10,7 +10,7 @@ import SafariServices
 ///   .sheet(isPresented: $showKimiLogin) {
 ///       KimiDeviceLoginSheet(instanceId: instance.id) { success in ... }
 ///   }
-@available(iOS 16.0, *)
+@available(iOS 15.0, *)
 struct KimiDeviceLoginSheet: View {
     let instanceId: String
     /// Called on dismiss with whether authentication succeeded.
