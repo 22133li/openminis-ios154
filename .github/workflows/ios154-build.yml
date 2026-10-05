@@ -20,16 +20,16 @@ jobs:
       - run: xcodebuild -downloadComponent MetalToolchain || true
       - name: Patch iSH VDSO (skip lld, use stub)
         run: |
-          # lld is unavailable on this runner; patch meson to use the VDSO stub
-          # (the build already supports a no-VDSO fallback, we force it)
-          MESON_FILE="deps/ish/vdso/arm64/meson.build"
-          if [ -f "$MESON_FILE" ]; then
-            # Comment out the real VDSO block, keep the stub fallback
-            # Simplest: make clang 'not found' by pointing to a nonexistent path
-            sed -i.bak "s|find_program('/usr/local/opt/llvm/bin/clang'|find_program('/nonexistent/clang', '/usr/local/opt/llvm/bin/clang'|" "$MESON_FILE"
-            echo "patched $MESON_FILE"
-            grep -n "find_program" "$MESON_FILE" | head -3
-          fi
+          # lld is unavailable on runner; force the VDSO stub by overwriting meson.build
+          cat > deps/ish/vdso/arm64/meson.build << 'MESONEOF'
+          # iOS 15.4 backport CI patch: VDSO disabled (no lld on runner).
+          # The empty stub keeps the iSH build going; VDSO is a guest optimization.
+          vdso = custom_target('vdso-arm64-stub',
+              output: 'libvdso.so.elf',
+              command: ['touch', '@OUTPUT@'])
+          MESONEOF
+          echo "--- patched meson.build ---"
+          cat deps/ish/vdso/arm64/meson.build
       - run: |
           cp src/ios/Configs/ProviderCustomization.xcconfig.example \
              src/ios/Configs/ProviderCustomization.xcconfig || true
