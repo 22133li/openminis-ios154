@@ -46,15 +46,6 @@ struct ProviderInstanceDetailView: View {
         }
         .navigationTitle(instance?.label ?? "Provider")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showExportShare = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-            }
-        }
         .sheet(item: $thinkingEditorRequest) { req in
             ThinkingRuleEditorView(
                 instanceId: instanceId,
@@ -133,24 +124,6 @@ struct ProviderInstanceDetailView: View {
                 }
                 .navigationTitle("Manual Bearer Token")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar(content: {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            showManualTokenInput = false
-                            manualTokenInputText = ""
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") {
-                            let cleaned = manualTokenInputText.components(separatedBy: .whitespacesAndNewlines).joined()
-                            ProviderKeychainHelper.saveOAuthString(cleaned, instanceId: instanceId, account: "manual-oauth-token")
-                            manualTokenInputText = ""
-                            showManualTokenInput = false
-                            oauthRefreshTrigger.toggle()
-                        }
-                        .disabled(manualTokenInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                }
             }
         }
         .alert("Delete Provider", isPresented: $showDeleteConfirm) {
@@ -1294,16 +1267,6 @@ struct AddCustomModelSheet: View {
             }
             .navigationTitle("Add Custom Model")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Add") { addModel() }
-                        .font(.body.weight(.semibold))
-                        .disabled(modelId.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-            }
             .onAppear { initializeModalityFromProvider() }
         }
     }
@@ -1595,15 +1558,6 @@ struct ModelEntryDetailSheet: View {
             }
             .navigationTitle("Model Details")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") { save() }
-                        .font(.body.weight(.semibold))
-                }
-            }
             .onAppear { loadFromEntry() }
             .sheet(isPresented: $showQuickTest) {
                 // [T-quicktest-stale-session] Fresh identity per model — this

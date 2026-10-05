@@ -884,7 +884,7 @@ struct MinisTextPreviewView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -1007,7 +1007,7 @@ struct MinisMarkdownPreviewView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -1090,7 +1090,7 @@ struct MinisHTMLPreviewView: View {
                 .onAppear { holder.startIfNeeded() }
                 .ignoresSafeArea()
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar(content: {
+                .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button { dismiss() } label: {
                             Image(systemName: "xmark.circle.fill")

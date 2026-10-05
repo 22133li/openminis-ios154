@@ -80,7 +80,7 @@ struct ModelGroupDetailView: View {
         }
         .navigationTitle(group?.name ?? "Group")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
+        .toolbar {
             ToolbarItem(placement: .secondaryAction) {
                 if let group {
                     Button {

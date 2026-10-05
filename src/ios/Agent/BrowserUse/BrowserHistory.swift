@@ -132,7 +132,7 @@ struct BrowserHistoryView: View {
             }
             .navigationTitle("History")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     if !historyStore.entries.isEmpty {
                         Button("Clear", role: .destructive) {

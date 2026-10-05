@@ -52,11 +52,6 @@ struct SessionMemoryView: View {
             }
             .navigationTitle("Memories in Session")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
         }
     }
 
@@ -273,24 +268,6 @@ private struct MemoryContentView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
-            if fileURL != nil {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if isEditing {
-                        Button("Save") {
-                            save()
-                        }
-                    } else {
-                        Button {
-                            editedContent = content
-                            isEditing = true
-                        } label: {
-                            Image(systemName: "pencil")
-                        }
-                    }
-                }
-            }
-        }
         .overlay(alignment: .bottom) {
             if saved {
                 Text("Saved")
@@ -373,28 +350,6 @@ private struct MemoryWriteDetailView: View {
         }
         .navigationTitle(item.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                if isEditing {
-                    Button("Save") { saveEdit() }
-                } else {
-                    if item.writtenContent != nil {
-                        Button {
-                            editedContent = item.writtenContent ?? ""
-                            isEditing = true
-                        } label: {
-                            Image(systemName: "pencil")
-                        }
-                    }
-                    Button {
-                        showRevokeAlert = true
-                    } label: {
-                        Image(systemName: "arrow.uturn.backward")
-                    }
-                    .disabled(item.writtenContent == nil)
-                }
-            }
-        }
         .overlay(alignment: .bottom) {
             if saved {
                 Text("Saved")

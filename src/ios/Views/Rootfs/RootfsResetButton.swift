@@ -173,7 +173,7 @@ struct RootfsResetToolbarItem: ToolbarContent {
 /*
 
  // Example 1: Add to toolbar
- .toolbar(content: {
+ .toolbar {
      RootfsResetToolbarItem()
  }
 

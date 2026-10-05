@@ -121,32 +121,6 @@ struct MCPFormSheet: View {
             }
             .navigationTitle(Text(isEditing ? "Edit Server" : "Add Server"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppLocalized("Cancel")) { dismiss() }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button {
-                            // Defer the side effect to the next runloop tick: on
-                            // iPad the toolbar Menu's own dismissal otherwise races
-                            // the pasteboard write / sheet present and swallows it,
-                            // so the tap appeared to do nothing.
-                            DispatchQueue.main.async { copyJSON() }
-                        } label: {
-                            Label(AppLocalized("Copy JSON"), systemImage: "doc.on.doc")
-                        }
-                        Button {
-                            DispatchQueue.main.async { shareJSON() }
-                        } label: {
-                            Label(AppLocalized("Share JSON"), systemImage: "square.and.arrow.up")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                    .disabled(!canSave)   // need a name + a transport to export anything
-                }
-            }
             // Full-width primary Save pinned to the bottom, above the keyboard.
             .safeAreaInset(edge: .bottom) {
                 Button(action: save) {

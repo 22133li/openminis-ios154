@@ -59,7 +59,7 @@ struct MemoryManagementView: View {
         }
         .navigationTitle("Memory")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
+        .toolbar {
             if #available(iOS 17.0, *), iCloudSyncEnabled {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
@@ -246,7 +246,7 @@ private struct MemoryFileEditView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle(fileName)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
+        .toolbar {
             // [T-global-memory-save-always-visible] Save is ALWAYS visible
             // once the editor is open. Previously it was gated on `hasChanges`,
             // which only flips via `onChange(of: content)`. On macOS a paste

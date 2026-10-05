@@ -107,7 +107,7 @@ struct OnboardingModelSelectionView: View {
         .searchable(text: $searchText, prompt: "Filter models")
         .navigationTitle("Select Models")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
+        .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button("Skip") { dismiss() }
             }

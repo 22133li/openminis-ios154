@@ -290,7 +290,7 @@ struct MinisApp: App {
                         // backwards.
                         BackupAndRestoreView(initialTab: .restore,
                                              initialPackageURL: pending.url)
-                            .toolbar(content: {
+                            .toolbar {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Close") { openRouter.pendingPackage = nil }
                                 }

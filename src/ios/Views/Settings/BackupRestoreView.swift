@@ -979,7 +979,7 @@ struct ServerRestorePickerSheet: View {
             }
             .navigationTitle("Restore from Server")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }

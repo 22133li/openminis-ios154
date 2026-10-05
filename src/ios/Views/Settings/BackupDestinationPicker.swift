@@ -47,7 +47,7 @@ struct BackupDestinationPicker: View {
             }
             .navigationTitle("Backup Destination")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }

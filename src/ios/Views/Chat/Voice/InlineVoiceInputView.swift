@@ -792,22 +792,6 @@ struct InlineVoiceInputView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(ChatColors.primaryText)
                 .onAppear { editFocused = true }
-                .toolbar(content: {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button {
-                            // [T-voice-panel-gap-after-edit] Focus teardown is
-                            // owned by the isEditingTranscript observer (which
-                            // also force-resigns the responder). Clearing
-                            // `editFocused` here as well would make the observer
-                            // see focus already false and skip that release.
-                            viewModel.endEditing(resume: false)
-                        } label: {
-                            Text("Done", comment: "Finish transcript editing")
-                                .font(.body.weight(.semibold))
-                        }
-                    }
-                }
                 // Fill the band and let the text view scroll inside it. Without
                 // an explicit height the field would size to its content and
                 // overflow the fixed-height band instead of scrolling.

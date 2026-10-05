@@ -94,7 +94,7 @@ struct MountedFoldersSettingsView: View {
         }
         .navigationTitle("Mount External Folders")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
+        .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showingPicker = true
@@ -383,7 +383,7 @@ private struct AddMountSheet: View {
             }
             .navigationTitle("New Mount")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(AppLocalized("Cancel"), action: onCancel)
                 }

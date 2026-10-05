@@ -693,7 +693,7 @@ struct UnifiedModelPicker: View {
             sectionsRevision = nil
             loadSections()
         }
-        .toolbar(content: { toolbarContent }
+        .toolbar { toolbarContent }
         .sheet(isPresented: $showCreateGroupSheet) {
             NavigationView {
                 UnifiedModelPicker(config: createGroupConfig())
@@ -702,7 +702,7 @@ struct UnifiedModelPicker: View {
         .sheet(isPresented: $showGroupsManager) {
             NavigationView {
                 ModelGroupsView()
-                    .toolbar(content: {
+                    .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Done") { showGroupsManager = false }
                         }

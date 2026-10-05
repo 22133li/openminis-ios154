@@ -2886,7 +2886,7 @@ private struct ToolPreviewThumbnail: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 2)
                     .background(Color.black.opacity(0.6))
-                    .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 8, bottomTrailingRadius: 8))
+                    .clipShape(BackportUnevenRoundedRectangle(bottomLeadingRadius: 8, bottomTrailingRadius: 8))
             }
         }
         .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 3)
@@ -3169,7 +3169,6 @@ private struct ToolStatusBarSurface: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: shape)
         } else {
             content
                 .background(Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(white: 0.15, alpha: 1) : UIColor.systemBackground }))

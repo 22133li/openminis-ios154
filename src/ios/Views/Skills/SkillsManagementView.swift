@@ -105,58 +105,6 @@ struct SkillsManagementView: View {
         .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text(AppLocalized("Search skills")))
         .onAppear { store.reload() }
-        .toolbar(content: {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                // Sort menu — same structure as the file browser's (sort-key
-                // picker + direction toggle), persisted via AppStorage.
-                Menu {
-                    Picker(selection: $sortKeyRaw) {
-                        ForEach(SkillSortKey.allCases) { key in
-                            Text(key.label).tag(key.rawValue)
-                        }
-                    } label: {
-                        Text("Sort By")
-                    }
-                    Button {
-                        sortAscending.toggle()
-                    } label: {
-                        Label(
-                            sortAscending ? "Ascending" : "Descending",
-                            systemImage: sortAscending ? "arrow.up" : "arrow.down"
-                        )
-                    }
-                } label: {
-                    Image(systemName: "arrow.up.arrow.down")
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button {
-                        showImportSheet = true
-                    } label: {
-                        Label(AppLocalized("Import Skill"), systemImage: "square.and.arrow.down")
-                    }
-                    Button {
-                        showSkillsBrowser = true
-                    } label: {
-                        Label(AppLocalized("Minis Skills"), systemImage: "globe")
-                    }
-                    // Skill iCloud sync is wired through SyncV2; hide the
-                    // force-sync entry entirely when the user has the
-                    // feature off in Settings (no-op otherwise).
-                    if #available(iOS 17.0, *), iCloudSyncEnabled {
-                        Divider()
-                        Button {
-                            forceSyncAllSkills()
-                        } label: {
-                            Label(AppLocalized("Force iCloud Sync All"), systemImage: "icloud.and.arrow.up")
-                        }
-                    }
-                } label: {
-                    Image(systemName: "plus")
-                }
-            }
-        }
         .sheet(isPresented: $showImportSheet) {
             ImportSkillSheet()
         }
@@ -276,17 +224,6 @@ private struct ImportSkillSheet: View {
             }
             .navigationTitle(AppLocalized("Import Skill"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(AppLocalized("Cancel")) { dismiss() }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if importMode != .file {
-                        Button(AppLocalized("Import")) { performImport() }
-                            .disabled(isImporting || (importMode == .url ? urlText.isEmpty : pastedContent.isEmpty))
-                    }
-                }
-            }
             .overlay {
                 if isImporting {
                     ProgressView("Importing…")
@@ -658,14 +595,6 @@ private struct SkillDetailView: View {
         }
         .navigationTitle(skill?.name ?? "Skill")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { shareSkill() } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-                .disabled(skill == nil)
-            }
-        }
         .onAppear { refreshUpdatedAgo() }
         .sheet(isPresented: Binding(get: { shareZipURL != nil }, set: { if !$0 { cleanupShareZip() } })) {
             if let url = shareZipURL {
@@ -880,13 +809,6 @@ private struct SkillFileDetailView: View {
             }
             .navigationTitle(fileName)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                if hasChanges {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(AppLocalized("Save")) { save() }
-                    }
-                }
-            }
             .onAppear {
                 content = store.readSkillFile(skillId, relativePath: relativePath) ?? ""
             }
@@ -930,17 +852,6 @@ struct MinisSkillsBrowserView: View {
             }
             .navigationTitle("Minis Skills")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(AppLocalized("Done")) { dismiss() }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(AppLocalized("Import This")) {
-                        coordinator.importCurrentSkill()
-                    }
-                    .disabled(coordinator.hudState == .importing)
-                }
-            }
             .alert(AppLocalized("Skill Already Exists"), isPresented: $coordinator.showOverwriteConfirm) {
                 Button(AppLocalized("Update"), role: .destructive) {
                     coordinator.confirmOverwrite()

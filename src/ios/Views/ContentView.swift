@@ -336,9 +336,7 @@ private struct SearchBarSurface: ViewModifier {
 }
 
 /// Tags the search FAB and the expanded search bar with ONE shared
-/// `glassEffectID`.
 ///
-/// Currently INERT: `glassEffectID` only does anything inside a
 /// `GlassEffectContainer`, and the FAB row no longer has one — that container
 /// suppressed the new-chat FAB's context menu, see the note on `fabRow`. The
 /// modifier is kept (harmless, and it costs nothing) so that if the container
@@ -349,7 +347,6 @@ private struct FABGlassMorphID: ViewModifier {
     let namespace: Namespace.ID
 
     func body(content: Content) -> some View {
-        if false {  // iOS 15 backport: glassEffectID is iOS 26+
             content
         } else {
             content
@@ -946,11 +943,7 @@ private struct FolderPickerSheet: View {
                              ? LocalizedStringKey("Change Group for \(sessionCount)")
                              : LocalizedStringKey("Move \(sessionCount) to Group"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarItems(trailing: Button("Cancel") { dismiss() })
         }
     }
 
@@ -1824,11 +1817,6 @@ struct ContentView: View {
             case .rootfsManagement:
                 NavigationView {
                     RootfsManagementView()
-                        .toolbar(content: {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button("Done") { activeToolSheet = nil }
-                            }
-                        }
                 }
             case .browser:
                 BrowserSheetView(pool: browserPool)
@@ -1839,11 +1827,6 @@ struct ContentView: View {
             case .syncMigrationDetail:
                 NavigationView {
                     SyncMigrationDetailView()
-                        .toolbar(content: {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button("Done") { activeToolSheet = nil }
-                            }
-                        }
                 }
             }
         }
@@ -3366,8 +3349,6 @@ struct ContentView: View {
         // keyboard, so normal avoidance is restored.
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: { sidebarToolbarContent }
-        )
     }
 
     /// Selection-bound List for split (iPad) layout.
@@ -3550,29 +3531,6 @@ struct ContentView: View {
         // is open (the chat column's composer avoidance is its own subtree).
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: { sidebarToolbarContent }
-        }
-    }
-    // MARK: - Sidebar Toolbar
-
-    /// Refresh cadence for the sidebar migration subtitle, in seconds.
-    private static let migrationSubtitleRefreshInterval: UInt64 = 5
-
-    /// [T-ios-migration-timer-sessionlist-uaf-crash] Self-cancelling refresh loop
-    /// for `migrationSubtitle`, driven by `.task` on the identity-stable sidebar
-    /// Group. Replaces the process-lived `Timer.publish().autoconnect()` +
-    /// `.onReceive` that AttributeGraph could tear down mid-transaction (UAF).
-    ///
-    /// SwiftUI cancels this Task when the Group's identity ends, so the loop stops
-    /// cleanly with no dangling subscription. It parks (no refresh, cheap poll)
-    /// while the app is backgrounded — the crash reproduced with the app in the
-    /// background, and a hidden sidebar has nothing to display anyway.
-    @MainActor
-    private func migrationSubtitleLoop() async {
-        // Mirror the old `.onAppear { refreshMigrationSubtitle() }`: refresh once
-        // immediately so the subtitle is correct as soon as the sidebar appears.
-        refreshMigrationSubtitle()
-        while !Task.isCancelled {
             do {
                 try await Task.sleep(nanoseconds: Self.migrationSubtitleRefreshInterval * 1_000_000_000)
             } catch {
@@ -4597,11 +4555,6 @@ struct ContentView: View {
             // (restore reloads ProviderConfigStore and the session list).
             NavigationView {
                 BackupAndRestoreView(initialTab: .restore)
-                    .toolbar(content: {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Close") { showRestoreBackup = false }
-                        }
-                    }
             }
         }
     }
@@ -4919,7 +4872,6 @@ struct ContentView: View {
     /// variance ~1.2 across its centre). Putting the icon inside means the glass
     /// is the background and the glyph rides on top of it.
     ///
-    /// iOS 26+: `.glassEffect(.regular[.tint], in: .circle)`. The old manual
     /// `.shadow` is dropped on that path on purpose — Liquid Glass renders its
     /// own shadow/edge, and stacking the hand-rolled one on top reads as a dark
     /// halo rather than depth. Sub-26 keeps the original opaque circle AND its
@@ -5000,7 +4952,6 @@ struct ContentView: View {
         // [T-fab-glass-contextmenu-regression] NO GlassEffectContainer here.
         //
         // The row was briefly wrapped in `GlassEffectContainer(spacing: 10)` so the
-        // search FAB and the expanded search bar (which share a `glassEffectID`)
         // would morph into one another like the system Dock. That container is what
         // broke the new-chat FAB's long-press "New Chat with Group" menu.
         //
@@ -6426,11 +6377,6 @@ private struct ExportPreviewSheet: View {
             }
             .navigationTitle(AppLocalized("Export Preview"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(AppLocalized("Done")) { dismiss() }
-                }
-            }
             .sheet(isPresented: $showShareSheet) {
                 if let url = fileURL {
                     ShareSheet(url: url)
@@ -7477,20 +7423,6 @@ struct SessionEditSheet: View {
             }
             .navigationTitle("Edit Session")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let title = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !title.isEmpty else { return }
-                        onSave(title, editCategory.isEmpty ? nil : editCategory)
-                    }
-                    .bold()
-                    .disabled(editTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
             .onAppear {
                 editTitle = session.title ?? ""
                 editCategory = session.category ?? ""
@@ -8449,11 +8381,6 @@ private struct SettingsSheet: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
             .background(
                 NavigationLink(
                     destination: settingsDestinationView,

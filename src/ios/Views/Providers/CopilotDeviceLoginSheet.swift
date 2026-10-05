@@ -80,7 +80,7 @@ struct CopilotDeviceLoginSheet: View {
             .padding()
             .navigationTitle(AppLocalized("GitHub Copilot Login"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(AppLocalized("Cancel")) { finish(false) }
                 }

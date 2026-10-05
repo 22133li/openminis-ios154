@@ -4357,7 +4357,7 @@ struct AIChatView: View {
                 // reserves the top/bottom share.
                 .padding(Self.popupRowInset)
             }
-            .scrollIndicators(.visible)
+            
             .frame(height: Self.slashPickerFixedHeight)
         }
     }
@@ -4428,7 +4428,7 @@ struct AIChatView: View {
                         // [T-slash-picker-fixed-height] Match slash popup:
                         // exactly 4 rows tall, scrolls on overflow with the
                         // visible indicator above.
-                        .scrollIndicators(.visible)
+                        
                         .frame(height: Self.slashPickerFixedHeight)
                         .onChange(of: vm.mentionSelectedIndex) { newIndex in
                             guard newIndex >= 0, newIndex < rows.count else { return }
@@ -5459,7 +5459,7 @@ private struct ChatToolbarHost<Title: View, Trailing: View>: View, Equatable {
         Color.clear
             .frame(width: 0, height: 0)
             .allowsHitTesting(false)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .principal) { title() }
                 ToolbarItem(placement: .navigationBarTrailing) { trailing() }
             }
@@ -6003,7 +6003,7 @@ private struct MoveToSessionSheet: View {
             .onChange(of: searchText) { _ in scheduleSearch() }
             .navigationTitle(AppLocalized("Move to…"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(AppLocalized("Cancel")) { dismiss() }
                 }
@@ -6397,7 +6397,7 @@ private struct SpeechLanguagePickerSheet: View {
             .searchable(text: $searchText, prompt: Text("Search Languages", comment: "Search field placeholder for speech language picker"))
             .navigationTitle(Text("Voice Language", comment: "Navigation title for speech language picker"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(AppLocalized("Done", comment: "Dismiss speech language picker")) {
                         dismiss()
@@ -6468,7 +6468,7 @@ struct CompactSummarySheet: View {
             }
             .navigationTitle("Compact Summary")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -6594,7 +6594,7 @@ private struct TokenUsageSheet: View {
             }
             .navigationTitle("Session Token Usage")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }

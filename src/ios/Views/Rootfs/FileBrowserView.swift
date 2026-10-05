@@ -164,23 +164,6 @@ struct FileBrowserView: View {
             }
         }
         .animation(.spring(response: 0.3), value: copiedToast)
-        .toolbar(content: {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Close") {
-                    dismiss()
-                }
-            }
-            // T-hidden-files a3e7f1d0: trailing toolbar collapsed to a
-            // single ⋯ menu. Previously surfaced Sort / Import (+) /
-            // Parent-dir (up.doc) as three separate buttons; users
-            // ignored the menu icon, accidentally tapped Import while
-            // trying to switch sort, etc. All functional actions now live
-            // under one entry point so the chrome stays consistent with
-            // the rest of the app's "... overflow" pattern.
-            ToolbarItem(placement: .navigationBarTrailing) {
-                moreMenu
-            }
-        }
         .sheet(isPresented: $showExportSheet) {
             if let file = exportingFile {
                 DocumentExportView(fileURL: file.url)
@@ -420,11 +403,6 @@ private struct FilePreviewSheet: View {
             content
                 .navigationTitle(item.name)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar(content: {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") { dismiss() }
-                    }
-                }
         }
     }
 
@@ -484,38 +462,6 @@ private struct MarkdownFilePreview: View {
                                 .padding(16)
                         }
                     }
-                }
-            }
-        }
-        .toolbar(content: {
-            if case .loaded = loadState {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    // Single toggle button, NOT a segmented Picker.
-                    //
-                    // A `.segmented` Picker asks for the width of all its
-                    // segments, but a toolbar item on iOS 26's Liquid Glass
-                    // bar is laid out as one round glass button. The control
-                    // got squeezed into that circular slot and drew both
-                    // segments on top of each other — the reported "two
-                    // overlapping, distorted icons" (screenshot
-                    // /tmp/md_preview_toggle_bug.jpg), not an animation stuck
-                    // mid-transition.
-                    //
-                    // A plain Button showing ONE icon is what a toolbar slot
-                    // is shaped for, and it matches the icon-swap toggles
-                    // used elsewhere in the app. The icon shows the mode you
-                    // will switch TO, which is the convention for a toggle
-                    // that has no separate label.
-                    Button {
-                        renderMode = (renderMode == .rendered) ? .source : .rendered
-                    } label: {
-                        Image(systemName: renderMode == .rendered
-                              ? "chevron.left.forwardslash.chevron.right"
-                              : "doc.richtext")
-                    }
-                    .accessibilityLabel(renderMode == .rendered
-                                        ? Text("Show Source")
-                                        : Text("Show Rendered"))
                 }
             }
         }
@@ -1661,16 +1607,6 @@ private struct DirectoryPickerView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
-            }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Select") {
-                    onSelect(currentDir)
-                }
-            }
-        }
         .onAppear { loadDirectories() }
     }
 

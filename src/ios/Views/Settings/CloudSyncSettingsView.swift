@@ -719,7 +719,7 @@ struct SyncLogView: View {
         }
         .navigationTitle("iCloud Sync Logs")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
+        .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button {
                     let report = store.exportSanitizedReport()

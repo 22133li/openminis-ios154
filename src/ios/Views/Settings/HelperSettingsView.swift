@@ -310,15 +310,6 @@ struct SubAgentEditorView: View {
             }
             .navigationTitle(existing == nil ? AppLocalized("New Sub Agent") : AppLocalized("Edit Sub Agent"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppLocalized("Cancel")) { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(AppLocalized("Save")) { save() }
-                        .disabled(!isValid)
-                }
-            }
             .onAppear(perform: seed)
         }
     }

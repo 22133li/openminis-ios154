@@ -1099,7 +1099,7 @@ private struct PauseSyncSheet: View {
 #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onCancel() }
                 }

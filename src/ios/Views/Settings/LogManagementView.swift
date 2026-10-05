@@ -193,17 +193,6 @@ struct LogManagementView: View {
                 }
             }
         }
-        .toolbar(content: {
-            if !vm.logFiles.isEmpty && tab == "logs" {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showShareSheet = true
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                    }
-                }
-            }
-        }
         .sheet(isPresented: $showShareSheet) {
             LogShareSheet(urls: vm.logFiles.map(\.url))
         }
@@ -237,19 +226,6 @@ struct LogDetailView: View {
         }
         .navigationTitle(name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    let avc = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-                    if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                       let root = scene.windows.first?.rootViewController {
-                        root.present(avc, animated: true)
-                    }
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-            }
-        }
         .task {
             let fileURL = url
             let loaded = await Task.detached(priority: .userInitiated) {

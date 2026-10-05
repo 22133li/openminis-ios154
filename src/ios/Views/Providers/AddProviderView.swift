@@ -286,7 +286,7 @@ struct AddProviderView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.88), value: currentStep)
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
+        .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 if selectedType != nil {
                     Button("Back") { goBack() }

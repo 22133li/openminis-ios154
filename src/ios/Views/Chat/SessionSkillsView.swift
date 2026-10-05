@@ -136,7 +136,7 @@ struct SessionSkillsView: View {
             .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: Text(AppLocalized("Search skills")))
             .onAppear { store.reload() }
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     if !filteredSkills.isEmpty {
                         let scope = filteredSkills

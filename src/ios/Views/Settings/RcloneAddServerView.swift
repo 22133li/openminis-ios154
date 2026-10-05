@@ -110,22 +110,6 @@ struct RcloneAddServerView: View {
                 set: { if $0 == nil { errorText = nil } }))
             .navigationTitle(connectedRemote == nil ? "Add Server" : "Choose Folder")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { cancelAndDismiss() }
-                }
-                // The confirming action belongs in the top-right slot, where
-                // iOS puts Done/Save everywhere else. As a row at the bottom
-                // of a long directory listing it moved with the scroll and
-                // could sit off-screen entirely in a folder with many
-                // entries — the one control the screen exists to offer.
-                if connectedRemote != nil {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save Here") { saveHere() }
-                            .disabled(isListing)
-                    }
-                }
-            }
             .alert("New Folder", isPresented: $showNewFolder) {
                 TextField("Folder name", text: $newFolderName)
                     .textInputAutocapitalization(.never)

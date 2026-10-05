@@ -253,7 +253,7 @@ struct AlarmListView: View {
             }
             .navigationTitle("Alarms")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") { dismiss() }
                 }

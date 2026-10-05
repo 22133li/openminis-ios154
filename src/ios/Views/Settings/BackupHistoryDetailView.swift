@@ -27,25 +27,6 @@ struct BackupHistoryDetailView: View {
         .navigationTitle(record.startedAt.formatted(date: .abbreviated, time: .shortened))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { keepScreenAwake = BackupScreenAwake.isEnabled }
-        .toolbar(content: {
-            // The list offers this as a swipe action, which is invisible until
-            // discovered — and a record opened from a notification or a deep
-            // link is reachable without ever seeing the list. Deleting from
-            // the screen you are already on is the obvious path.
-            //
-            // Hidden while the run is live: a delete that dropped the record
-            // while the upload kept running would strand a job with nothing
-            // tracking it. Stop it first — this button is then right here.
-            if !isLive {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(role: .destructive) {
-                        showDeleteConfirm = true
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                }
-            }
-        }
         // Confirmed, unlike the list's swipe action: a swipe is deliberate and
         // undoable-by-redoing-the-backup, but a toolbar button sits next to
         // Back and is easy to hit by accident on the way out.

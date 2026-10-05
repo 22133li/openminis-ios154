@@ -74,7 +74,7 @@ struct OffloadPermissionSettingsView: View {
         }
         .navigationTitle("Permissions")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
+        .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Set All Bypass") {
                     manager.setAllBypass()

@@ -95,22 +95,6 @@ struct ISHTerminalView: View {
         .background(Color.black)
         .navigationTitle("Minis Shell")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(content: {
-            if showCloseButton {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                    }
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    viewModel.clearScreen()
-                } label: {
-                    Image(systemName: "paintbrush")
-                }
-            }
-        }
         .onAppear {
             viewModel.startShell(sessionId: sessionId, initCommand: initCommand)
             // Claim the broker so AIChatView (which sits beneath our

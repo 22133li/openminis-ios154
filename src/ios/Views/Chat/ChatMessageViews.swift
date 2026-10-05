@@ -177,7 +177,6 @@ private struct UserBubbleSurface: ViewModifier {
                         .foregroundStyle(ChatColors.secondaryText.opacity(0.5))
                 )
         } else if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: shape)
         } else {
             content.background(shape.fill(ChatColors.userBubble))
         }

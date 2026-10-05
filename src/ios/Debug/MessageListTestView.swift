@@ -779,7 +779,7 @@ struct MessageListTestView: View {
             .padding()
             .navigationTitle("Paste Session Data")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { showPasteSheet = false }
                 }

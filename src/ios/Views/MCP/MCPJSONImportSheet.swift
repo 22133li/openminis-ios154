@@ -60,7 +60,7 @@ struct MCPJSONImportSheet: View {
             }
             .navigationTitle(Text("Import JSON"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(AppLocalized("Cancel")) { dismiss() }
                 }
