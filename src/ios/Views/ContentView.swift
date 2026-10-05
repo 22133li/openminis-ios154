@@ -3142,7 +3142,6 @@ struct ContentView: View {
         // there is no sink to release mid-transaction. The loop also parks while the
         // app is backgrounded (the crash reproduced with the app in the background).
         // refreshMigrationSubtitle is idempotent (Task{@MainActor} + diff-before-assign).
-        .task { await migrationSubtitleLoop() }
         // [T-ios-soul-name-sidebar-stale] Refresh the sidebar title from SOUL.md.
         // Moved here off the churny toolbar `titleLabel` Text (which rebuilds on
         // every canOpenSync/soulName/migrationSubtitle/isSelecting change) for the

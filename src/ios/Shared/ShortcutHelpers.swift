@@ -166,6 +166,10 @@ final class ShortcutNotificationDelegate: NSObject, UNUserNotificationCenterDele
     }
 }
 
+// iOS 15 backport: helper for Shortcut-related utilities
+enum ShortcutHelpers {
+}
+
 // iOS 15 backport: extracted from deleted SendPromptIntent
 extension ShortcutHelpers {
     static func extractResponseText(from vm: AIChatViewModel) -> String {
