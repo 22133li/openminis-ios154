@@ -78,7 +78,7 @@ enum SystemVoiceCatalog {
     static func allowedLanguageCodes() -> Set<String> {
         let appUI: Set<String> = ["de", "en", "fr", "ja", "ko", "ru", "zh"]
         let preferred = Locale.preferredLanguages.compactMap { tag -> String? in
-            Locale(identifier: tag).languageCode?.identifier.lowercased()
+            Locale(identifier: tag).languageCode.lowercased()
         }
         return appUI.union(preferred)
     }

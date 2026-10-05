@@ -81,7 +81,7 @@ final class SpeechRecognitionManager: ObservableObject {
 
     /// Short label for the badge (e.g. "EN", "FR", or a CJK glyph for zh / ja / ko).
     var languageLabel: String {
-        guard let langCode = locale.languageCode?.identifier else {
+        guard let langCode = locale.languageCode else {
             return locale.identifier.prefix(2).uppercased()
         }
         // Use the language's own script for CJK, otherwise uppercase Latin code
@@ -115,8 +115,8 @@ final class SpeechRecognitionManager: ObservableObject {
            allSupported.contains(where: { $0.identifier == savedId }) {
             resolvedLocale = Locale(identifier: savedId)
         } else {
-            let systemLangCode = Locale.current.languageCode?.identifier ?? "en"
-            resolvedLocale = allSupported.first { $0.languageCode?.identifier == systemLangCode }
+            let systemLangCode = Locale.current.languageCode ?? "en"
+            resolvedLocale = allSupported.first { $0.languageCode == systemLangCode }
                 ?? Locale(identifier: "en-US")
         }
 
@@ -124,11 +124,11 @@ final class SpeechRecognitionManager: ObservableObject {
         self.speechRecognizer = SFSpeechRecognizer(locale: resolvedLocale)
 
         // Build sorted list: user preferred languages first, then the rest alphabetically
-        let preferredCodes = Locale.preferredLanguages.map { Locale(identifier: $0).languageCode?.identifier ?? "" }
+        let preferredCodes = Locale.preferredLanguages.map { Locale(identifier: $0).languageCode ?? "" }
 
         let sorted = allSupported.sorted { a, b in
-            let aCode = a.languageCode?.identifier ?? ""
-            let bCode = b.languageCode?.identifier ?? ""
+            let aCode = a.languageCode ?? ""
+            let bCode = b.languageCode ?? ""
             let aIdx = preferredCodes.firstIndex(of: aCode) ?? Int.max
             let bIdx = preferredCodes.firstIndex(of: bCode) ?? Int.max
             if aIdx != bIdx { return aIdx < bIdx }

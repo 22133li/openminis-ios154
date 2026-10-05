@@ -147,7 +147,7 @@ struct ModelGroupsView: View {
                 AddAgentLoopGroupsSheet()
             }
         }
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {

@@ -214,7 +214,7 @@ private struct AttachmentChip: View {
                 AttachmentPreviewView(url: attachment.cacheURL)
                     .navigationTitle(attachment.fileName)
                     .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
+                    .toolbar(content: {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button("Done") { showPreview = false }
                         }
@@ -500,7 +500,7 @@ struct PastedTextChipRow: View {
                 }
                 .navigationTitle("Pasted#\(entry.id) · " + String(format: AppLocalized("%d chars"), entry.charCount))
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
+                .toolbar(content: {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(AppLocalized("Done")) { previewEntry = nil }
                     }

@@ -58,7 +58,7 @@ struct ConfigConfirmSheet: View {
                              ? "Confirm \(workingItems.count) changes"
                              : "Confirm change")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel", role: .cancel) {
                         gate.userReject()

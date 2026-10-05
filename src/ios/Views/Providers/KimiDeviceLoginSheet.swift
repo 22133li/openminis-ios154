@@ -64,7 +64,7 @@ struct KimiDeviceLoginSheet: View {
             .padding()
             .navigationTitle(AppLocalized("Kimi Code Login"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(AppLocalized("Cancel")) { finish(false) }
                 }

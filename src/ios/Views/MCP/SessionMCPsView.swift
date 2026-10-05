@@ -127,7 +127,7 @@ struct SessionMCPsView: View {
             .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: Text(AppLocalized("Search MCP servers")))
             .onAppear { store.load() }
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     if !filteredServers.isEmpty {
                         let scope = filteredServers

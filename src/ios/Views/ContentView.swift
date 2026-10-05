@@ -946,7 +946,7 @@ private struct FolderPickerSheet: View {
                              ? LocalizedStringKey("Change Group for \(sessionCount)")
                              : LocalizedStringKey("Move \(sessionCount) to Group"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Cancel") { dismiss() }
                 }
@@ -1824,7 +1824,7 @@ struct ContentView: View {
             case .rootfsManagement:
                 NavigationView {
                     RootfsManagementView()
-                        .toolbar {
+                        .toolbar(content: {
                             ToolbarItem(placement: .navigationBarTrailing) {
                                 Button("Done") { activeToolSheet = nil }
                             }
@@ -1839,7 +1839,7 @@ struct ContentView: View {
             case .syncMigrationDetail:
                 NavigationView {
                     SyncMigrationDetailView()
-                        .toolbar {
+                        .toolbar(content: {
                             ToolbarItem(placement: .navigationBarTrailing) {
                                 Button("Done") { activeToolSheet = nil }
                             }
@@ -3366,7 +3366,7 @@ struct ContentView: View {
         // keyboard, so normal avoidance is restored.
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { sidebarToolbarContent }
+        .toolbar(content: { sidebarToolbarContent }
         )
     }
 
@@ -3550,7 +3550,7 @@ struct ContentView: View {
         // is open (the chat column's composer avoidance is its own subtree).
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { sidebarToolbarContent }
+        .toolbar(content: { sidebarToolbarContent }
         }
     }
     // MARK: - Sidebar Toolbar
@@ -4597,7 +4597,7 @@ struct ContentView: View {
             // (restore reloads ProviderConfigStore and the session list).
             NavigationView {
                 BackupAndRestoreView(initialTab: .restore)
-                    .toolbar {
+                    .toolbar(content: {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Close") { showRestoreBackup = false }
                         }
@@ -6426,7 +6426,7 @@ private struct ExportPreviewSheet: View {
             }
             .navigationTitle(AppLocalized("Export Preview"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(AppLocalized("Done")) { dismiss() }
                 }
@@ -7477,7 +7477,7 @@ struct SessionEditSheet: View {
             }
             .navigationTitle("Edit Session")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
@@ -8449,7 +8449,7 @@ private struct SettingsSheet: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }

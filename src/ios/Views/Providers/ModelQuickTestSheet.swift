@@ -57,7 +57,7 @@ struct ModelQuickTestSheet: View {
             }
             .navigationTitle("Quick Test")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") { dismiss() }
                 }

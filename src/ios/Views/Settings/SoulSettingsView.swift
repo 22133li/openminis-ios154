@@ -108,7 +108,7 @@ struct SoulSettingsView: View {
         }
         .navigationTitle(AppLocalized("Soul"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(AppLocalized("Save")) { save() }
                     .disabled(!isDirty || isBodyOverLimit)
@@ -475,7 +475,7 @@ private struct SoulEmojiPickerSheet: View {
             .padding(.horizontal, 20)
             .navigationTitle(AppLocalized("Choose Emoji"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(AppLocalized("Cancel")) { dismiss() }
                 }

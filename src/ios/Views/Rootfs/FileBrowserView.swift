@@ -164,7 +164,7 @@ struct FileBrowserView: View {
             }
         }
         .animation(.spring(response: 0.3), value: copiedToast)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button("Close") {
                     dismiss()
@@ -420,7 +420,7 @@ private struct FilePreviewSheet: View {
             content
                 .navigationTitle(item.name)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
+                .toolbar(content: {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button("Done") { dismiss() }
                     }
@@ -487,7 +487,7 @@ private struct MarkdownFilePreview: View {
                 }
             }
         }
-        .toolbar {
+        .toolbar(content: {
             if case .loaded = loadState {
                 ToolbarItem(placement: .navigationBarLeading) {
                     // Single toggle button, NOT a segmented Picker.
@@ -1661,7 +1661,7 @@ private struct DirectoryPickerView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
             }

@@ -792,7 +792,7 @@ struct InlineVoiceInputView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(ChatColors.primaryText)
                 .onAppear { editFocused = true }
-                .toolbar {
+                .toolbar(content: {
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
                         Button {

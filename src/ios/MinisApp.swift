@@ -290,7 +290,7 @@ struct MinisApp: App {
                         // backwards.
                         BackupAndRestoreView(initialTab: .restore,
                                              initialPackageURL: pending.url)
-                            .toolbar {
+                            .toolbar(content: {
                                 ToolbarItem(placement: .cancellationAction) {
                                     Button("Close") { openRouter.pendingPackage = nil }
                                 }
@@ -422,7 +422,6 @@ struct MinisApp: App {
                     NetworkMonitor.shared.start()
                     // iOS 15 backport: FileProvider removed
                     // Migrate legacy shared dir to App Group container
-                    Self.migrateSharedDirToAppGroup()
                     // Trace the resolved AppGroup paths so we can confirm the
                     // main app, FileProvider extension, and iSH bind mount all
                     // agree on which directory holds the user's shared files.

@@ -193,7 +193,7 @@ struct LogManagementView: View {
                 }
             }
         }
-        .toolbar {
+        .toolbar(content: {
             if !vm.logFiles.isEmpty && tab == "logs" {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -237,7 +237,7 @@ struct LogDetailView: View {
         }
         .navigationTitle(name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     let avc = UIActivityViewController(activityItems: [url], applicationActivities: nil)

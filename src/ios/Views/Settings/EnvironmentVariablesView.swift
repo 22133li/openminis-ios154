@@ -64,7 +64,7 @@ struct EnvironmentVariablesView: View {
         .searchable(text: $searchText, prompt: "Filter by name")
         .navigationTitle("Environment Variables")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showingAddSheet = true
@@ -294,7 +294,7 @@ private struct EnvVarFormSheet: View {
             }
             .navigationTitle(mode == .add ? "Add Variable" : "Edit Variable")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }

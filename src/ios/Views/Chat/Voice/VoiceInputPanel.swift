@@ -1319,8 +1319,8 @@ enum VoiceLanguages {
             return supported.first { $0.caseInsensitiveCompare(preferred) == .orderedSame }
         }
         // language+region (drops script), e.g. zh-Hans-CN -> zh-CN.
-        if let lang = loc.languageCode?.identifier {
-            if let region = loc.region?.identifier {
+        if let lang = loc.languageCode {
+            if let region = loc.regionCode {
                 let target = "\(lang)-\(region)"
                 if let hit = supported.first(where: { $0.caseInsensitiveCompare(target) == .orderedSame }) {
                     return hit
@@ -1340,9 +1340,9 @@ enum VoiceLanguages {
         // Prefer the full localized locale name (e.g. "中文（中国）"); fall back to
         // the bare language name, then the raw code.
         let name = current.localizedString(forIdentifier: code)
-            ?? loc.languageCode.map { current.localizedString(forLanguageCode: $0.identifier) ?? $0.identifier }
+            ?? loc.languageCode.map { current.localizedString(forLanguageCode: $0) ?? $0 }
             ?? code
-        let primary = loc.languageCode?.identifier ?? String(code.prefix(2))
+        let primary = loc.languageCode ?? String(code.prefix(2))
         let short = primary == "zh" ? "中"
             : primary == "ja" ? "日"
             : primary == "ko" ? "한"

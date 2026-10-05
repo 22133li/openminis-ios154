@@ -85,7 +85,7 @@ struct WebAppAddToHomeSheet: View {
             }
             .navigationTitle("Add to Home Screen")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }

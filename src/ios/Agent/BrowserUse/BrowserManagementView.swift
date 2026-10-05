@@ -39,7 +39,7 @@ struct BrowserManagementView: View {
         .searchable(text: $searchText, prompt: "Filter by domain")
         .navigationTitle("Browser Settings")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Done") { dismiss() }
             }

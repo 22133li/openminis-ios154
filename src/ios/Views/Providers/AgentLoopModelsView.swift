@@ -262,7 +262,7 @@ struct AddAgentLoopGroupsSheet: View {
         }
         .navigationTitle("Add Groups")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button("Cancel") { dismiss() }
             }

@@ -52,7 +52,7 @@ struct SessionMemoryView: View {
             }
             .navigationTitle("Memories in Session")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }
@@ -273,7 +273,7 @@ private struct MemoryContentView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             if fileURL != nil {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if isEditing {
@@ -373,7 +373,7 @@ private struct MemoryWriteDetailView: View {
         }
         .navigationTitle(item.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 if isEditing {
                     Button("Save") { saveEdit() }

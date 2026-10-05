@@ -5459,7 +5459,7 @@ private struct ChatToolbarHost<Title: View, Trailing: View>: View, Equatable {
         Color.clear
             .frame(width: 0, height: 0)
             .allowsHitTesting(false)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .principal) { title() }
                 ToolbarItem(placement: .navigationBarTrailing) { trailing() }
             }
@@ -6003,7 +6003,7 @@ private struct MoveToSessionSheet: View {
             .onChange(of: searchText) { _ in scheduleSearch() }
             .navigationTitle(AppLocalized("Move to…"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(AppLocalized("Cancel")) { dismiss() }
                 }
@@ -6369,14 +6369,14 @@ private struct SpeechLanguagePickerSheet: View {
 
     /// Indices where the preferred/non-preferred boundary lies for section headers.
     private var preferredCodes: Set<String> {
-        Set(Locale.preferredLanguages.map { Locale(identifier: $0).languageCode?.identifier ?? "" })
+        Set(Locale.preferredLanguages.map { Locale(identifier: $0).languageCode ?? "" })
     }
 
     var body: some View {
         NavigationView {
             List {
-                let preferred = filteredLocales.filter { preferredCodes.contains($0.languageCode?.identifier ?? "") }
-                let others = filteredLocales.filter { !preferredCodes.contains($0.languageCode?.identifier ?? "") }
+                let preferred = filteredLocales.filter { preferredCodes.contains($0.languageCode ?? "") }
+                let others = filteredLocales.filter { !preferredCodes.contains($0.languageCode ?? "") }
 
                 if !preferred.isEmpty {
                     Section(AppLocalized("Preferred", comment: "Section header for preferred speech languages")) {
@@ -6397,7 +6397,7 @@ private struct SpeechLanguagePickerSheet: View {
             .searchable(text: $searchText, prompt: Text("Search Languages", comment: "Search field placeholder for speech language picker"))
             .navigationTitle(Text("Voice Language", comment: "Navigation title for speech language picker"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(AppLocalized("Done", comment: "Dismiss speech language picker")) {
                         dismiss()
@@ -6468,7 +6468,7 @@ struct CompactSummarySheet: View {
             }
             .navigationTitle("Compact Summary")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -6594,7 +6594,7 @@ private struct TokenUsageSheet: View {
             }
             .navigationTitle("Session Token Usage")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }

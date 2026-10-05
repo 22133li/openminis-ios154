@@ -95,7 +95,7 @@ struct ISHTerminalView: View {
         .background(Color.black)
         .navigationTitle("Minis Shell")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             if showCloseButton {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button { dismiss() } label: {

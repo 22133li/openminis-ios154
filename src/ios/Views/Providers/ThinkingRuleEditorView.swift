@@ -136,7 +136,7 @@ struct ThinkingRuleEditorView: View {
             }
             .navigationTitle(existing == nil ? Text("New Rule") : Text("Edit Rule"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }

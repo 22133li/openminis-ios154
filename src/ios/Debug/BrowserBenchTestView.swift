@@ -155,7 +155,7 @@ struct BrowserBenchTestView: View {
             }
             .navigationTitle("Browser Bench Test")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") { dismiss() }
                 }

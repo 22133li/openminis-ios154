@@ -152,7 +152,7 @@ struct BrowserSheetView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 5) {
                         Image(systemName: pool.userAgentProfile.icon)
@@ -164,7 +164,7 @@ struct BrowserSheetView: View {
                     }
                 }
             }
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     HStack(spacing: 12) {
                         Button {
@@ -530,7 +530,7 @@ struct BrowserDownloadPanelSheet: View {
             }
             .navigationTitle(Text("Downloads", comment: "Downloads panel title"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     // [T-browser-download-ux-v3] "Clear" wipes every finished
                     // record (completed + failed); in-flight rows stay.

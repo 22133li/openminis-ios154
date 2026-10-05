@@ -649,7 +649,7 @@ struct RcloneFolderBrowser: View {
             .backupHUD($errorText)
             .navigationTitle("Backup Folder")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
@@ -820,7 +820,7 @@ struct RcloneConnectionEditor: View {
             }
             .navigationTitle("Edit Connection")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }

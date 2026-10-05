@@ -105,7 +105,7 @@ struct SkillsManagementView: View {
         .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text(AppLocalized("Search skills")))
         .onAppear { store.reload() }
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 // Sort menu — same structure as the file browser's (sort-key
                 // picker + direction toggle), persisted via AppStorage.
@@ -276,7 +276,7 @@ private struct ImportSkillSheet: View {
             }
             .navigationTitle(AppLocalized("Import Skill"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(AppLocalized("Cancel")) { dismiss() }
                 }
@@ -658,7 +658,7 @@ private struct SkillDetailView: View {
         }
         .navigationTitle(skill?.name ?? "Skill")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { shareSkill() } label: {
                     Image(systemName: "square.and.arrow.up")
@@ -880,7 +880,7 @@ private struct SkillFileDetailView: View {
             }
             .navigationTitle(fileName)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 if hasChanges {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(AppLocalized("Save")) { save() }
@@ -930,7 +930,7 @@ struct MinisSkillsBrowserView: View {
             }
             .navigationTitle("Minis Skills")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(AppLocalized("Done")) { dismiss() }
                 }

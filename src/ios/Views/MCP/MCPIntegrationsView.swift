@@ -82,7 +82,7 @@ struct MCPIntegrationsView: View {
                 }
             }
         }
-        .toolbar {
+        .toolbar(content: {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
@@ -214,7 +214,7 @@ struct MCPToolsSheet: View {
             }
             .navigationTitle(Text(verbatim: serverName))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         Task { await refresh() }

@@ -27,7 +27,7 @@ struct BackupHistoryDetailView: View {
         .navigationTitle(record.startedAt.formatted(date: .abbreviated, time: .shortened))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { keepScreenAwake = BackupScreenAwake.isEnabled }
-        .toolbar {
+        .toolbar(content: {
             // The list offers this as a swipe action, which is invisible until
             // discovered — and a record opened from a notification or a deep
             // link is reachable without ever seeing the list. Deleting from
