@@ -3345,6 +3345,7 @@ struct ContentView: View {
         // keyboard, so normal avoidance is restored.
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
+        )
     }
 
     /// Selection-bound List for split (iPad) layout.
