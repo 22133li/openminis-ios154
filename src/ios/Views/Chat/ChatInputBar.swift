@@ -1563,7 +1563,6 @@ struct PastableTextView: UIViewRepresentable {
         return tv
     }
 
-    func sizeThatFits(_ proposal: ProposedViewSize, uiView tv: PastableUITextView, context: Context) -> CGSize? {
         let width = proposal.width ?? UIScreen.main.bounds.width
         // [T-share-url-input-height] UITextView.sizeThatFits returns the
         // height typeset against the CURRENT textContainer width, not the

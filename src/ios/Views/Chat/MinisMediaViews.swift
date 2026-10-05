@@ -945,7 +945,7 @@ private struct MinisTextView: UIViewRepresentable {
     let text: String
 
     func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView(usingTextLayoutManager: true)
+        let textView = UITextView()
         textView.isEditable = false
         textView.isSelectable = true
         textView.backgroundColor = .clear
