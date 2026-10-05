@@ -58,26 +58,23 @@ struct MemoryManagementView: View {
             }
         }
 
-    private var syncMenuButton: some View {
-        Menu {
-            Button {
-                Task { await forceSyncMemory() }
-            } label: {
-                Label(AppLocalized("Force iCloud Sync"),
-                      systemImage: "arrow.triangle.2.circlepath.icloud")
-            }
-        } label: {
-            Image(systemName: "ellipsis.circle")
-        }
-        .opacity(iCloudSyncEnabled ? 1 : 0)
-        .disabled(!iCloudSyncEnabled)
-    }
 
         .navigationTitle("Memory")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                syncMenuButton
+                Menu {
+                    Button {
+                        Task { await forceSyncMemory() }
+                    } label: {
+                        Label(AppLocalized("Force iCloud Sync"),
+                              systemImage: "arrow.triangle.2.circlepath.icloud")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .opacity(iCloudSyncEnabled ? 1 : 0)
+                .disabled(!iCloudSyncEnabled)
             }
         }
         .overlay(alignment: .top) {
