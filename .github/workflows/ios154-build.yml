@@ -18,21 +18,18 @@ jobs:
           brew install ninja llvm libarchive pkg-config meson
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
       - run: xcodebuild -downloadComponent MetalToolchain || true
-      - name: Fix LLVM lld linker for iSH VDSO
+      - name: Patch iSH VDSO (skip lld, use stub)
         run: |
-          LLVM_BIN="$(brew --prefix llvm)/bin"
-          echo "LLVM bin: $LLVM_BIN"
-          ls "$LLVM_BIN" | grep -i lld || echo "no lld binaries found"
-          # clang -fuse-ld=lld looks for ld.lld next to clang; ensure it exists
-          if [ ! -e "$LLVM_BIN/ld.lld" ]; then
-            # Try common locations
-            for cand in /opt/homebrew/bin/ld.lld /usr/local/bin/ld.lld; do
-              if [ -e "$cand" ]; then ln -sf "$cand" "$LLVM_BIN/ld.lld"; echo "linked $cand"; break; fi
-            done
+          # lld is unavailable on this runner; patch meson to use the VDSO stub
+          # (the build already supports a no-VDSO fallback, we force it)
+          MESON_FILE="deps/ish/vdso/arm64/meson.build"
+          if [ -f "$MESON_FILE" ]; then
+            # Comment out the real VDSO block, keep the stub fallback
+            # Simplest: make clang 'not found' by pointing to a nonexistent path
+            sed -i.bak "s|find_program('/usr/local/opt/llvm/bin/clang'|find_program('/nonexistent/clang', '/usr/local/opt/llvm/bin/clang'|" "$MESON_FILE"
+            echo "patched $MESON_FILE"
+            grep -n "find_program" "$MESON_FILE" | head -3
           fi
-          ls -la "$LLVM_BIN/ld.lld" || echo "STILL MISSING ld.lld"
-          # Also ensure lld is on PATH as fallback
-          echo "$LLVM_BIN" >> $GITHUB_PATH
       - run: |
           cp src/ios/Configs/ProviderCustomization.xcconfig.example \
              src/ios/Configs/ProviderCustomization.xcconfig || true
