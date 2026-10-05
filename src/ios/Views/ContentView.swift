@@ -347,10 +347,8 @@ private struct FABGlassMorphID: ViewModifier {
     let namespace: Namespace.ID
 
     func body(content: Content) -> some View {
-            content
-        } else {
-            content
-        }
+        // iOS 15 backport: glassEffectID removed
+        content
     }
 }
 

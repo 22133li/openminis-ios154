@@ -831,13 +831,11 @@ final class BackgroundKeepAliveManager: NSObject, ObservableObject, CLLocationMa
     }
 
     private func refreshActiveTaskBadge(sessions: Set<String>, enabled: Bool) {
-        let center = UNUserNotificationCenter.current()
         guard enabled else {
             UIApplication.shared.applicationIconBadgeNumber = 0
             return
         }
         UIApplication.shared.applicationIconBadgeNumber = sessions.count
-        }
     }
 
     // MARK: - Background Task Notifications
@@ -881,7 +879,6 @@ final class BackgroundKeepAliveManager: NSObject, ObservableObject, CLLocationMa
         let isBackground = wasBackground ?? (UIApplication.shared.applicationState != .active)
         guard isBackground else { return }
 
-        let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
 
         let category = UNNotificationCategory(

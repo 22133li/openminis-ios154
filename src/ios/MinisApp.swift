@@ -1,3 +1,4 @@
+import UIKit
 import SwiftUI
 import ObjectiveC
 import UserNotifications
@@ -425,7 +426,6 @@ struct MinisApp: App {
                     // Trace the resolved AppGroup paths so we can confirm the
                     // main app, FileProvider extension, and iSH bind mount all
                     // agree on which directory holds the user's shared files.
-                    Self.logFPSyncTracePaths()
                     // Start watching shared/skills/memory subtrees so iSH writes
                     // and FileBrowserView mutations propagate to the Files app.
                     AppGroupChangeWatcher.shared.start()
@@ -569,7 +569,7 @@ struct MinisApp: App {
                 debugServer.restartIfDead(port: 8321)
                 #endif
 
-                try? await UNUserNotificationCenter.current().setBadgeCount(0)
+                UIApplication.shared.applicationIconBadgeNumber = 0
                 BackgroundInterruptionTracker.shared.checkOnForeground()
                 // [T-shortcuts-diag-and-pending] Scan for AppIntent runs that
                 // were marked pending but never cleared (i.e. the process was
