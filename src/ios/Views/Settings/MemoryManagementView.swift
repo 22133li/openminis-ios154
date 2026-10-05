@@ -57,22 +57,27 @@ struct MemoryManagementView: View {
                 deleteFiles(at: offsets)
             }
         }
+
+    private var syncMenuButton: some View {
+        Menu {
+            Button {
+                Task { await forceSyncMemory() }
+            } label: {
+                Label(AppLocalized("Force iCloud Sync"),
+                      systemImage: "arrow.triangle.2.circlepath.icloud")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .opacity(iCloudSyncEnabled ? 1 : 0)
+        .disabled(!iCloudSyncEnabled)
+    }
+
         .navigationTitle("Memory")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if #available(iOS 17.0, *), iCloudSyncEnabled {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button {
-                            Task { await forceSyncMemory() }
-                        } label: {
-                            Label(AppLocalized("Force iCloud Sync"),
-                                  systemImage: "arrow.triangle.2.circlepath.icloud")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                syncMenuButton
             }
         }
         .overlay(alignment: .top) {

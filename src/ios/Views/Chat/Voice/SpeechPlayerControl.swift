@@ -229,7 +229,7 @@ struct SpeechPlayerControl: View {
             } else if descentTask == nil {
                 VoiceLog.log("[capsule] descent \(Int(avoidLift)) → \(Int(newLift)) ARMED — applying after \(Self.descentSettleMillis)ms of stability")
                 descentTask = Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(Self.descentSettleMillis))
+                    try? await Task.sleep(nanoseconds: UInt64(Self.descentSettleMillis) * 1_000_000)
                     guard !Task.isCancelled else { return }
                     descentTask = nil
                     // Re-evaluate from a FRESH requiredLift at fire time — the

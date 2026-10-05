@@ -443,7 +443,6 @@ struct ChatMessageRow: View {
             // otherwise the lifted preview shows square corners while the bubble
             // is RoundedRectangle(cornerRadius: 18). iOS 16+ lets us specify the
             // preview clip shape independently from the interaction shape.
-            .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 18))
             .contextMenu {
                 Button {
                     UIPasteboard.general.string = message.content
@@ -679,11 +678,6 @@ struct ChatMessageRow: View {
                         }
                     }
                     .equatable()
-                } preview: {
-                    // [T-ios-longpress-menu-preview-background] Opaque card for
-                    // this Color.clear-attached contextMenu (see
-                    // MessageContextMenuPreview).
-                    MessageContextMenuPreview(text: fullReplyText)
                 }
         }
         .sheet(item: $detailBlock) { block in
