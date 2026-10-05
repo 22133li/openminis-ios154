@@ -172,7 +172,7 @@ enum ShortcutHelpers {
 
 // iOS 15 backport: extracted from deleted SendPromptIntent
 extension ShortcutHelpers {
-    static func extractResponseText(from vm: AIChatViewModel) -> String {
+    @MainActor static func extractResponseText(from vm: AIChatViewModel) -> String {
         guard let lastAssistant = vm.messages.last(where: { $0.role == .assistant && !$0.isInternalBridge }) else {
             return "No response."
         }
