@@ -4498,7 +4498,6 @@ struct AIChatView: View {
         func body(content: Content) -> some View {
             if #available(iOS 26.0, *) {
                 content
-                    .glassEffect(.regular, in: shape)
                     .clipShape(shape)
             } else {
                 content
@@ -4906,7 +4905,6 @@ struct FloatingCircleButtonSurface: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             content
-                .glassEffect(.regular.interactive(), in: .circle)
                 .contentShape(Circle())
         } else {
             content
@@ -4951,7 +4949,6 @@ private struct ComposerSurface: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             content
-                .glassEffect(.regular, in: shape)
                 .clipShape(shape)
         } else {
             content
@@ -5248,7 +5245,6 @@ struct NavBarStyleModifier: ViewModifier {
             // starting below the bar.
             content
                 .ignoresSafeArea(.container, edges: .top)
-                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
                 // [T-macos27-liquid-glass-navbar] See MacOS27GlassWorkaround in
                 // ContentView. `toolbarBackgroundVisibility(.visible)` only
                 // declares "there should be a backdrop"; the material is still

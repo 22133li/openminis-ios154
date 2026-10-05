@@ -3243,7 +3243,6 @@ struct ContentView: View {
             // with a hand-rolled gesture sequence — the
             // gesture layer is where system gestures are
             // beaten (see the WebView sheet-dismiss fix).
-            .draggable(session.id)
             .overlay {
                 if regeneratingTitleSessionId == session.id {
                     ZStack {
@@ -3445,7 +3444,6 @@ struct ContentView: View {
                                 // with a hand-rolled gesture sequence — the
                                 // gesture layer is where system gestures are
                                 // beaten (see the WebView sheet-dismiss fix).
-                                .draggable(session.id)
                                 .overlay {
                                     if regeneratingTitleSessionId == session.id {
                                         ZStack {
@@ -4059,7 +4057,7 @@ struct ContentView: View {
         if isWideLayout {
             openSession(newId)
         } else {
-            commitNavigationPath([newId]))
+            commitNavigationPath([newId])
             currentStackSessionId = newId
         }
     }
@@ -4112,7 +4110,7 @@ struct ContentView: View {
         if isWideLayout {
             openSession(newId)
         } else {
-            commitNavigationPath([newId]))
+            commitNavigationPath([newId])
             currentStackSessionId = newId
         }
         QuickActionWorkflow.shared.attachTargetSession(newId)
@@ -4214,7 +4212,7 @@ struct ContentView: View {
             return
         }
         searchFocused = false
-        commitNavigationPath([id]))
+        commitNavigationPath([id])
         currentStackSessionId = id
     }
 
@@ -4971,7 +4969,6 @@ struct ContentView: View {
         if #available(iOS 26.0, *) {
             icon()
                 .frame(width: 56, height: 56)
-                .glassEffect(
                     tint.map { Glass.regular.tint($0) } ?? Glass.regular,
                     in: .circle
                 )
@@ -5253,19 +5250,6 @@ struct ContentView: View {
             // Dropping on a date-bucket header moves the sessions OUT of any
             // folder — the drag gesture works both directions, otherwise
             // moving out would still require a trip through the menu.
-            .dropDestination(for: String.self) { sessionIds, _ in
-                Task { @MainActor in
-                    await ChatStore.shared.setFolder(nil, forSessions: sessionIds)
-                    refreshSessionList()
-                }
-                return true
-            } isTargeted: { over in
-                if over {
-                    dropTargetFolderId = ""
-                } else if dropTargetFolderId == "" {
-                    dropTargetFolderId = nil
-                }
-            }
         }
     }
 
@@ -5460,20 +5444,6 @@ struct ContentView: View {
         // ScrollViewReader anchor for the mini-bar's "back to header" jump.
         .id("folderHeader-\(group.folderId ?? "")")
         .listRowInsets(EdgeInsets())
-        .dropDestination(for: String.self) { sessionIds, _ in
-            guard let fid = group.folderId else { return false }
-            Task { @MainActor in
-                await ChatStore.shared.setFolder(fid, forSessions: sessionIds)
-                refreshSessionList()
-            }
-            return true
-        } isTargeted: { over in
-            if over {
-                dropTargetFolderId = group.folderId
-            } else if dropTargetFolderId == group.folderId {
-                dropTargetFolderId = nil
-            }
-        }
         .contextMenu {
             if let fid = group.folderId, let folder = folders.first(where: { $0.id == fid }) {
                 Button {

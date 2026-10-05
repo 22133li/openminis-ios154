@@ -129,7 +129,6 @@ private struct ContextMenuPreviewSurface: ViewModifier {
             content
                 // Opaque floor first — see the note above.
                 .background(shape.fill(ChatColors.background))
-                .glassEffect(.regular, in: shape)
         } else {
             content.background(ChatColors.background)
         }
