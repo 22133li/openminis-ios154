@@ -43,7 +43,7 @@ struct CopilotDeviceLoginSheet: View {
     @State private var loginTask: Task<Void, Never>?
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 24) {
                 switch phase {
                 case .consent:

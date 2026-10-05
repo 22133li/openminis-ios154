@@ -619,7 +619,7 @@ struct ChatMessageRow: View {
         // (ViewGraphGeometryObservers.needsUpdate SIGTRAP). onGeometryChange
         // measures the same row bounds the background GeometryReader did,
         // and its initial fire covers the old onAppear seed.
-        .onGeometryChange(for: CGRect.self) { proxy in
+        .onGeometryChangeBackport(for: CGRect.self) { proxy in
             proxy.frame(in: .global)
         } action: { rowFrameInWindow = $0 }
         .background {

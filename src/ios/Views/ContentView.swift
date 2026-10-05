@@ -764,7 +764,7 @@ private struct FolderPickerSheet: View {
     private var sessionCount: Int { sessionIds.count }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 Section {
                     HStack {
@@ -1124,8 +1124,6 @@ struct MacOS27OpaqueNavigationBar<S: ShapeStyle>: ViewModifier {
         if #available(iOS 26.0, *), MacOS27GlassWorkaround.isActive {
             content
                 .scrollEdgeEffectHidden(true, for: .top)
-                .toolbarBackground(background, for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
         } else {
             content
         }
@@ -1439,7 +1437,6 @@ struct ContentView: View {
     /// Whether the initial session load has completed (prevents showing the list before we decide to auto-navigate).
     @State private var didInitialLoad = false
     /// Controls sidebar visibility on iPad (automatic handles iPhone collapse).
-    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
 
     /// Launch screen preference: 0=Auto, 1=Last Session, 2=New Chat.
     @AppStorage("launchScreen") private var launchScreen: Int = 0
@@ -1515,7 +1512,7 @@ struct ContentView: View {
     /// Whether the current window is wide enough for two-column layout.
     @State private var isWideLayout = false
     /// Navigation path for stack (compact) layout.
-    @State private var navigationPath = NavigationPath()
+    @State private var navigationPath: [String] = []
     /// Tracks the session ID currently visible on the compact navigation stack.
     @State private var currentStackSessionId: String?
     /// [T-ios-stacknav-transition-attributegraph-race] Compact-layout analogue
@@ -1596,7 +1593,7 @@ struct ContentView: View {
     ///
     /// Carries the deferral instant so a stale request can be dropped rather
     /// than flushed — see `pendingBackgroundNavigationTTL`.
-    @State private var pendingBackgroundNavigation: (path: NavigationPath, deferredAt: Date)?
+    @State private var pendingBackgroundNavigation: (path: [String], deferredAt: Date)?
 
     /// [T-ios-bg-nav-push-watchdog] How long a deferred push stays valid.
     ///
@@ -1820,7 +1817,7 @@ struct ContentView: View {
             }
         }
         .fullScreenCover(isPresented: $showTerminal) {
-            NavigationStack {
+            NavigationView {
                 ISHTerminalView(showCloseButton: true)
             }
         }
@@ -1832,7 +1829,7 @@ struct ContentView: View {
             case .settings:
                 SettingsSheet(showTerminal: $showTerminal)
             case .rootfsManagement:
-                NavigationStack {
+                NavigationView {
                     RootfsManagementView()
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
@@ -1843,11 +1840,11 @@ struct ContentView: View {
             case .browser:
                 BrowserSheetView(pool: browserPool)
             case .browserManagement:
-                NavigationStack {
+                NavigationView {
                     BrowserManagementView(pool: browserPool)
                 }
             case .syncMigrationDetail:
-                NavigationStack {
+                NavigationView {
                     SyncMigrationDetailView()
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
@@ -1876,7 +1873,6 @@ struct ContentView: View {
             .onAppear {
                 print("[DELETE] Sheet appeared. singleDeleteInfo is \(singleDeleteInfo == nil ? "nil" : "non-nil, sessionCount=\(singleDeleteInfo!.sessionCount)")")
             }
-            .presentationDetents([.medium])
         }
         .sheet(item: $sessionToEdit) { session in
             SessionEditSheet(session: session) { newTitle, newCategory in
@@ -1888,7 +1884,6 @@ struct ContentView: View {
                 }
                 sessionToEdit = nil
             }
-            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showDeleteConfirm, onDismiss: {
             if deleteInfo == nil {
@@ -1905,7 +1900,6 @@ struct ContentView: View {
                 deleteSelectedSessions()
                 showDeleteConfirm = false
             }
-            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showExportPreview) {
             ExportPreviewSheet(fileURL: exportFileURL, previewURL: exportPreviewURL, summary: exportSummary)
@@ -1940,7 +1934,6 @@ struct ContentView: View {
                 if req.fromMultiSelect { folderMoveApplied = true }
                 folderPickerRequest = nil
             }
-            .presentationDetents([.medium, .large])
         }
         .modifier(FolderAlertsModifier(
             folderToRename: $folderToRename,
@@ -2473,10 +2466,12 @@ struct ContentView: View {
         // session-switch / tap lag is a separate issue (ChatSession Array `==`
         // in SwiftUI's transaction flush; an A/B test confirmed the font
         // injection is not its cause), so per-column injection is safe here.
-        NavigationSplitView(columnVisibility: $columnVisibility) {
+        // iOS 15 backport: NavigationSplitView -> HStack (iPad layout)
+        HStack(spacing: 0) {
             sessionList(useNavigationLinks: false)
                 .appFontScale()
-        } detail: {
+                .frame(width: 320)
+            Divider()
             detailView
                 .appFontScale()
         }
@@ -2485,50 +2480,48 @@ struct ContentView: View {
     // MARK: - Stack Layout (iPhone / narrow window)
 
     private var stackLayout: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationView {
             sessionList(useNavigationLinks: true)
-                .navigationDestination(for: String.self) { id in
-                    // `.id(id)` mirrors detailView (iPad): navigationDestination
-                    // views are identified by stack depth, not path value, so
-                    // replacing the top element in place (menu "New Chat" swaps
-                    // [current] → [draft]) would otherwise reuse the old view's
-                    // @StateObject vm and nothing visibly changes.
-                    if id.hasPrefix("remote:") {
-                        let parts = id.split(separator: ":", maxSplits: 2)
-                        if parts.count == 3 {
-                            AIChatView(sessionId: String(parts[2]), remoteDeviceId: String(parts[1]))
-                                .id(id)
-                        }
-                    } else {
-                        AIChatView(sessionId: Self.isNewSessionId(id) ? nil : id, draftId: Self.isNewSessionId(id) ? id : nil, initialGroupId: Self.extractGroupId(from: id))
-                            .id(id)
-                            .onAppear {
-                                if currentStackSessionId != id {
-                                    currentStackSessionId = id
-                                    // [T-ios-stacknav-transition-attributegraph-race]
-                                    // Keep the outgoing-id tracker in lockstep.
-                                    // This branch fires exactly when the two
-                                    // have DIVERGED — the "swallowed push left
-                                    // currentStackSessionId set to a target
-                                    // that never appeared" case documented on
-                                    // the .moveInputToSession handler — and it
-                                    // mounts a chat WITHOUT a navigationPath
-                                    // change, so the observer that normally
-                                    // maintains previousStackSessionId does not
-                                    // run. Left unsynced, the next real
-                                    // transition would suspend whichever id the
-                                    // last observer pass recorded instead of
-                                    // the vm actually on screen: the wrong vm
-                                    // stalls and the real outgoing one keeps
-                                    // publishing into its teardown.
-                                    previousStackSessionId = id
-                                }
-                                SessionBadgeStore.shared.remove(.unread, for: id)
-                                shareLog.info("🔄SESSION stackNav APPEAR id=\(id)")
-                            }
-                            .onDisappear { shareLog.info("🔄SESSION stackNav DISAPPEAR id=\(id)") }
+                .background(
+                    NavigationLink(
+                        destination: stackDestinationView,
+                        isActive: Binding(
+                            get: { !navigationPath.isEmpty },
+                            set: { if !$0 { navigationPath = [] } }
+                        )
+                    ) {
+                        EmptyView()
                     }
+                )
+        }
+        .navigationViewStyle(.stack)
+    }
+
+    /// iOS 15 backport: replaces `.navigationDestination(for: String.self)`.
+    @ViewBuilder
+    private var stackDestinationView: some View {
+        if let id = navigationPath.first {
+            if id.hasPrefix("remote:") {
+                let parts = id.split(separator: ":", maxSplits: 2)
+                if parts.count == 3 {
+                    AIChatView(sessionId: String(parts[2]), remoteDeviceId: String(parts[1]))
+                        .id(id)
                 }
+            } else {
+                AIChatView(sessionId: Self.isNewSessionId(id) ? nil : id, draftId: Self.isNewSessionId(id) ? id : nil, initialGroupId: Self.extractGroupId(from: id))
+                    .id(id)
+                    .onAppear {
+                        if currentStackSessionId != id {
+                            currentStackSessionId = id
+                            previousStackSessionId = id
+                        }
+                        SessionBadgeStore.shared.remove(.unread, for: id)
+                        shareLog.info("stackNav APPEAR id=\(id)")
+                    }
+                    .onDisappear { shareLog.info("stackNav DISAPPEAR id=\(id)") }
+            }
+        } else {
+            EmptyView()
         }
     }
 
@@ -4066,7 +4059,7 @@ struct ContentView: View {
         if isWideLayout {
             openSession(newId)
         } else {
-            commitNavigationPath(NavigationPath([newId]))
+            commitNavigationPath([newId]))
             currentStackSessionId = newId
         }
     }
@@ -4100,7 +4093,7 @@ struct ContentView: View {
             if isWideLayout {
                 selectedSessionId = nil
             } else {
-                navigationPath = NavigationPath()
+                navigationPath = []
                 currentStackSessionId = nil
             }
         }
@@ -4119,7 +4112,7 @@ struct ContentView: View {
         if isWideLayout {
             openSession(newId)
         } else {
-            commitNavigationPath(NavigationPath([newId]))
+            commitNavigationPath([newId]))
             currentStackSessionId = newId
         }
         QuickActionWorkflow.shared.attachTargetSession(newId)
@@ -4152,7 +4145,7 @@ struct ContentView: View {
     /// `previousStackSessionId` stays in lockstep because it is maintained by
     /// the `onChange(of: navigationPath)` observer, which simply runs later —
     /// when the deferred path is actually committed.
-    private func commitNavigationPath(_ newPath: NavigationPath) {
+    private func commitNavigationPath(_ newPath: [String]) {
         // [T-share-first-tap-no-response] `.inactive` is NOT the state this
         // gate was built for. The watchdog kills it prevents come from a push
         // running AIChatView's whole first layout while the app is genuinely
@@ -4221,7 +4214,7 @@ struct ContentView: View {
             return
         }
         searchFocused = false
-        commitNavigationPath(NavigationPath([id]))
+        commitNavigationPath([id]))
         currentStackSessionId = id
     }
 
@@ -4603,12 +4596,12 @@ struct ContentView: View {
         .frame(maxHeight: .infinity)
         .padding(.horizontal, 32)
         .sheet(isPresented: $showAddProvider) {
-            NavigationStack {
+            NavigationView {
                 AddProviderView()
             }
         }
         .sheet(isPresented: $showSelectModels) {
-            NavigationStack {
+            NavigationView {
                 OnboardingModelSelectionView()
             }
         }
@@ -4617,7 +4610,7 @@ struct ContentView: View {
             // the Restore tab. Not auto-dismissed on success — the result
             // report is worth reading; the steps above refresh on their own
             // (restore reloads ProviderConfigStore and the session list).
-            NavigationStack {
+            NavigationView {
                 BackupAndRestoreView(initialTab: .restore)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
@@ -6295,7 +6288,7 @@ private struct DeleteConfirmSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 0) {
                 if isLoading || info == nil {
                     Spacer()
@@ -6419,7 +6412,7 @@ private struct ExportPreviewSheet: View {
     private let previewLimit = 10000
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 0) {
                 // Preview — summary for multi-select, full content for single.
                 if let summary {
@@ -7478,7 +7471,7 @@ struct SessionEditSheet: View {
     ]
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 Section("Title") {
                     TextField("Session title", text: $editTitle)
@@ -8099,16 +8092,76 @@ private enum SettingsDestination: Hashable {
     case mcpServerDetail(serverId: String)
 }
 
+    /// iOS 15 backport: replaces `.navigationDestination(for: SettingsDestination.self)`.
+    @ViewBuilder
+    private var settingsDestinationView: some View {
+        if let dest = navPath.last {
+            switch dest {
+                case .providers:
+                    ProviderInstancesView()
+                case .providerDetail(let id):
+                    ProviderInstanceDetailView(instanceId: id)
+                case .modelGroups:
+                    ModelGroupsView()
+                case .modelGroupDetail(let id):
+                    ModelGroupDetailView(groupId: id)
+                case .usage:
+                    UsageStatsView()
+                case .skills:
+                    SkillsManagementView()
+                case .soul:
+                    SoulSettingsView()
+                case .tools:
+                    ToolsSettingsView()
+                case .memory:
+                    MemoryManagementView()
+                case .storage:
+                    StorageManagementView()
+                case .mountedFolders:
+                    MountedFoldersSettingsView()
+                case .sharedFolders:
+                    SharedFoldersSettingsView()
+                case .logs:
+                    // Pull a one-shot tab hint from the deep link router
+                    // (e.g. `?tab=config-audit`). LogManagementView clears
+                    // its local state independently; the published value
+                    // here is consumed once and reset to nil.
+                    LogManagementView(initialTab: deepLink.pendingLogsTab ?? "logs")
+                        .onAppear { deepLink.pendingLogsTab = nil }
+                case .appearance:
+                    AppearanceSettingsView()
+                case .background:
+                    EnhancedBackgroundSettingsView()
+                case .about:
+                    AboutView()
+                case .environments:
+                    EnvironmentVariablesView()
+                case .permissions:
+                    OffloadPermissionSettingsView()
+                // [T-mcp-oauth-deeplink] Detail = the list view told to open
+                // the server's edit sheet on appear; a deleted/unknown server
+                // just lands on the list (no crash, sensible fallback).
+                case .mcpIntegrations:
+                    MCPIntegrationsView()
+                case .mcpServerDetail(let serverId):
+                    MCPIntegrationsView(initialEditServerId: serverId)
+                }
+        } else {
+            EmptyView()
+        }
+    }
+
+
 private struct SettingsSheet: View {
     @Binding var showTerminal: Bool
     @AppStorage("appearanceMode") private var appearanceMode: Int = 0
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var deepLink = DeepLinkCoordinator.shared
-    @State private var navPath = NavigationPath()
+    @State private var navPath: [SettingsDestination] = []
     @State private var showFeedbackDialog = false
 
     var body: some View {
-        NavigationStack(path: $navPath) {
+        NavigationView {
             List {
                 Section {
                     NavigationLink {
@@ -8445,58 +8498,17 @@ private struct SettingsSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
-            .navigationDestination(for: SettingsDestination.self) { dest in
-                switch dest {
-                case .providers:
-                    ProviderInstancesView()
-                case .providerDetail(let id):
-                    ProviderInstanceDetailView(instanceId: id)
-                case .modelGroups:
-                    ModelGroupsView()
-                case .modelGroupDetail(let id):
-                    ModelGroupDetailView(groupId: id)
-                case .usage:
-                    UsageStatsView()
-                case .skills:
-                    SkillsManagementView()
-                case .soul:
-                    SoulSettingsView()
-                case .tools:
-                    ToolsSettingsView()
-                case .memory:
-                    MemoryManagementView()
-                case .storage:
-                    StorageManagementView()
-                case .mountedFolders:
-                    MountedFoldersSettingsView()
-                case .sharedFolders:
-                    SharedFoldersSettingsView()
-                case .logs:
-                    // Pull a one-shot tab hint from the deep link router
-                    // (e.g. `?tab=config-audit`). LogManagementView clears
-                    // its local state independently; the published value
-                    // here is consumed once and reset to nil.
-                    LogManagementView(initialTab: deepLink.pendingLogsTab ?? "logs")
-                        .onAppear { deepLink.pendingLogsTab = nil }
-                case .appearance:
-                    AppearanceSettingsView()
-                case .background:
-                    EnhancedBackgroundSettingsView()
-                case .about:
-                    AboutView()
-                case .environments:
-                    EnvironmentVariablesView()
-                case .permissions:
-                    OffloadPermissionSettingsView()
-                // [T-mcp-oauth-deeplink] Detail = the list view told to open
-                // the server's edit sheet on appear; a deleted/unknown server
-                // just lands on the list (no crash, sensible fallback).
-                case .mcpIntegrations:
-                    MCPIntegrationsView()
-                case .mcpServerDetail(let serverId):
-                    MCPIntegrationsView(initialEditServerId: serverId)
+            .background(
+                NavigationLink(
+                    destination: settingsDestinationView,
+                    isActive: Binding(
+                        get: { !navPath.isEmpty },
+                        set: { if !$0 { navPath = [] } }
+                    )
+                ) {
+                    EmptyView()
                 }
-            }
+            )
             .onAppear {
                 applyPendingDeepLink()
                 // Legacy flags — kept so older call sites keep working.
@@ -8546,7 +8558,7 @@ private struct SettingsSheet: View {
         // Reset path so deep links are predictable: a deep link always
         // lands on the requested destination as the only stack entry,
         // not on top of whatever the user was browsing earlier.
-        navPath = NavigationPath()
+        navPath = []
         switch target {
         case .home:
             break // already at Settings root

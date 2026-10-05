@@ -1124,7 +1124,7 @@ struct ThinkingLevelSheetView: View {
     let onSelect: (ThinkingLevel) -> Void
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 thinkingRow(level: .off, isSelected: !currentLevel.isEnabled)
                 Section {

@@ -122,7 +122,7 @@ struct BrowserHistoryView: View {
     @State private var showClearConfirm = false
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Group {
                 if historyStore.entries.isEmpty {
                     emptyState

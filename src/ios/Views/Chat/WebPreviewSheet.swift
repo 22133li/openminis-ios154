@@ -745,7 +745,6 @@ struct MinisSafariView: View {
                 .padding(.bottom, 18) // clears the home-indicator gutter
         }
         .statusBarHidden(true)
-        .persistentSystemOverlays(.hidden)
         .preferredColorScheme(appearanceMode == 1 ? .light : appearanceMode == 2 ? .dark : nil)
         .sheet(isPresented: $showShareSheet) {
             MinisShareSheet(url: shareURL)
@@ -855,7 +854,7 @@ struct MinisLinkPreviewView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             ReusableWebView(webView: holder.webView)
                 // [T-webview-preview-swipe-dismiss] Arbitrate the sheet's
                 // interactive-dismiss pan against page content at the gesture
@@ -884,8 +883,6 @@ struct MinisLinkPreviewView: View {
                 .ignoresSafeArea(.keyboard)
                 .navigationTitle(holder.pageTitle.isEmpty ? (url.host ?? url.absoluteString) : holder.pageTitle)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button { dismiss() } label: {
@@ -904,13 +901,11 @@ struct MinisLinkPreviewView: View {
                     }
                 }
         }
-        .presentationDetents([.large])
         // [T-ios-html-preview-wide-sheet] Widen to a page-style sheet on
         // iPad/Mac, reusing the shared modifier from AIChatView.swift. iPhone
         // unaffected (presentationSizing is iOS18+ and .page only affects
         // iPad/Mac form sheets).
         .modifier(WideSheetSizingModifier())
-        .presentationDragIndicator(.hidden)
         // [T-webview-preview-swipe-dismiss] Interactive-dismiss arbitration is
         // now done at the gesture layer by WebViewDismissArbiterGate (above),
         // which vetoes the sheet dismiss pan synchronously when the touch is on

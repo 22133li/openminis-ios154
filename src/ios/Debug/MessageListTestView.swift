@@ -765,7 +765,7 @@ struct MessageListTestView: View {
     // MARK: - Paste Sheet
 
     private var pasteSheet: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 12) {
                 Text("Paste session JSON from \"Copy Session Data\"")
                     .font(.caption)

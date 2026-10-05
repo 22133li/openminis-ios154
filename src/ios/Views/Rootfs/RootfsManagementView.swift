@@ -184,7 +184,7 @@ struct RootfsManagementView: View {
             Text("This will backup your /root directory, then reset the rootfs. You can restore the backup later.")
         }
         .sheet(isPresented: $showFileBrowser) {
-            NavigationStack {
+            NavigationView {
                 FileBrowserView(rootPath: RootfsManager.shared.dataPath, rootLabel: "/")
             }
         }
@@ -319,7 +319,7 @@ class RootfsManagementViewModel: ObservableObject {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         RootfsManagementView()
     }
 }

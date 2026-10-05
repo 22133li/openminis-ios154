@@ -186,7 +186,7 @@ struct SubAgentEditorView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 // [T-sub-agents-v1] The built-in's name and description are
                 // fixed. They are what the delegating model reads to decide

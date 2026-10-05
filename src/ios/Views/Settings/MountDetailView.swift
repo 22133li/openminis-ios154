@@ -142,7 +142,7 @@ struct MountDetailView: View {
             }
         }
         .sheet(isPresented: $showingBrowser) {
-            NavigationStack {
+            NavigationView {
                 FileBrowserView(
                     rootPath: context.hostURL,
                     rootLabel: context.linuxPath

@@ -343,7 +343,6 @@ struct AIChatView: View {
     @State private var showAttachmentMenu = false
     @State private var isDropTargeted = false
     @State private var showCamera = false
-    @State private var showPhotoPicker = false
     @State private var showDocumentPicker = false
     @State private var showMoveToSheet = false
     @State private var showClearChatConfirm = false
@@ -399,7 +398,6 @@ struct AIChatView: View {
     @State private var pendingProviderImport: PendingProviderImport?
     @State private var providerImportResult: String?
     @State private var screenshotPreview: ChatScreenshotPreview?
-    @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var attachmentGridHeight: CGFloat = 0
     @State private var transcriptHeight: CGFloat = 0
     /// Tracks how much of recognizedText has already been appended to inputText.
@@ -480,7 +478,7 @@ struct AIChatView: View {
     /// True when any sheet or fullScreenCover is presented (suppress auto-focus to avoid keyboard bugs).
     private var hasOverlayPresented: Bool {
         showFileBrowser || showBrowserSheet || showTerminal || showCamera
-            || showPhotoPicker || showDocumentPicker || showModelPicker
+            || showDocumentPicker || showModelPicker
     }
 
     /// Tracks whether this ChatView is the currently visible screen.
@@ -821,7 +819,7 @@ struct AIChatView: View {
         }
         .sheet(item: $locateDownloadTarget) { target in
             if let sid = vm.sessionId {
-                NavigationStack {
+                NavigationView {
                     FileBrowserView(
                         rootPath: AIChatViewModel.minisWorkspacePersistentDir(for: sid),
                         rootLabel: "/var/minis/workspace",
@@ -962,8 +960,6 @@ struct AIChatView: View {
         }
         .sheet(item: $previewAudioFile) { fileURL in
             MinisAudioPreviewView(fileURL: fileURL)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.hidden)
         }
         .sheet(item: $previewTextFile) { fileURL in
             MinisTextPreviewView(fileURL: fileURL)
@@ -1047,7 +1043,7 @@ struct AIChatView: View {
             })
         }
         .sheet(isPresented: $showFileBrowser) {
-            NavigationStack {
+            NavigationView {
                 let base = RootfsManager.shared.dataPath
                 FileBrowserView(rootPath: base, initialPath: base.appendingPathComponent("var/minis"), rootLabel: "/")
             }
@@ -1058,16 +1054,14 @@ struct AIChatView: View {
             })
         }
         .sheet(isPresented: $showModelPicker) {
-            NavigationStack {
+            NavigationView {
                 SessionModelPicker(sessionId: vm.sessionId) {
                     await vm.ensureSessionReturningId()
                 }
             }
-            .presentationDetents([.large])
         }
         .sheet(isPresented: $showTokenUsage) {
             TokenUsageSheet(vm: cached.vm)
-                .presentationDetents([.fraction(0.8), .large])
         }
         .sheet(item: $screenshotPreview) { preview in
             ChatScreenshotPreviewSheet(image: preview.image)
@@ -1154,7 +1148,7 @@ struct AIChatView: View {
         .fullScreenCover(isPresented: $showTerminal) {
             terminalInitCommand = nil
         } content: {
-            NavigationStack {
+            NavigationView {
                 ISHTerminalView(sessionId: vm.sessionId, showCloseButton: true, initCommand: terminalInitCommand)
                     .onAppear {
                         if let sid = vm.sessionId {
@@ -1198,65 +1192,7 @@ struct AIChatView: View {
                 }
             )
         }
-        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotoItems,
-                      maxSelectionCount: 50, matching: .any(of: [.images, .videos]))
-        .onChange(of: selectedPhotoItems) { items in
-            guard !items.isEmpty else { return }
-            // [T-ios-photo-pick-placeholder] 1) Insert a loading placeholder chip
-            // for every picked item RIGHT NOW (one main-actor batch update), so the
-            // user immediately sees how many they picked instead of watching photos
-            // trickle in one-by-one. 2) Load all of them CONCURRENTLY via a
-            // TaskGroup. 3) Resolve each placeholder in place as its bytes arrive
-            // (success → real thumbnail, failure → error chip). The send button is
-            // gated on `hasLoadingAttachments` until every item settles.
-            let kinds = items.map { item -> InputAttachment.Kind in
-                item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) ? .video : .image
-            }
-            let placeholderIDs = vm.addLoadingPlaceholders(kinds: kinds)
-
-            // Snapshot per-item metadata synchronously (PHAsset fetch + UTI) so the
-            // concurrent loaders don't touch SwiftUI state or PhotosUI mid-flight.
-            struct PickJob { let id: UUID; let item: PhotosPickerItem; let isVideo: Bool; let ext: String?; let date: Date? }
-            let jobs: [PickJob] = zip(placeholderIDs, items).map { pid, item in
-                let isVideo = item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) })
-                var assetDate: Date?
-                if let aid = item.itemIdentifier,
-                   let asset = PHAsset.fetchAssets(withLocalIdentifiers: [aid], options: nil).firstObject {
-                    assetDate = asset.creationDate
-                }
-                let ext = item.supportedContentTypes
-                    .first(where: { $0.conforms(to: .image) })?
-                    .preferredFilenameExtension
-                return PickJob(id: pid, item: item, isVideo: isVideo, ext: ext, date: assetDate)
-            }
-            selectedPhotoItems = []
-
-            Task {
-                await withTaskGroup(of: Void.self) { group in
-                    for job in jobs {
-                        group.addTask {
-                            if job.isVideo {
-                                if let videoURL = try? await job.item.loadTransferable(type: VideoFileTransferable.self) {
-                                    await MainActor.run {
-                                        vm.finalizeVideoPlaceholder(id: job.id, from: videoURL.url, originalDate: job.date)
-                                    }
-                                } else {
-                                    await MainActor.run { vm.markPlaceholderFailed(id: job.id) }
-                                }
-                            } else if let data = try? await job.item.loadTransferable(type: Data.self) {
-                                // Preserve original encoded bytes (PNG transparency,
-                                // HEIC, animated GIFs, EXIF) — written verbatim.
-                                await MainActor.run {
-                                    vm.finalizeImagePlaceholder(id: job.id, data: data, fileExtension: job.ext, originalDate: job.date)
-                                }
-                            } else {
-                                await MainActor.run { vm.markPlaceholderFailed(id: job.id) }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // iOS 15 backport: PhotosPicker removed
         .fileImporter(
             isPresented: $showDocumentPicker,
             allowedContentTypes: [.image, .pdf, .plainText, .json, .sourceCode, .presentation, .spreadsheet, .data],
@@ -2562,7 +2498,6 @@ struct AIChatView: View {
                     showThinkingLevelSheet = false
                 }
             )
-            .presentationDetents([.medium])
         }
     }
 
@@ -2911,7 +2846,7 @@ struct AIChatView: View {
                 // layout and trips a precondition on the iOS 18 async renderer
                 // (ViewGraphGeometryObservers.needsUpdate SIGTRAP). The action
                 // also fires with the initial value, covering the old onAppear.
-                .onGeometryChange(for: CGFloat.self) { proxy in
+                .onGeometryChangeBackport(for: CGFloat.self) { proxy in
                     proxy.size.height
                 } action: { newH in
                     floatingBarHeight = newH
@@ -3297,7 +3232,6 @@ struct AIChatView: View {
         if #available(iOS 17, *) {
             Menu {
                 Button { showCamera = true } label: { Label("Take Photo", systemImage: "camera") }
-                Button { showPhotoPicker = true } label: { Label("Choose Photos & Videos", systemImage: "photo.on.rectangle") }
                 Button { showDocumentPicker = true } label: { Label("Add File", systemImage: "doc") }
             } label: {
                 icon
@@ -3308,7 +3242,6 @@ struct AIChatView: View {
             }
             .confirmationDialog("Add Attachment", isPresented: $showAttachmentMenu) {
                 Button { showCamera = true } label: { Label("Take Photo", systemImage: "camera") }
-                Button { showPhotoPicker = true } label: { Label("Choose Photos & Videos", systemImage: "photo.on.rectangle") }
                 Button { showDocumentPicker = true } label: { Label("Add File", systemImage: "doc") }
             }
         }
@@ -3875,7 +3808,7 @@ struct AIChatView: View {
                     // [T-ios-geometry-observer-crash] traced an async-renderer
                     // SIGTRAP to that scaffold, and this file already
                     // standardised on the observer for exactly that reason.
-                    .onGeometryChange(for: CGFloat.self) { proxy in
+                    .onGeometryChangeBackport(for: CGFloat.self) { proxy in
                         proxy.size.width
                     } action: { w in
                         guard w > 0, abs(w - inputBottomRowWidth) > 0.5 else { return }
@@ -3936,7 +3869,7 @@ struct AIChatView: View {
             // floating-bar site). Fires with the initial value too, so the
             // old onAppear seeding AND its diagnostic log are preserved as
             // a single unified line.
-            .onGeometryChange(for: CGRect.self) { proxy in
+            .onGeometryChangeBackport(for: CGRect.self) { proxy in
                 proxy.frame(in: .global)
             } action: { frame in
                 let newH = frame.size.height
@@ -5232,8 +5165,6 @@ private struct ProviderImportSheet: View {
             }
         }
         .padding(24)
-        .presentationDetents([.height(360), .medium])
-        .presentationDragIndicator(.visible)
         // Swipe-to-dismiss without tapping a button still needs cleanup.
         .onDisappear { if !chose { onCancel() } }
     }
@@ -5333,8 +5264,6 @@ struct NavBarStyleModifier: ViewModifier {
         } else {
             // iOS 16–18: opaque navbar background
             content
-                .toolbarBackground(ChatColors.background, for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
                 .overlay(alignment: .top) {
                     if measuresSafeArea {
                         // [T-ios-geometry-observer-crash] onGeometryChange
@@ -5345,7 +5274,7 @@ struct NavBarStyleModifier: ViewModifier {
                         // before, and the action's initial fire covers the old
                         // onAppear seed.
                         Color.clear
-                            .onGeometryChange(for: CGFloat.self) { proxy in
+                            .onGeometryChangeBackport(for: CGFloat.self) { proxy in
                                 proxy.safeAreaInsets.top
                             } action: { topSafeAreaInset = $0 }
                             .ignoresSafeArea()
@@ -6032,7 +5961,7 @@ private struct MoveToSessionSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 if !isSearching {
                     Button {
@@ -6448,7 +6377,7 @@ private struct SpeechLanguagePickerSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 let preferred = filteredLocales.filter { preferredCodes.contains($0.language.languageCode?.identifier ?? "") }
                 let others = filteredLocales.filter { !preferredCodes.contains($0.language.languageCode?.identifier ?? "") }
@@ -6480,7 +6409,6 @@ private struct SpeechLanguagePickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
     }
 
     private func languageRow(_ loc: Locale) -> some View {
@@ -6520,7 +6448,7 @@ struct CompactSummarySheet: View {
     @State private var showRevertConfirm = false
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 0) {
                 SelectableTextView(text: summary)
                     .padding(.horizontal, 16)
@@ -6573,7 +6501,6 @@ struct CompactSummarySheet: View {
                 Text("The summary will be discarded and the messages it covered will become active again. This may push the conversation past the model's context window — if that happens, long-press a message to re-compact from that point.")
             }
         }
-        .presentationDetents([.large])
     }
 }
 
@@ -6616,7 +6543,7 @@ private struct TokenUsageSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 let s = vm.sessionTokenStats
 

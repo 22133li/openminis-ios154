@@ -305,7 +305,7 @@ struct SpeechPlayerControl: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) { showFailureFlash = false }
         }
         .sheet(isPresented: $showModelSelector, onDismiss: { refreshModelLabel(); bumpIdle() }) {
-            NavigationStack {
+            NavigationView {
                 UnifiedModelPicker(config: .voiceOutput())
             }
         }

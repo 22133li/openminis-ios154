@@ -37,7 +37,7 @@ struct ConfigConfirmSheet: View {
 
     @ViewBuilder
     private func sheetBody(change: PendingConfigChange) -> some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 0) {
                 if let caption = change.caption, !caption.isEmpty {
                     Text(caption)
@@ -74,7 +74,6 @@ struct ConfigConfirmSheet: View {
                 }
             }
         }
-        .presentationDetents([.fraction(0.75)])
         .interactiveDismissDisabled()    // force explicit Apply / Cancel
     }
 

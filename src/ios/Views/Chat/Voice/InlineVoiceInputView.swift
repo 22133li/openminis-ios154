@@ -579,7 +579,7 @@ struct InlineVoiceInputView: View {
             viewModel.refreshInputProvider()
         }
         .sheet(isPresented: $showModelSelector) {
-            NavigationStack {
+            NavigationView {
                 UnifiedModelPicker(config: .voiceInput())
             }
         }

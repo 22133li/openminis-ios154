@@ -150,7 +150,7 @@ struct ProviderInstancesView: View {
             }
         }
         .sheet(isPresented: $showAddProvider) {
-            NavigationStack {
+            NavigationView {
                 AddProviderView()
             }
         }

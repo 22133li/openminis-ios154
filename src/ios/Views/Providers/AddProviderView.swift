@@ -11,7 +11,7 @@ struct AIDataSharingConsentView: View {
     var onDecline: () -> Void
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {

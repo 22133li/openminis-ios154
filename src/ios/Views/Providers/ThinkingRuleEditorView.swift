@@ -85,7 +85,7 @@ struct ThinkingRuleEditorView: View {
     @State private var customHighValue: String = ""
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section("Name") {
                     TextField("Rule name", text: $label)

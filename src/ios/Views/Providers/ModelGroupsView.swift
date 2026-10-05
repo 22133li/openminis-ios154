@@ -138,12 +138,12 @@ struct ModelGroupsView: View {
         .navigationTitle("Model Groups")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showAddAgentModels) {
-            NavigationStack {
+            NavigationView {
                 UnifiedModelPicker(config: .agentLoopAddModels())
             }
         }
         .sheet(isPresented: $showAddAgentGroups) {
-            NavigationStack {
+            NavigationView {
                 AddAgentLoopGroupsSheet()
             }
         }
