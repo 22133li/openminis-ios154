@@ -3345,7 +3345,6 @@ struct ContentView: View {
         // keyboard, so normal avoidance is restored.
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
-        )
     }
 
     /// Selection-bound List for split (iPad) layout.
@@ -3528,6 +3527,26 @@ struct ContentView: View {
         // is open (the chat column's composer avoidance is its own subtree).
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
+            do {
+                try await Task.sleep(nanoseconds: Self.migrationSubtitleRefreshInterval * 1_000_000_000)
+            } catch {
+                return  // cancelled during sleep
+            }
+            // Skip the refresh while backgrounded; keep looping so it resumes on
+            // return to foreground without needing a separate scene-phase wake.
+            // Read the process-level flag (kept current by the scenePhase observer)
+            // rather than the `@Environment(\.scenePhase)` captured in this `.task`
+            // closure's `self` snapshot, which would be stale.
+            let backgrounded: Bool
+            if #available(iOS 17.0, *) {
+                backgrounded = SyncCore.shared.isAppInBackground
+            } else {
+                backgrounded = false
+            }
+            if !backgrounded {
+                refreshMigrationSubtitle()
+            }
+        }
     }
 
     private func refreshMigrationSubtitle() {

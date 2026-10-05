@@ -1563,41 +1563,6 @@ struct PastableTextView: UIViewRepresentable {
         return tv
     }
 
-        let width = proposal.width ?? UIScreen.main.bounds.width
-        // [T-share-url-input-height] UITextView.sizeThatFits returns the
-        // height typeset against the CURRENT textContainer width, not the
-        // requested one. When a large block of text lands via the shared-
-        // sheet path (`vm.inputText += sharedURL`), SwiftUI re-runs
-        // updateUIView with the new text but UITextView's typesetter is
-        // still keyed to the previous (single-line) frame width, so
-        // sizeThatFits reports the unwrapped one-line height and the
-        // composer doesn't grow. Forcing the textContainer width to the
-        // proposed value triggers an immediate re-layout against the real
-        // wrap point, so the returned height matches what the user will
-        // actually see once the cell renders.
-        if abs(tv.textContainer.size.width - width) > 0.5 {
-            tv.textContainer.size = CGSize(width: width, height: .greatestFiniteMagnitude)
-            tv.layoutManager.ensureLayout(for: tv.textContainer)
-        }
-        let fitSize = tv.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-        let lineH = tv.font?.lineHeight ?? 20
-        let effective = tv.text.isEmpty ? lineH : fitSize.height
-        let maxH = tv.maxHeight
-        tv.isScrollEnabled = fitSize.height > maxH
-        // [T-ipad-composer-resize] When the user has dragged the composer to an
-        // explicit height, that height IS the answer — report it verbatim.
-        //
-        // A UIViewRepresentable's `sizeThatFits` outranks an outer
-        // `.frame(height:)`: SwiftUI asks the representable how big it wants to
-        // be and lays it out at that size. So returning the CONTENT height here
-        // (one line ≈ 20pt) pulled the composer back down mid-drag — the frame
-        // said 400pt, this said 20pt, and this won. Returning the override makes
-        // the two agree, which is what stops the snap-back.
-        if let maxHeightOverride {
-            return CGSize(width: width, height: maxHeightOverride)
-        }
-        return CGSize(width: width, height: min(effective, maxH))
-    }
 
     func updateUIView(_ tv: PastableUITextView, context: Context) {
         // [T-ios-context-usage-hint] Hand the Coordinator the CURRENT view
