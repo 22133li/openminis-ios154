@@ -217,7 +217,7 @@ struct SubAgentEditorView: View {
                         Text(existing?.displayDescription ?? descriptionText).foregroundStyle(.secondary)
                     } else {
                         TextField(AppLocalized("Description"), text: $descriptionText)
-                            .lineLimit(2...4)
+                            .lineLimit(4)
                         counter(descriptionText.count, SubAgentLimits.descriptionMaxLength)
                     }
                 } header: {
@@ -230,7 +230,7 @@ struct SubAgentEditorView: View {
 
                 Section {
                     TextField(AppLocalized("Instructions"), text: $instructions)
-                        .lineLimit(4...12)
+                        .lineLimit(12)
                     counter(instructions.count, SubAgentLimits.instructionsMaxLength)
                 } header: {
                     Text(AppLocalized("Instructions"))

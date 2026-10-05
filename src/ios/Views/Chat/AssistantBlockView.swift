@@ -1153,7 +1153,6 @@ struct ThinkingLevelSheetView: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(.blue)
-                        .fontWeight(.bold)
                 }
             }
         }

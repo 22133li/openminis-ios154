@@ -298,10 +298,8 @@ struct StorageManagementView: View {
                 storageRow(icon: "ellipsis", color: .gray, label: "Other", value: vm.format(vm.otherSize))
                 HStack {
                     Text("Total")
-                        .fontWeight(.bold)
                     Spacer()
                     Text(vm.format(vm.containerTotalSize))
-                        .fontWeight(.bold)
                 }
             } header: {
                 Text("Overview")

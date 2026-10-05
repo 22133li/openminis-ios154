@@ -771,7 +771,7 @@ private struct FolderPickerSheet: View {
                     // here or prefilled by AI Suggest; never shown in the
                     // list, editable later from Rename Group.
                     TextField("Description (optional, guides auto-grouping)", text: $newFolderDesc)
-                        .lineLimit(1...2)
+                        .lineLimit(2)
                         .font(.subheadline)
                         .onChange(of: newFolderDesc) { v in
                             if v.count > 100 { newFolderDesc = String(v.prefix(100)) }
@@ -804,7 +804,6 @@ private struct FolderPickerSheet: View {
                         Spacer()
                         Button("Create", action: createIfNamed)
                             .buttonStyle(.borderless)
-                            .fontWeight(.bold)
                             .disabled(trimmedName.isEmpty || duplicateFolder != nil)
                     }
                     // [T-folder-duplicate-name] Name already taken. Says so, and
@@ -7887,7 +7886,6 @@ private struct AppearanceSettingsView: View {
                             if appLanguage == lang.id {
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(.blue)
-                                    .fontWeight(.bold)
                             }
                         }
                     }

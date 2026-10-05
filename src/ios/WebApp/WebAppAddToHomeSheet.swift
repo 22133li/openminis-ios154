@@ -70,7 +70,6 @@ struct WebAppAddToHomeSheet: View {
                                     ProgressView().tint(.white)
                                 } else {
                                     Text("Continue in Safari")
-                                        .fontWeight(.bold)
                                 }
                                 Spacer()
                             }
