@@ -42,7 +42,7 @@ jobs:
       - run: ./deps/build_rclone_ios.sh
       - run: |
           cd src/ios
-          xcodebuild -project Minis.xcodeproj -target Minis -configuration Release \
+          xcodebuild -project Minis.xcodeproj -scheme Minis -target Minis -configuration Release \
             -sdk iphoneos -derivedDataPath ../../build/derived \
             CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM=""
       - run: |
