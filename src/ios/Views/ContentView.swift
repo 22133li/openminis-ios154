@@ -349,8 +349,8 @@ private struct FABGlassMorphID: ViewModifier {
     let namespace: Namespace.ID
 
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffectID("fabSearch", in: namespace)
+        if false {  // iOS 15 backport: glassEffectID is iOS 26+
+            content
         } else {
             content
         }
@@ -392,18 +392,18 @@ private struct FolderSurface: ViewModifier {
             : UIColor(red: 252/255.0, green: 252/255.0, blue: 252/255.0, alpha: 1)
     })
 
-    private var shape: AnyShape {
+    private var shape: BackportAnyShape {
         switch kind {
         case .lone:
-            return AnyShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            return BackportAnyShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         case .top:
-            return AnyShape(UnevenRoundedRectangle(
+            return BackportAnyShape(BackportUnevenRoundedRectangle(
                 topLeadingRadius: 16, bottomLeadingRadius: 0,
                 bottomTrailingRadius: 0, topTrailingRadius: 16, style: .continuous))
         case .middle:
-            return AnyShape(Rectangle())
+            return BackportAnyShape(Rectangle())
         case .bottom:
-            return AnyShape(UnevenRoundedRectangle(
+            return BackportAnyShape(BackportUnevenRoundedRectangle(
                 topLeadingRadius: 0, bottomLeadingRadius: 16,
                 bottomTrailingRadius: 16, topTrailingRadius: 0, style: .continuous))
         }
@@ -472,12 +472,12 @@ private struct FolderCardBackground: ViewModifier {
     let isDropTarget: Bool
     let isExpanded: Bool
 
-    private var dropShape: AnyShape {
+    private var dropShape: BackportAnyShape {
         isExpanded
-            ? AnyShape(UnevenRoundedRectangle(
+            ? BackportAnyShape(BackportUnevenRoundedRectangle(
                 topLeadingRadius: 16, bottomLeadingRadius: 0,
                 bottomTrailingRadius: 0, topTrailingRadius: 16, style: .continuous))
-            : AnyShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            : BackportAnyShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     func body(content: Content) -> some View {
@@ -3494,7 +3494,7 @@ struct ContentView: View {
                                             // container's bottom radii so it stays
                                             // wrapped by the corners.
                                             if isSessionHighlighted(session.id) {
-                                                UnevenRoundedRectangle(
+                                                BackportUnevenRoundedRectangle(
                                                     topLeadingRadius: 0,
                                                     bottomLeadingRadius: isLast ? 16 : 0,
                                                     bottomTrailingRadius: isLast ? 16 : 0,
@@ -6160,68 +6160,10 @@ struct ContentView: View {
             if i > 0 {
                 try handle.write(contentsOf: Data(("\n\n" + String(repeating: "=", count: 60) + "\n\n").utf8))
             }
+            header += String(repeating: "-", count: 40) + "\n"
             var header = "# \(session.title ?? "Untitled")\n"
             header += "Model: \(session.modelId)\n"
             header += "Created: \(dateFmt.string(from: session.createdAt))\n"
-        /// iOS 15 backport: replaces `.navigationDestination(for: SettingsDestination.self)`.
-        @ViewBuilder
-        private var settingsDestinationView: some View {
-            if let dest = navPath.last {
-                switch dest {
-                    case .providers:
-                        ProviderInstancesView()
-                    case .providerDetail(let id):
-                        ProviderInstanceDetailView(instanceId: id)
-                    case .modelGroups:
-                        ModelGroupsView()
-                    case .modelGroupDetail(let id):
-                        ModelGroupDetailView(groupId: id)
-                    case .usage:
-                        UsageStatsView()
-                    case .skills:
-                        SkillsManagementView()
-                    case .soul:
-                        SoulSettingsView()
-                    case .tools:
-                        ToolsSettingsView()
-                    case .memory:
-                        MemoryManagementView()
-                    case .storage:
-                        StorageManagementView()
-                    case .mountedFolders:
-                        MountedFoldersSettingsView()
-                    case .sharedFolders:
-                        SharedFoldersSettingsView()
-                    case .logs:
-                        // Pull a one-shot tab hint from the deep link router
-                        // (e.g. `?tab=config-audit`). LogManagementView clears
-                        // its local state independently; the published value
-                        // here is consumed once and reset to nil.
-                        LogManagementView(initialTab: deepLink.pendingLogsTab ?? "logs")
-                            .onAppear { deepLink.pendingLogsTab = nil }
-                    case .appearance:
-                        AppearanceSettingsView()
-                    case .background:
-                        EnhancedBackgroundSettingsView()
-                    case .about:
-                        AboutView()
-                    case .environments:
-                        EnvironmentVariablesView()
-                    case .permissions:
-                        OffloadPermissionSettingsView()
-                    // [T-mcp-oauth-deeplink] Detail = the list view told to open
-                    // the server's edit sheet on appear; a deleted/unknown server
-                    // just lands on the list (no crash, sensible fallback).
-                    case .mcpIntegrations:
-                        MCPIntegrationsView()
-                    case .mcpServerDetail(let serverId):
-                        MCPIntegrationsView(initialEditServerId: serverId)
-                    }
-            } else {
-                EmptyView()
-            }
-        }
-            header += String(repeating: "-", count: 40) + "\n"
             try handle.write(contentsOf: Data(header.utf8))
 
             let allMessages = await ChatStore.shared.loadMessages(sessionId: session.id)
@@ -8114,6 +8056,66 @@ private struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var deepLink = DeepLinkCoordinator.shared
     @State private var navPath: [SettingsDestination] = []
+
+    /// iOS 15 backport: replaces `.navigationDestination(for: SettingsDestination.self)`.
+    @ViewBuilder
+    private var settingsDestinationView: some View {
+        if let dest = navPath.last {
+            switch dest {
+                case .providers:
+                    ProviderInstancesView()
+                case .providerDetail(let id):
+                    ProviderInstanceDetailView(instanceId: id)
+                case .modelGroups:
+                    ModelGroupsView()
+                case .modelGroupDetail(let id):
+                    ModelGroupDetailView(groupId: id)
+                case .usage:
+                    UsageStatsView()
+                case .skills:
+                    SkillsManagementView()
+                case .soul:
+                    SoulSettingsView()
+                case .tools:
+                    ToolsSettingsView()
+                case .memory:
+                    MemoryManagementView()
+                case .storage:
+                    StorageManagementView()
+                case .mountedFolders:
+                    MountedFoldersSettingsView()
+                case .sharedFolders:
+                    SharedFoldersSettingsView()
+                case .logs:
+                    // Pull a one-shot tab hint from the deep link router
+                    // (e.g. `?tab=config-audit`). LogManagementView clears
+                    // its local state independently; the published value
+                    // here is consumed once and reset to nil.
+                    LogManagementView(initialTab: deepLink.pendingLogsTab ?? "logs")
+                        .onAppear { deepLink.pendingLogsTab = nil }
+                case .appearance:
+                    AppearanceSettingsView()
+                case .background:
+                    EnhancedBackgroundSettingsView()
+                case .about:
+                    AboutView()
+                case .environments:
+                    EnvironmentVariablesView()
+                case .permissions:
+                    OffloadPermissionSettingsView()
+                // [T-mcp-oauth-deeplink] Detail = the list view told to open
+                // the server's edit sheet on appear; a deleted/unknown server
+                // just lands on the list (no crash, sensible fallback).
+                case .mcpIntegrations:
+                    MCPIntegrationsView()
+                case .mcpServerDetail(let serverId):
+                    MCPIntegrationsView(initialEditServerId: serverId)
+                }
+        } else {
+            EmptyView()
+        }
+    }
+
     @State private var showFeedbackDialog = false
 
     var body: some View {

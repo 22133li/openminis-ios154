@@ -1,7 +1,7 @@
 import SwiftUI
 
 // iOS 15 backport: AnyShape is iOS 16+. Simple type-erased Shape.
-struct AnyShape: Shape {
+struct BackportAnyShape: Shape {
     private let pathBuilder: (CGRect) -> Path
     init<S: Shape>(_ shape: S) {
         self.pathBuilder = { rect in shape.path(in: rect) }
@@ -13,7 +13,7 @@ struct AnyShape: Shape {
 
 // iOS 15 backport: UnevenRoundedRectangle is iOS 16+.
 // Approximates with uniform RoundedRectangle using average radius.
-struct UnevenRoundedRectangle: Shape {
+struct BackportUnevenRoundedRectangle: Shape {
     var topLeadingRadius: CGFloat = 0
     var bottomLeadingRadius: CGFloat = 0
     var bottomTrailingRadius: CGFloat = 0
