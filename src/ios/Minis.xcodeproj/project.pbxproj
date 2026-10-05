@@ -9,6 +9,12 @@
 /* Begin PBXBuildFile section */
 		21FED4B7BB6F6D9476C9992E /* VoiceProvider+System.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88993FC8E3F0199C6638F664 /* VoiceProvider+System.swift */; };
 		241D530017827D7F0EB604DE /* VoiceProviderFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2941B643B8A2F048A2B154E /* VoiceProviderFactory.swift */; };
+		E5BP0002 /* ShapeBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0001 /* ShapeBackport.swift */; };
+		E5BP0004 /* LabeledContentBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0003 /* LabeledContentBackport.swift */; };
+		E5BP0006 /* GeometryChangeBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0005 /* GeometryChangeBackport.swift */; };
+		E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0007 /* LocalizedStringResourceBackport.swift */; };
+		E5BP0010 /* ShortcutHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0009 /* ShortcutHelpers.swift */; };
+		E5BP0012 /* ShortcutRunTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0011 /* ShortcutRunTracker.swift */; };
 		2A4FD49F872431D703328384 /* VoiceOutputPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 424510790AF3FB2452D3CCE3 /* VoiceOutputPlayer.swift */; };
 		30390D7AA90818BD4BDCE784 /* VoiceProviderTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F3D1138DBE516F31D76ABF4 /* VoiceProviderTemplate.swift */; };
 		33643CC21B9402F949D76C3C /* VoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84758F712C9B9178FA9D0EF2 /* VoiceProvider.swift */; };
@@ -622,6 +628,12 @@
 
 /* Begin PBXFileReference section */
 		0ED149397BEA7E0408C92688 /* GroupVoiceModelsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GroupVoiceModelsView.swift; sourceTree = "<group>"; };
+		E5BP0001 /* ShapeBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeBackport.swift; sourceTree = "<group>"; };
+		E5BP0003 /* LabeledContentBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabeledContentBackport.swift; sourceTree = "<group>"; };
+		E5BP0005 /* GeometryChangeBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryChangeBackport.swift; sourceTree = "<group>"; };
+		E5BP0007 /* LocalizedStringResourceBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedStringResourceBackport.swift; sourceTree = "<group>"; };
+		E5BP0009 /* ShortcutHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutHelpers.swift; sourceTree = "<group>"; };
+		E5BP0011 /* ShortcutRunTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRunTracker.swift; sourceTree = "<group>"; };
 		0F5379380323FA8C6477708C /* GroupSlotPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GroupSlotPicker.swift; sourceTree = "<group>"; };
 		16FF3462D09402F14B610CD6 /* VoiceWaveformView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceWaveformView.swift; sourceTree = "<group>"; };
 		28E23EA0E199D6D50EBC76F2 /* VoiceLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceLog.swift; sourceTree = "<group>"; };
@@ -1871,7 +1883,13 @@
 				E5E0000A2 /* ExternalFileImporter.swift */,
 				E5E000017 /* SharedContainerStore.swift */,
 				AADDA9E02F6ECCF400B66649 /* ThumbnailCache.swift */,
-			);
+							E5BP0001 /* ShapeBackport.swift */,
+				E5BP0003 /* LabeledContentBackport.swift */,
+				E5BP0005 /* GeometryChangeBackport.swift */,
+				E5BP0007 /* LocalizedStringResourceBackport.swift */,
+				E5BP0009 /* ShortcutHelpers.swift */,
+				E5BP0011 /* ShortcutRunTracker.swift */,
+);
 			path = Shared;
 			sourceTree = "<group>";
 		};
@@ -2706,7 +2724,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
+							E5BP0002 /* ShapeBackport.swift in Sources */,
+				E5BP0004 /* LabeledContentBackport.swift in Sources */,
+				E5BP0006 /* GeometryChangeBackport.swift in Sources */,
+				E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */,
+				E5BP0010 /* ShortcutHelpers.swift in Sources */,
+				E5BP0012 /* ShortcutRunTracker.swift in Sources */,
+);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BB1000030F700000000000AA /* Sources */ = {

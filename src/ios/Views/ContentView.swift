@@ -324,10 +324,8 @@ private let folderEdgeHighlight = Color(UIColor { traits in
 /// over a separately-drawn shape.
 private struct SearchBarSurface: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            // No .clipShape needed — glassEffect(in:) already clips to the
-            // capsule, and no .shadow: the material carries its own.
-            content.glassEffect(.regular, in: .capsule)
+        if false {  // iOS 15 backport: glassEffect is iOS 26+
+            content
         } else {
             content
                 .background(Color(UIColor.secondarySystemBackground))
@@ -1121,12 +1119,7 @@ struct MacOS27OpaqueNavigationBar<S: ShapeStyle>: ViewModifier {
     let background: S
 
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *), MacOS27GlassWorkaround.isActive {
-            content
-                .scrollEdgeEffectHidden(true, for: .top)
-        } else {
-            content
-        }
+        content
     }
 }
 
@@ -2548,7 +2541,7 @@ struct ContentView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(.secondary)
                 Text("No Conversation Selected")
-                    .font(.title3.bold())
+                    .font(.title3).bold()
                 Text("Select a conversation or start a new one")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -3251,10 +3244,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .background(
-                NavigationLink(value: session.id) { EmptyView() }
-                    .opacity(0)
-            )
+
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.hidden)
             .listRowBackground(Group {
@@ -3546,7 +3536,6 @@ struct ContentView: View {
 
         }
         .listStyle(.plain)
-        .navigationSplitViewColumnWidth(min: 340, ideal: 380, max: 500)
         // [T-macos27-liquid-glass-navbar] See MacOS27GlassWorkaround. Applied to
         // the Mac sidebar List only; the iPhone compact list (the other branch
         // of sessionList) is unaffected and does not get it.
@@ -4401,7 +4390,7 @@ struct ContentView: View {
             Section {
                 ForEach(entry.ids, id: \.self) { sessionId in
                     if let session = byId["\(entry.deviceId):\(sessionId)"] {
-                        NavigationLink(value: "remote:\(entry.deviceId):\(session.id)") {
+                        NavigationLink(destination: AIChatView(sessionId: session.id, remoteDeviceId: entry.deviceId)) {
                             RemoteSessionRow(session: session)
                         }
                         .listRowInsets(EdgeInsets())
@@ -4523,7 +4512,7 @@ struct ContentView: View {
 
             VStack(spacing: 8) {
                 Text("Welcome to Minis")
-                    .font(.title2.bold())
+                    .font(.title2).bold()
                 Text("Your first On-Device Agent is almost ready.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -4969,9 +4958,6 @@ struct ContentView: View {
         if #available(iOS 26.0, *) {
             icon()
                 .frame(width: 56, height: 56)
-                    tint.map { Glass.regular.tint($0) } ?? Glass.regular,
-                    in: .circle
-                )
                 // [T-fab-glass-contextmenu-regression] Without this the long-press
                 // menu on the new-chat FAB stops opening.
                 //
@@ -6177,6 +6163,64 @@ struct ContentView: View {
             var header = "# \(session.title ?? "Untitled")\n"
             header += "Model: \(session.modelId)\n"
             header += "Created: \(dateFmt.string(from: session.createdAt))\n"
+        /// iOS 15 backport: replaces `.navigationDestination(for: SettingsDestination.self)`.
+        @ViewBuilder
+        private var settingsDestinationView: some View {
+            if let dest = navPath.last {
+                switch dest {
+                    case .providers:
+                        ProviderInstancesView()
+                    case .providerDetail(let id):
+                        ProviderInstanceDetailView(instanceId: id)
+                    case .modelGroups:
+                        ModelGroupsView()
+                    case .modelGroupDetail(let id):
+                        ModelGroupDetailView(groupId: id)
+                    case .usage:
+                        UsageStatsView()
+                    case .skills:
+                        SkillsManagementView()
+                    case .soul:
+                        SoulSettingsView()
+                    case .tools:
+                        ToolsSettingsView()
+                    case .memory:
+                        MemoryManagementView()
+                    case .storage:
+                        StorageManagementView()
+                    case .mountedFolders:
+                        MountedFoldersSettingsView()
+                    case .sharedFolders:
+                        SharedFoldersSettingsView()
+                    case .logs:
+                        // Pull a one-shot tab hint from the deep link router
+                        // (e.g. `?tab=config-audit`). LogManagementView clears
+                        // its local state independently; the published value
+                        // here is consumed once and reset to nil.
+                        LogManagementView(initialTab: deepLink.pendingLogsTab ?? "logs")
+                            .onAppear { deepLink.pendingLogsTab = nil }
+                    case .appearance:
+                        AppearanceSettingsView()
+                    case .background:
+                        EnhancedBackgroundSettingsView()
+                    case .about:
+                        AboutView()
+                    case .environments:
+                        EnvironmentVariablesView()
+                    case .permissions:
+                        OffloadPermissionSettingsView()
+                    // [T-mcp-oauth-deeplink] Detail = the list view told to open
+                    // the server's edit sheet on appear; a deleted/unknown server
+                    // just lands on the list (no crash, sensible fallback).
+                    case .mcpIntegrations:
+                        MCPIntegrationsView()
+                    case .mcpServerDetail(let serverId):
+                        MCPIntegrationsView(initialEditServerId: serverId)
+                    }
+            } else {
+                EmptyView()
+            }
+        }
             header += String(repeating: "-", count: 40) + "\n"
             try handle.write(contentsOf: Data(header.utf8))
 
@@ -6282,7 +6326,7 @@ private struct DeleteConfirmSheet: View {
                             if info.totalFileCount > 0 {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Associated Files")
-                                        .font(.subheadline.bold())
+                                        .font(.subheadline).bold()
                                         .foregroundStyle(.primary)
                                     ForEach(info.fileNames, id: \.self) { name in
                                         HStack(spacing: 6) {
@@ -6318,7 +6362,7 @@ private struct DeleteConfirmSheet: View {
                             dismiss()
                         } label: {
                             Text("Delete (\(info.formattedSize))")
-                                .font(.body.bold())
+                                .font(.body).bold()
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                         }
@@ -6346,7 +6390,7 @@ private struct DeleteConfirmSheet: View {
     private func infoRow(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.subheadline.bold())
+                .font(.subheadline).bold()
                 .foregroundStyle(.primary)
             Text(value)
                 .font(.subheadline)
@@ -8062,64 +8106,6 @@ private enum SettingsDestination: Hashable {
     case mcpServerDetail(serverId: String)
 }
 
-    /// iOS 15 backport: replaces `.navigationDestination(for: SettingsDestination.self)`.
-    @ViewBuilder
-    private var settingsDestinationView: some View {
-        if let dest = navPath.last {
-            switch dest {
-                case .providers:
-                    ProviderInstancesView()
-                case .providerDetail(let id):
-                    ProviderInstanceDetailView(instanceId: id)
-                case .modelGroups:
-                    ModelGroupsView()
-                case .modelGroupDetail(let id):
-                    ModelGroupDetailView(groupId: id)
-                case .usage:
-                    UsageStatsView()
-                case .skills:
-                    SkillsManagementView()
-                case .soul:
-                    SoulSettingsView()
-                case .tools:
-                    ToolsSettingsView()
-                case .memory:
-                    MemoryManagementView()
-                case .storage:
-                    StorageManagementView()
-                case .mountedFolders:
-                    MountedFoldersSettingsView()
-                case .sharedFolders:
-                    SharedFoldersSettingsView()
-                case .logs:
-                    // Pull a one-shot tab hint from the deep link router
-                    // (e.g. `?tab=config-audit`). LogManagementView clears
-                    // its local state independently; the published value
-                    // here is consumed once and reset to nil.
-                    LogManagementView(initialTab: deepLink.pendingLogsTab ?? "logs")
-                        .onAppear { deepLink.pendingLogsTab = nil }
-                case .appearance:
-                    AppearanceSettingsView()
-                case .background:
-                    EnhancedBackgroundSettingsView()
-                case .about:
-                    AboutView()
-                case .environments:
-                    EnvironmentVariablesView()
-                case .permissions:
-                    OffloadPermissionSettingsView()
-                // [T-mcp-oauth-deeplink] Detail = the list view told to open
-                // the server's edit sheet on appear; a deleted/unknown server
-                // just lands on the list (no crash, sensible fallback).
-                case .mcpIntegrations:
-                    MCPIntegrationsView()
-                case .mcpServerDetail(let serverId):
-                    MCPIntegrationsView(initialEditServerId: serverId)
-                }
-        } else {
-            EmptyView()
-        }
-    }
 
 
 private struct SettingsSheet: View {
