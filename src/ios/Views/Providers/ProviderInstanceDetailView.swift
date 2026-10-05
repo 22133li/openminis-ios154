@@ -1295,10 +1295,10 @@ struct AddCustomModelSheet: View {
             .navigationTitle("Add Custom Model")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Add") { addModel() }
                         .font(.body.weight(.semibold))
                         .disabled(modelId.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -1596,10 +1596,10 @@ struct ModelEntryDetailSheet: View {
             .navigationTitle("Model Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") { save() }
                         .font(.body.weight(.semibold))
                 }

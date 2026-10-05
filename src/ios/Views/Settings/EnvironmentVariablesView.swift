@@ -65,7 +65,7 @@ struct EnvironmentVariablesView: View {
         .navigationTitle("Environment Variables")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showingAddSheet = true
                 } label: {

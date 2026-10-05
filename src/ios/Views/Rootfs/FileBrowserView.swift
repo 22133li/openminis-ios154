@@ -421,7 +421,7 @@ private struct FilePreviewSheet: View {
                 .navigationTitle(item.name)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .navigationBarTrailing) {
                         Button("Done") { dismiss() }
                     }
                 }
@@ -489,7 +489,7 @@ private struct MarkdownFilePreview: View {
         }
         .toolbar {
             if case .loaded = loadState {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     // Single toggle button, NOT a segmented Picker.
                     //
                     // A `.segmented` Picker asks for the width of all its

@@ -128,7 +128,7 @@ struct SessionMCPsView: View {
                         prompt: Text(AppLocalized("Search MCP servers")))
             .onAppear { store.load() }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     if !filteredServers.isEmpty {
                         let scope = filteredServers
                         let allEnabled = scope.allSatisfy { isEnabled($0) }
@@ -139,7 +139,7 @@ struct SessionMCPsView: View {
                         .font(.subheadline)
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }
             }

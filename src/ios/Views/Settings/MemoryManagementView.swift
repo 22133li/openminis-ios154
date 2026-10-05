@@ -61,7 +61,7 @@ struct MemoryManagementView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if #available(iOS 17.0, *), iCloudSyncEnabled {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
                             Task { await forceSyncMemory() }
@@ -255,7 +255,7 @@ private struct MemoryFileEditView: View {
             // user had to press Return to reveal it. Keeping it always present
             // sidesteps every input-source quirk. `save()` is a harmless
             // no-op rewrite when nothing changed.
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Save") { save() }
             }
         }

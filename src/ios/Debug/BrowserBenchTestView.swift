@@ -156,10 +156,10 @@ struct BrowserBenchTestView: View {
             .navigationTitle("Browser Bench Test")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") { dismiss() }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(vm.isRunning ? "Stop" : "Start") {
                         if vm.isRunning {
                             vm.stop()

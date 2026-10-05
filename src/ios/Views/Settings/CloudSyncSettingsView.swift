@@ -720,7 +720,7 @@ struct SyncLogView: View {
         .navigationTitle("iCloud Sync Logs")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button {
                     let report = store.exportSanitizedReport()
                     let tempURL = FileManager.default.temporaryDirectory

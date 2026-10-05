@@ -809,7 +809,7 @@ private struct FolderPickerSheet: View {
                         Spacer()
                         Button("Create", action: createIfNamed)
                             .buttonStyle(.borderless)
-                            .fontWeight(.semibold)
+                            .bold()
                             .disabled(trimmedName.isEmpty || duplicateFolder != nil)
                     }
                     // [T-folder-duplicate-name] Name already taken. Says so, and
@@ -947,7 +947,7 @@ private struct FolderPickerSheet: View {
                              : LocalizedStringKey("Move \(sessionCount) to Group"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Cancel") { dismiss() }
                 }
             }
@@ -1825,7 +1825,7 @@ struct ContentView: View {
                 NavigationView {
                     RootfsManagementView()
                         .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
+                            ToolbarItem(placement: .navigationBarTrailing) {
                                 Button("Done") { activeToolSheet = nil }
                             }
                         }
@@ -1840,7 +1840,7 @@ struct ContentView: View {
                 NavigationView {
                     SyncMigrationDetailView()
                         .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
+                            ToolbarItem(placement: .navigationBarTrailing) {
                                 Button("Done") { activeToolSheet = nil }
                             }
                         }
@@ -3878,7 +3878,7 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
             }
         }
-        ToolbarItem(placement: .topBarLeading) {
+        ToolbarItem(placement: .navigationBarLeading) {
             if isSelecting {
                 Button("Cancel") {
                     isSelecting = false
@@ -3892,7 +3892,7 @@ struct ContentView: View {
                 }
             }
         }
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .navigationBarTrailing) {
             if isSelecting {
                 Button(selectedIds.count == sessions.count ? "Deselect All" : "Select All") {
                     if selectedIds.count == sessions.count {
@@ -3910,7 +3910,7 @@ struct ContentView: View {
                 }
             }
         }
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .navigationBarTrailing) {
             if !isSelecting {
                 Menu {
                     Button {
@@ -3996,12 +3996,10 @@ struct ContentView: View {
     }
 
     @available(iOS 26.0, *)
+    @available(iOS 26.0, *)
     private func _fetchAlarmsImpl() {
-        AlarmOffloadBridge.listAlarms { arr, _ in
-            DispatchQueue.main.async {
-                hasAlarms = (arr?.count ?? 0) > 0
-            }
-        }
+        // iOS 15 backport: stubbed
+        hasAlarms = false
     }
 
     // MARK: - Navigation Helper
@@ -6160,8 +6158,8 @@ struct ContentView: View {
             if i > 0 {
                 try handle.write(contentsOf: Data(("\n\n" + String(repeating: "=", count: 60) + "\n\n").utf8))
             }
-            header += String(repeating: "-", count: 40) + "\n"
             var header = "# \(session.title ?? "Untitled")\n"
+            header += String(repeating: "-", count: 40) + "\n"
             header += "Model: \(session.modelId)\n"
             header += "Created: \(dateFmt.string(from: session.createdAt))\n"
             try handle.write(contentsOf: Data(header.utf8))
@@ -6429,7 +6427,7 @@ private struct ExportPreviewSheet: View {
             .navigationTitle(AppLocalized("Export Preview"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(AppLocalized("Done")) { dismiss() }
                 }
             }
@@ -7960,7 +7958,7 @@ private struct AppearanceSettingsView: View {
                             if appLanguage == lang.id {
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(.blue)
-                                    .fontWeight(.semibold)
+                                    .bold()
                             }
                         }
                     }
@@ -8452,7 +8450,7 @@ private struct SettingsSheet: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }
             }

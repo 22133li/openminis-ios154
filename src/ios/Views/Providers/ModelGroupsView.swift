@@ -148,7 +148,7 @@ struct ModelGroupsView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
                         showCreateGroup = true

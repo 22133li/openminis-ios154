@@ -287,7 +287,7 @@ struct AddProviderView: View {
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .navigationBarLeading) {
                 if selectedType != nil {
                     Button("Back") { goBack() }
                 } else {
@@ -300,7 +300,7 @@ struct AddProviderView: View {
             // gesture bounces instead of silently discarding, and this button
             // is the visible path to the save/discard choice — the same
             // pattern as Mail's compose sheet.
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 if selectedType != nil {
                     Button {
                         requestExit()

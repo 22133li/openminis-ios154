@@ -166,7 +166,7 @@ struct BrowserSheetView: View {
             }
             .toolbar(isFullscreen ? .hidden : .visible, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     HStack(spacing: 12) {
                         Button {
                             _ = pool.newTab()
@@ -183,7 +183,7 @@ struct BrowserSheetView: View {
                         .disabled(isAgentBusy)
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItemGroup(placement: .keyboard) {

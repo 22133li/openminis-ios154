@@ -263,10 +263,10 @@ struct AddAgentLoopGroupsSheet: View {
         .navigationTitle("Add Groups")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .navigationBarLeading) {
                 Button("Cancel") { dismiss() }
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Add (\(selectedGroupIds.count))") {
                     addSelected()
                 }

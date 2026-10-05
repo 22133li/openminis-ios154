@@ -75,7 +75,7 @@ struct OffloadPermissionSettingsView: View {
         .navigationTitle("Permissions")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Set All Bypass") {
                     manager.setAllBypass()
                     // The minis-config master switch is a separate

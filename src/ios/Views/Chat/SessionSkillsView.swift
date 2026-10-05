@@ -137,7 +137,7 @@ struct SessionSkillsView: View {
                         prompt: Text(AppLocalized("Search skills")))
             .onAppear { store.reload() }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     if !filteredSkills.isEmpty {
                         let scope = filteredSkills
                         let allEnabled = scope.allSatisfy { isEnabled($0) }
@@ -148,7 +148,7 @@ struct SessionSkillsView: View {
                         .font(.subheadline)
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }
             }

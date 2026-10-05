@@ -37,7 +37,7 @@ struct BackupHistoryDetailView: View {
             // while the upload kept running would strand a job with nothing
             // tracking it. Stop it first — this button is then right here.
             if !isLive {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(role: .destructive) {
                         showDeleteConfirm = true
                     } label: {

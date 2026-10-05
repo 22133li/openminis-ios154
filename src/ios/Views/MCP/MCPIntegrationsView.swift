@@ -83,7 +83,7 @@ struct MCPIntegrationsView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
                         showAddForm = true
@@ -215,7 +215,7 @@ struct MCPToolsSheet: View {
             .navigationTitle(Text(verbatim: serverName))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         Task { await refresh() }
                     } label: {
@@ -224,7 +224,7 @@ struct MCPToolsSheet: View {
                     .disabled(isLoading)
                     .accessibilityLabel(Text("Refresh tools"))
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(AppLocalized("Done")) { dismiss() }
                 }
             }
