@@ -63,18 +63,8 @@ struct MemoryManagementView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button {
-                        Task { await forceSyncMemory() }
-                    } label: {
-                        Label(AppLocalized("Force iCloud Sync"),
-                              systemImage: "arrow.triangle.2.circlepath.icloud")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                }
-                .opacity(iCloudSyncEnabled ? 1 : 0)
-                .disabled(!iCloudSyncEnabled)
+                Image(systemName: "ellipsis.circle")
+                .opacity(0)
             }
         }
         .overlay(alignment: .top) {
