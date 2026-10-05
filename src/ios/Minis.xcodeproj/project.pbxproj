@@ -628,7 +628,6 @@
 			files = (
 				E5E000009 /* MinisShare.appex in Embed Foundation Extensions */,
 				E5H000009 /* AgentWidgetExtension.appex in Embed Foundation Extensions */,
-				E5FP00009 /* MinisFileProvider.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2485,7 +2484,6 @@
 			dependencies = (
 				E5E000080 /* PBXTargetDependency */,
 				E5H000080 /* PBXTargetDependency */,
-				E5FP00080 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				AA0838CB2F3CA8A900049557 /* Terminal */,
