@@ -18,6 +18,21 @@ jobs:
           brew install ninja llvm libarchive pkg-config meson
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
       - run: xcodebuild -downloadComponent MetalToolchain || true
+      - name: Fix LLVM lld linker for iSH VDSO
+        run: |
+          LLVM_BIN="$(brew --prefix llvm)/bin"
+          echo "LLVM bin: $LLVM_BIN"
+          ls "$LLVM_BIN" | grep -i lld || echo "no lld binaries found"
+          # clang -fuse-ld=lld looks for ld.lld next to clang; ensure it exists
+          if [ ! -e "$LLVM_BIN/ld.lld" ]; then
+            # Try common locations
+            for cand in /opt/homebrew/bin/ld.lld /usr/local/bin/ld.lld; do
+              if [ -e "$cand" ]; then ln -sf "$cand" "$LLVM_BIN/ld.lld"; echo "linked $cand"; break; fi
+            done
+          fi
+          ls -la "$LLVM_BIN/ld.lld" || echo "STILL MISSING ld.lld"
+          # Also ensure lld is on PATH as fallback
+          echo "$LLVM_BIN" >> $GITHUB_PATH
       - run: |
           cp src/ios/Configs/ProviderCustomization.xcconfig.example \
              src/ios/Configs/ProviderCustomization.xcconfig || true
