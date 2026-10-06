@@ -3304,6 +3304,11 @@ struct ContentView: View {
                                 .listRowInsets(EdgeInsets())
                         } else {
                             erasedSessionRow(session, group: group)
+                                .onTapGesture {
+                                    // iOS 15 backport: NavigationLink(value:) 是 16+ API，
+                                    // 用 onTapGesture + openSession() 代替
+                                    openSession(session.id)
+                                }
                         }
                         }  // if let session
                     }
