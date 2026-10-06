@@ -18,7 +18,7 @@ struct CollectionViewMessageListV3: View {
     var onBrowserTakeover: (() -> Void)?
     var onTakeoverDone: (() -> Void)?
     var onCompact: ((UUID) -> Void)?
-    var onRevertCompact: ((UUID) -> Void)?
+    var onRevertCompact: (() -> Void)?
     var onForceSync: (() -> Void)?
     var onScreenshotImage: ((UIImage) -> Void)?
     var maxContentWidth: CGFloat
