@@ -179,13 +179,18 @@ static int weather_handler(int argc, char **argv,
     __block NSDictionary *weatherData = nil;
     __block NSError *weatherError = nil;
 
-    [WeatherOffloadBridge fetchWeatherForLatitude:loc.coordinate.latitude
-                                       longitude:loc.coordinate.longitude
-                                      completion:^(NSDictionary *result, NSError *error) {
-        weatherData = result;
-        weatherError = error;
+    if (@available(iOS 16, *)) {
+        [WeatherOffloadBridge fetchWeatherForLatitude:loc.coordinate.latitude
+                                           longitude:loc.coordinate.longitude
+                                          completion:^(NSDictionary *result, NSError *error) {
+            weatherData = result;
+            weatherError = error;
+            dispatch_semaphore_signal(sem);
+        }];
+    } else {
+        weatherError = [NSError errorWithDomain:@"WeatherOffload" code:1 userInfo:@{NSLocalizedDescriptionKey: @"WeatherKit requires iOS 16+"}];
         dispatch_semaphore_signal(sem);
-    }];
+    }
 
     dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 30 * NSEC_PER_SEC));
 

@@ -343,6 +343,7 @@ struct AIChatView: View {
     @State private var showAttachmentMenu = false
     @State private var isDropTargeted = false
     @State private var showCamera = false
+    @State private var showPhotoPicker = false
     @State private var showDocumentPicker = false
     @State private var showMoveToSheet = false
     @State private var showClearChatConfirm = false
@@ -478,7 +479,76 @@ struct AIChatView: View {
     /// True when any sheet or fullScreenCover is presented (suppress auto-focus to avoid keyboard bugs).
     private var hasOverlayPresented: Bool {
         showFileBrowser || showBrowserSheet || showTerminal || showCamera
-            || showDocumentPicker || showModelPicker
+            || showPhotoPicker || showDocumentPicker || showModelPicker
+    }
+
+    /// iOS 15.4: 处理 PHPicker 选择结果，复刻原 PhotosPicker 的 placeholder 流程
+    private func handlePHPickerResults(_ results: [PHPickerResult]) {
+        guard !results.isEmpty else { return }
+        // 1) 为每个选择项立即插入 loading placeholder
+        let kinds = results.map { result -> InputAttachment.Kind in
+            result.itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) ? .video : .image
+        }
+        let placeholderIDs = vm.addLoadingPlaceholders(kinds: kinds)
+
+        // 2) 并发加载每个 item 的数据
+        Task {
+            await withTaskGroup(of: Void.self) { group in
+                for (index, result) in results.enumerated() {
+                    let pid = placeholderIDs[index]
+                    let provider = result.itemProvider
+                    let isVideo = provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier)
+                    group.addTask {
+                        if isVideo {
+                            // 视频：加载文件 URL
+                            if let url = await loadVideoFileURL(from: provider) {
+                                await MainActor.run {
+                                    vm.finalizeVideoPlaceholder(id: pid, from: url, originalDate: nil)
+                                }
+                            } else {
+                                await MainActor.run { vm.markPlaceholderFailed(id: pid) }
+                            }
+                        } else {
+                            // 图片：加载原始数据（保留 PNG 透明、HEIC、GIF、EXIF）
+                            if let data = await loadImageData(from: provider) {
+                                let ext = provider.registeredTypeIdentifiers
+                                    .compactMap { UTType($0)?.preferredFilenameExtension }
+                                    .first
+                                await MainActor.run {
+                                    vm.finalizeImagePlaceholder(id: pid, data: data, fileExtension: ext, originalDate: nil)
+                                }
+                            } else {
+                                await MainActor.run { vm.markPlaceholderFailed(id: pid) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 从 NSItemProvider 加载视频文件 URL
+    private func loadVideoFileURL(from provider: NSItemProvider) async -> URL? {
+        await withCheckedContinuation { continuation in
+            provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
+                continuation.resume(returning: url)
+            }
+        }
+    }
+
+    /// 从 NSItemProvider 加载图片原始数据
+    private func loadImageData(from provider: NSItemProvider) async -> Data? {
+        // 优先尝试加载原始数据
+        for typeId in provider.registeredTypeIdentifiers {
+            if let data = await withCheckedContinuation({ continuation in
+                provider.loadDataRepresentation(forTypeIdentifier: typeId) { data, error in
+                    continuation.resume(returning: data)
+                }
+            }) {
+                return data
+            }
+        }
+        return nil
     }
 
     /// Tracks whether this ChatView is the currently visible screen.
@@ -1192,7 +1262,17 @@ struct AIChatView: View {
                 }
             )
         }
-        // iOS 15 backport: PhotosPicker removed
+        .sheet(isPresented: $showPhotoPicker) {
+            MinisPHPicker(
+                onComplete: { results in
+                    showPhotoPicker = false
+                    handlePHPickerResults(results)
+                },
+                onCancel: {
+                    showPhotoPicker = false
+                }
+            )
+        }
         .fileImporter(
             isPresented: $showDocumentPicker,
             allowedContentTypes: [.image, .pdf, .plainText, .json, .sourceCode, .presentation, .spreadsheet, .data],
@@ -3232,6 +3312,7 @@ struct AIChatView: View {
         if #available(iOS 17, *) {
             Menu {
                 Button { showCamera = true } label: { Label("Take Photo", systemImage: "camera") }
+                Button { showPhotoPicker = true } label: { Label("Choose Photos & Videos", systemImage: "photo.on.rectangle") }
                 Button { showDocumentPicker = true } label: { Label("Add File", systemImage: "doc") }
             } label: {
                 icon
@@ -3242,6 +3323,7 @@ struct AIChatView: View {
             }
             .confirmationDialog("Add Attachment", isPresented: $showAttachmentMenu) {
                 Button { showCamera = true } label: { Label("Take Photo", systemImage: "camera") }
+                Button { showPhotoPicker = true } label: { Label("Choose Photos & Videos", systemImage: "photo.on.rectangle") }
                 Button { showDocumentPicker = true } label: { Label("Add File", systemImage: "doc") }
             }
         }
@@ -6924,4 +7006,47 @@ final class ComposerActionChannel {
     /// an early arrow/tab key keeps its default text-view behaviour).
     @discardableResult
     func send(_ action: Action) -> Bool { handler?(action) ?? false }
+}
+
+// MARK: - iOS 15.4 Photo Picker (PHPickerViewController fallback)
+
+/// PHPickerViewController wrapper for iOS 15.4 (SwiftUI .photosPicker is iOS 16+).
+/// Supports multi-select of images and videos, matching the original PhotosPicker behavior.
+struct MinisPHPicker: UIViewControllerRepresentable {
+    var onComplete: ([PHPickerResult]) -> Void
+    var onCancel: () -> Void
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.selectionLimit = 50
+        config.filter = .any(of: [.images, .videos])
+        config.preferredAssetRepresentationMode = .current
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onComplete: onComplete, onCancel: onCancel)
+    }
+
+    final class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let onComplete: ([PHPickerResult]) -> Void
+        let onCancel: () -> Void
+
+        init(onComplete: @escaping ([PHPickerResult]) -> Void, onCancel: @escaping () -> Void) {
+            self.onComplete = onComplete
+            self.onCancel = onCancel
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            if results.isEmpty {
+                onCancel()
+            } else {
+                onComplete(results)
+            }
+        }
+    }
 }

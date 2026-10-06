@@ -193,6 +193,17 @@ struct LogManagementView: View {
                 }
             }
         }
+        .toolbar {
+            if !vm.logFiles.isEmpty && tab == "logs" {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showShareSheet = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $showShareSheet) {
             LogShareSheet(urls: vm.logFiles.map(\.url))
         }
@@ -215,6 +226,7 @@ struct LogDetailView: View {
     let name: String
     @State private var content: String = ""
     @State private var isLoading = true
+    @State private var showDetailShare = false
 
     var body: some View {
         Group {
@@ -226,6 +238,18 @@ struct LogDetailView: View {
         }
         .navigationTitle(name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showDetailShare = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+            }
+        }
+        .sheet(isPresented: $showDetailShare) {
+            LogShareSheet(urls: [url])
+        }
         .task {
             let fileURL = url
             let loaded = await Task.detached(priority: .userInitiated) {

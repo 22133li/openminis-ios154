@@ -5,6 +5,7 @@ import os.log
 /// Replicated File Provider extension that exposes MinisFileProvider/ to the system Files app.
 /// Structure: Minis → { memory, skills, shared }
 /// Uses the modern NSFileProviderReplicatedExtension protocol (iOS 16+).
+@available(iOS 16, *)
 final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
 
     let domain: NSFileProviderDomain
@@ -15,7 +16,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
     static var providerRoot: URL {
         let container = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: "group.com.openminis.app"
-        )!
+        ) ?? FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
         let url = container.appendingPathComponent("MinisFileProvider", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url

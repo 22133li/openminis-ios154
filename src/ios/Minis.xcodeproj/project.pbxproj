@@ -7,6 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E5T000001 /* SessionEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000011 /* SessionEntity.swift */; };
+		E5T000002 /* ListSessionsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000012 /* ListSessionsIntent.swift */; };
+		E5T000003 /* SendPromptIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000013 /* SendPromptIntent.swift */; };
+		E5T000004 /* OpenSessionIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000014 /* OpenSessionIntent.swift */; };
+		E5T000005 /* MinisShortcutsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000015 /* MinisShortcutsProvider.swift */; };
+		E5T000006 /* SendPromptResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000016 /* SendPromptResult.swift */; };
+		E5T000007 /* GetSessionStatusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000017 /* GetSessionStatusIntent.swift */; };
+		E5T000008 /* QuickTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000018 /* QuickTaskIntent.swift */; };
+		E5T000009 /* FollowUpSessionIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000019 /* FollowUpSessionIntent.swift */; };
+		E5T00000A /* RetryRunIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T00001A /* RetryRunIntent.swift */; };
+		E5T00000B /* UserMessageEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T00001B /* UserMessageEntity.swift */; };
+		E5T0000A1 /* AskMinisIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T0000A2 /* AskMinisIntent.swift */; };
+		E5F200006 /* ModelSelectionEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F200016 /* ModelSelectionEntity.swift */; };
 		21FED4B7BB6F6D9476C9992E /* VoiceProvider+System.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88993FC8E3F0199C6638F664 /* VoiceProvider+System.swift */; };
 		241D530017827D7F0EB604DE /* VoiceProviderFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2941B643B8A2F048A2B154E /* VoiceProviderFactory.swift */; };
 		E5BP0002 /* ShapeBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0001 /* ShapeBackport.swift */; };
@@ -619,6 +632,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				E5FP00009 /* MinisFileProvider.appex in Embed Foundation Extensions */,
 				E5E000009 /* MinisShare.appex in Embed Foundation Extensions */,
 				E5H000009 /* AgentWidgetExtension.appex in Embed Foundation Extensions */,
 			);
@@ -628,6 +642,19 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E5T000011 /* SessionEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionEntity.swift; sourceTree = "<group>"; };
+		E5T000012 /* ListSessionsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListSessionsIntent.swift; sourceTree = "<group>"; };
+		E5T000013 /* SendPromptIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendPromptIntent.swift; sourceTree = "<group>"; };
+		E5T000014 /* OpenSessionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSessionIntent.swift; sourceTree = "<group>"; };
+		E5T000015 /* MinisShortcutsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinisShortcutsProvider.swift; sourceTree = "<group>"; };
+		E5T000016 /* SendPromptResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendPromptResult.swift; sourceTree = "<group>"; };
+		E5T000017 /* GetSessionStatusIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetSessionStatusIntent.swift; sourceTree = "<group>"; };
+		E5T000018 /* QuickTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTaskIntent.swift; sourceTree = "<group>"; };
+		E5T000019 /* FollowUpSessionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowUpSessionIntent.swift; sourceTree = "<group>"; };
+		E5T00001A /* RetryRunIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryRunIntent.swift; sourceTree = "<group>"; };
+		E5T00001B /* UserMessageEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserMessageEntity.swift; sourceTree = "<group>"; };
+		E5T0000A2 /* AskMinisIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskMinisIntent.swift; sourceTree = "<group>"; };
+		E5F200016 /* ModelSelectionEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelSelectionEntity.swift; sourceTree = "<group>"; };
 		0ED149397BEA7E0408C92688 /* GroupVoiceModelsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GroupVoiceModelsView.swift; sourceTree = "<group>"; };
 		E5BP0001 /* ShapeBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeBackport.swift; sourceTree = "<group>"; };
 		E5BP0003 /* LabeledContentBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabeledContentBackport.swift; sourceTree = "<group>"; };
@@ -2769,6 +2796,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E5T000001 /* SessionEntity.swift in Sources */,
+				E5T000002 /* ListSessionsIntent.swift in Sources */,
+				E5T000003 /* SendPromptIntent.swift in Sources */,
+				E5T000004 /* OpenSessionIntent.swift in Sources */,
+				E5T000005 /* MinisShortcutsProvider.swift in Sources */,
+				E5T000006 /* SendPromptResult.swift in Sources */,
+				E5T000007 /* GetSessionStatusIntent.swift in Sources */,
+				E5T000008 /* QuickTaskIntent.swift in Sources */,
+				E5T000009 /* FollowUpSessionIntent.swift in Sources */,
+				E5T00000A /* RetryRunIntent.swift in Sources */,
+				E5T00000B /* UserMessageEntity.swift in Sources */,
+				E5T0000A1 /* AskMinisIntent.swift in Sources */,
+				E5F200006 /* ModelSelectionEntity.swift in Sources */,
 				AC0000202 /* ProviderCustomizationGenerated.swift in Sources */,
 				E54000AC1 /* DebugSkillGenerated.swift in Sources */,
 				E5FP00100 /* AppGroupChangeWatcher.swift in Sources */,
