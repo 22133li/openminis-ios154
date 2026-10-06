@@ -56,7 +56,15 @@ struct SkillsManagementView: View {
 
     var body: some View {
         List {
-            if store.skills.isEmpty {
+            if store.isLoading {
+                Section {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                }
+            } else if store.skills.isEmpty {
                 Section {
                     Text(AppLocalized("No skills installed. Tap + to import a SKILL.md from GitHub or paste one manually."))
                         .foregroundStyle(.secondary)

@@ -71,6 +71,7 @@ final class SkillStore: ObservableObject {
     static let shared = SkillStore()
 
     @Published private(set) var skills: [Skill] = []
+    @Published private(set) var isLoading = true
 
     private let fm = FileManager.default
     private var db: OpaquePointer?
@@ -96,9 +97,20 @@ final class SkillStore: ObservableObject {
     private init() {
         openDatabase()
         createTables()
+        // 修复 iOS 15.4 卡死闪退：延迟加载，不阻塞初始化
+        Task { [weak self] in
+            // 让出主线程，让 UI 先显示
+            await Task.yield()
+            await self?.doBackgroundLoad()
+        }
+    }
+
+    @MainActor
+    private func doBackgroundLoad() async {
         loadSkills()
         installBundledSkills()
         migrateMarkBundledSkillsDirty()
+        isLoading = false
     }
 
     deinit {
