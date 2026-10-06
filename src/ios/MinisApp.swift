@@ -738,10 +738,13 @@ struct MinisApp: App {
 
     // MARK: - FileProvider
 
-    private static let fileProviderDomain = NSFileProviderDomain(
+    @available(iOS 16, *)
+    private static var fileProviderDomain: NSFileProviderDomain {
+        NSFileProviderDomain(
         identifier: NSFileProviderDomainIdentifier("com.openminis.app.files"),
         displayName: "Minis"
-    )
+        )
+    }
 
     /// Bumped when we need to force-rebuild the FileProvider domain on next launch
     /// (e.g. after a bug where iOS Files ended up paused and only a full
@@ -801,6 +804,7 @@ struct MinisApp: App {
         lifecycleLog.info("[FPSyncTrace] app-updated old=\(previous ?? "none") new=\(current) mac=\(onMac)")
     }
 
+    @available(iOS 16, *)
     private static func registerFileProviderDomain() {
         logAppUpdateMarkerForFPTrace()
 
@@ -1009,6 +1013,7 @@ struct MinisApp: App {
         }
     }
 
+    @available(iOS 16, *)
     private static func signalFileProvider() {
         NSFileProviderManager(for: fileProviderDomain)?.signalEnumerator(for: .rootContainer) { error in
             if let error {

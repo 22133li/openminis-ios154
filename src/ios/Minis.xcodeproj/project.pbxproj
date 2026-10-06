@@ -3280,7 +3280,6 @@
 				E5H000001 /* AgentWidgetBundle.swift in Sources */,
 				E5H000002 /* AgentLiveActivityWidget.swift in Sources */,
 				E5H000003 /* AgentActivityAttributes.swift in Sources */,
-				E5AT00003 /* AudioTogglePlaybackIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
