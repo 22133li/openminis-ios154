@@ -632,7 +632,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				E5FP00009 /* MinisFileProvider.appex in Embed Foundation Extensions */,
 				E5E000009 /* MinisShare.appex in Embed Foundation Extensions */,
 				E5H000009 /* AgentWidgetExtension.appex in Embed Foundation Extensions */,
 			);
