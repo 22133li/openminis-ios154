@@ -3345,6 +3345,7 @@ struct ContentView: View {
         // keyboard, so normal avoidance is restored.
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { sidebarToolbarContent }
         )
     }
 
@@ -3528,6 +3529,7 @@ struct ContentView: View {
         // is open (the chat column's composer avoidance is its own subtree).
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { sidebarToolbarContent }
             /* Orphaned async block disabled for iOS 15.4
             do {
                 try await Task.sleep(nanoseconds: Self.migrationSubtitleRefreshInterval * 1_000_000_000)
