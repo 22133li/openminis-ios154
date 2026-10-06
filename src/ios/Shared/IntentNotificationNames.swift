@@ -7,3 +7,10 @@ extension Notification.Name {
     static let openSessionFromIntent = Notification.Name("openSessionFromIntent")
     static let minisUserAttachmentsMounted = Notification.Name("minisUserAttachmentsMounted")
 }
+
+/// Bridge for audio toggle Darwin notifications (extracted from AudioTogglePlaybackIntent.swift).
+/// The Intent itself requires iOS 16+, but this bridge is 15.4-compatible.
+enum AudioTogglePlaybackBridge {
+    /// Darwin notification name the widget posts and the app observes.
+    static let darwinNotificationName = "com.openminis.app.liveActivity.audioToggle"
+}
