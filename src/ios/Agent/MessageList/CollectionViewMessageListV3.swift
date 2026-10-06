@@ -42,6 +42,13 @@ struct CollectionViewMessageListV3: View {
             .onChange(of: vm.messages.count) { _ in
                 scrollToBottom(proxy: proxy)
             }
+            // 流式输出时：直接观察最后一条消息的 content 变化
+            //（ChatMessage 是 ObservableObject，content 是 @Published）
+            .background(
+                LastMessageScrollTrigger(message: vm.messages.last) {
+                    scrollToBottom(proxy: proxy)
+                }
+            )
             .onReceive(vm.forceScrollToBottom) { _ in
                 scrollToBottom(proxy: proxy)
             }
@@ -220,5 +227,26 @@ private struct ToolBlockView: View {
             }
         }
         .padding(.vertical, 2)
+    }
+}
+
+/// 观察最后一条消息的内容变化，流式输出时触发滚动到底部。
+/// ChatMessage 是 ObservableObject，直接观察其 @Published content。
+private struct LastMessageScrollTrigger: View {
+    @ObservedObject var message: ChatMessage
+    let onChange: () -> Void
+
+    init(message: ChatMessage?, onChange: @escaping () -> Void) {
+        // message 为 nil 时用一个空占位（不会触发）
+        self.message = message ?? ChatMessage(role: .user, content: "")
+        self.onChange = onChange
+    }
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onChange(of: message.content) { _ in
+                onChange()
+            }
     }
 }
