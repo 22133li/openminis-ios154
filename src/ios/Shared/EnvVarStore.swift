@@ -39,16 +39,39 @@ final class EnvVarStore: ObservableObject {
 
     @Published private(set) var entries: [EnvVarEntry] = []
 
-    private let fileURL: URL
+    private var fileURL: URL
     nonisolated private static let keychainService = "com.openminis.app.envvar"
 
     init() {
-        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
-        let baseURL = libraryURL.appendingPathComponent("MinisChat", isDirectory: true)
-        try? FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true)
+        // 修复 iOS 15.4 点击环境变量闪退：init 不做文件 IO，
+        // 避免主线程阻塞被看门狗杀掉（SIGKILL）。
+        // fileURL 先用临时值，后台加载完成后再更新。
+        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        let baseURL = (libraryURL ?? FileManager.default.temporaryDirectory)
+            .appendingPathComponent("MinisChat", isDirectory: true)
         self.fileURL = baseURL.appendingPathComponent("env-vars.json")
-        self.entries = Self.loadEntries(from: fileURL)
-        scheduleLegacyRecordCleanupIfNeeded()
+        // 后台加载，完成后回主线程发布
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            let url = await self.resolveFileURL()
+            let loaded = Self.loadEntries(from: url)
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                // 更新真实 fileURL（init 时可能用了 temporaryDirectory 兜底）
+                self.fileURL = url
+                self.entries = loaded
+                self.scheduleLegacyRecordCleanupIfNeeded()
+            }
+        }
+    }
+
+    /// 后台解析真实的文件 URL（创建目录）
+    private func resolveFileURL() async -> URL {
+        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        let baseURL = (libraryURL ?? FileManager.default.temporaryDirectory)
+            .appendingPathComponent("MinisChat", isDirectory: true)
+        try? FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true)
+        return baseURL.appendingPathComponent("env-vars.json")
     }
 
     // MARK: - Legacy whole-file record cleanup

@@ -95,22 +95,108 @@ final class SkillStore: ObservableObject {
     }
 
     private init() {
+        // 修复 iOS 15.4 点击技能页 SIGKILL 闪退：
+        // openDatabase/createTables 是毫秒级（sqlite3_open + CREATE IF NOT EXISTS），
+        // 可以在主线程做。loadSkills/installBundledSkills/migrate 是秒级文件 IO，
+        // 必须在后台做。之前 doBackgroundLoad 标了 @MainActor，IO 全在主线程，
+        // 主线程阻塞 3.7 秒被看门狗杀掉。
         openDatabase()
         createTables()
-        // 修复 iOS 15.4 卡死闪退：延迟加载，不阻塞初始化
-        Task { [weak self] in
-            // 让出主线程，让 UI 先显示
-            await Task.yield()
-            await self?.doBackgroundLoad()
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            // 先在主线程取 DB 句柄和目录（很快）
+            let ctx: (db: OpaquePointer?, skillsDir: URL, rootfsDir: URL)? = await MainActor.run { [weak self] in
+                guard let self, let db = self.db else { return nil }
+                return (db, self.skillsDir, self.rootfsSkillsDir)
+            }
+            guard let ctx else {
+                await MainActor.run { [weak self] in self?.isLoading = false }
+                return
+            }
+            // 后台：加载 skills 数据（读 DB + 逐个读 SKILL.md 文件，最慢的部分）
+            // static 方法，不触碰 @MainActor 隔离的状态
+            let loaded = Self.loadSkillsDataBackground(
+                db: ctx.db,
+                skillsDir: ctx.skillsDir,
+                rootfsDir: ctx.rootfsDir
+            )
+            // 回主线程：一次性更新 UI
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.skills = loaded
+                self.isLoading = false
+            }
+            // 主线程：安装 bundled skills + 迁移（此时 UI 已显示，
+            // installBundledSkills 只是版本检查很快，migrate 扫目录也很快，
+            // 真正的文件拷贝在 importSkill 内部按需做）
+            await MainActor.run { [weak self] in
+                self?.installBundledSkills()
+                self?.migrateMarkBundledSkillsDirty()
+            }
         }
     }
 
-    @MainActor
-    private func doBackgroundLoad() async {
-        loadSkills()
-        installBundledSkills()
-        migrateMarkBundledSkillsDirty()
-        isLoading = false
+    /// 后台加载 skills 数据（static，不触碰 @MainActor 状态）。
+    /// 做 DB 查询 + 逐个读 SKILL.md 文件，是初始化最慢的部分。
+    /// 注意：不做 discoverNewSkillsOnDisk（orphan 处理），那个在 reload() 时做。
+    nonisolated private static func loadSkillsDataBackground(
+        db: OpaquePointer?,
+        skillsDir: URL,
+        rootfsDir: URL
+    ) -> [Skill] {
+        var result: [Skill] = []
+        let fm = FileManager.default
+        let sql = "SELECT id, name, description, version, import_source, is_enabled, installed_at, updated_at, use_count FROM skills"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
+        defer { sqlite3_finalize(stmt) }
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let id = String(cString: sqlite3_column_text(stmt, 0))
+            let name = String(cString: sqlite3_column_text(stmt, 1))
+            let description = String(cString: sqlite3_column_text(stmt, 2))
+            let version = String(cString: sqlite3_column_text(stmt, 3))
+            let importSourceStr = String(cString: sqlite3_column_text(stmt, 4))
+            let isEnabled = sqlite3_column_int(stmt, 5) != 0
+            let installedAt = Date(timeIntervalSince1970: sqlite3_column_double(stmt, 6))
+            let updatedAt = Date(timeIntervalSince1970: sqlite3_column_double(stmt, 7))
+            let useCount = sqlite3_column_double(stmt, 8)
+
+            let skillFile = skillsDir.appendingPathComponent(id).appendingPathComponent("SKILL.md")
+            var resolvedName = name
+            var resolvedDesc = description
+            var body: String = ""
+            if let content = try? String(contentsOf: skillFile, encoding: .utf8) {
+                let parsed = Self.parse(skillMD: content)
+                body = parsed.body
+                let nameStale = (name == Self.defaultSkillName && parsed.name != Self.defaultSkillName)
+                let descStale = (description == "|" || description == ">" || description.isEmpty)
+                    && !parsed.description.isEmpty
+                if nameStale { resolvedName = parsed.name }
+                if descStale { resolvedDesc = parsed.description }
+                // 注意：后台不做 dbUpdateSkillMeta（需要 MainActor），
+                // stale 数据在 reload() 时修正
+            } else {
+                let rootfsFile = rootfsDir.appendingPathComponent(id).appendingPathComponent("SKILL.md")
+                if let rootfsContent = try? String(contentsOf: rootfsFile, encoding: .utf8) {
+                    let parsed = Self.parse(skillMD: rootfsContent)
+                    body = parsed.body
+                }
+            }
+            let skill = Skill(
+                id: id,
+                name: resolvedName,
+                description: resolvedDesc,
+                version: version,
+                importSource: SkillImportSource.fromDB(importSourceStr),
+                isEnabled: isEnabled,
+                installedAt: installedAt,
+                updatedAt: updatedAt,
+                body: body,
+                useCount: useCount
+            )
+            result.append(skill)
+        }
+        return result
     }
 
     deinit {
@@ -437,7 +523,7 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
         var body: String = ""
     }
 
-    static func parse(skillMD content: String) -> ParsedSkillMD {
+    nonisolated static func parse(skillMD content: String) -> ParsedSkillMD {
         var result = ParsedSkillMD()
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -1409,7 +1495,23 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
     /// Re-scan DB and disk for new/updated skills. Call after agent creates a skill file,
     /// or when returning to foreground.
     func reload() {
-        loadSkills()
+        // 修复：reload 也在后台做，避免 Skills 页 onAppear 阻塞主线程
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            let ctx: (db: OpaquePointer?, skillsDir: URL, rootfsDir: URL)? = await MainActor.run { [weak self] in
+                guard let self, let db = self.db else { return nil }
+                return (db, self.skillsDir, self.rootfsSkillsDir)
+            }
+            guard let ctx else { return }
+            let loaded = Self.loadSkillsDataBackground(
+                db: ctx.db,
+                skillsDir: ctx.skillsDir,
+                rootfsDir: ctx.rootfsDir
+            )
+            await MainActor.run { [weak self] in
+                self?.skills = loaded
+            }
+        }
     }
 
     /// Rescan disk vs the previous in-memory snapshot, then markDirty
