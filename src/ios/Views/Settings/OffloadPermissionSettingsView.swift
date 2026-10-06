@@ -20,7 +20,7 @@ struct OffloadPermissionSettingsView: View {
             Section {
                 Toggle("Allow minis-config", isOn: $configGate.enabled)
             } header: {
-                Text("Configuration Tool")
+                Text(AppLocalized("Configuration Tool"))
             } footer: {
                 Text("When disabled, the agent cannot read or modify any settings via minis-config. The change history at Logs → Config Changes remains accessible. The agent will receive a permission_denied error and can guide you via deep links instead.")
             }
@@ -43,7 +43,7 @@ struct OffloadPermissionSettingsView: View {
                           systemImage: "trash")
                 }
             } header: {
-                Text("Voice Correction Learning")
+                Text(AppLocalized("Voice Correction Learning"))
             } footer: {
                 Text("When enabled, your manual fixes to voice transcripts (original → corrected pairs), accepted/rejected AI corrections, and frequently typed terms are stored in a local on-device database to make future voice corrections smarter. Nothing is uploaded. Default is off; existing data stays until you clear it.")
             }

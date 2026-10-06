@@ -114,7 +114,7 @@ struct AboutView: View {
                 Link(destination: URL(string: "https://github.com/OpenMinis")!) {
                     Label {
                         HStack {
-                            Text("GitHub Repository")
+                            Text(AppLocalized("GitHub Repository"))
                                 .foregroundStyle(Color(UIColor.label))
                             Spacer()
                             Image(systemName: "arrow.up.right.square")
@@ -128,7 +128,7 @@ struct AboutView: View {
                 Link(destination: URL(string: "https://github.com/OpenMinis/OpenMinis/issues")!) {
                     Label {
                         HStack {
-                            Text("Report an Issue")
+                            Text(AppLocalized("Report an Issue"))
                                 .foregroundStyle(Color(UIColor.label))
                             Spacer()
                             Image(systemName: "arrow.up.right.square")

@@ -35,7 +35,7 @@ private struct OffloadPermissionDialogContent: View {
                             .font(.system(size: 36))
                             .foregroundStyle(.orange)
 
-                        Text("Permission Request")
+                        Text(AppLocalized("Permission Request"))
                             .font(.title3.bold())
 
                         Text("The agent wants to use **\(request.commandName)**")
@@ -92,7 +92,7 @@ private struct OffloadPermissionDialogContent: View {
                 Button {
                     OffloadPermissionManager.shared.respond(to: request.id, allowed: true)
                 } label: {
-                    Text("Allow in Session")
+                    Text(AppLocalized("Allow in Session"))
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -103,7 +103,7 @@ private struct OffloadPermissionDialogContent: View {
                 Button {
                     OffloadPermissionManager.shared.respond(to: request.id, allowed: false)
                 } label: {
-                    Text("Deny in Session")
+                    Text(AppLocalized("Deny in Session"))
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)

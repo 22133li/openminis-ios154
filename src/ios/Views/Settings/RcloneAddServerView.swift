@@ -187,7 +187,7 @@ struct RcloneAddServerView: View {
                 }
             }
         } header: {
-            Text("Type")
+            Text(AppLocalized("Type"))
         }
     }
 
@@ -201,7 +201,7 @@ struct RcloneAddServerView: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
             } header: {
-                Text("Name")
+                Text(AppLocalized("Name"))
             } footer: {
                 Text("Shown in the destination list.")
             }
@@ -221,7 +221,7 @@ struct RcloneAddServerView: View {
                                 .font(.footnote.weight(.medium))
                                 .foregroundStyle(.secondary)
                             if f.isOptional {
-                                Text("Optional")
+                                Text(AppLocalized("Optional"))
                                     .font(.caption2)
                                     .foregroundStyle(.tertiary)
                             }
@@ -246,7 +246,7 @@ struct RcloneAddServerView: View {
                     .padding(.vertical, 2)
                 }
             } header: {
-                Text("Connection")
+                Text(AppLocalized("Connection"))
             } footer: {
                 // Say where the password goes. "Stored in the Keychain" is the
                 // difference between this and typing a password into a text
@@ -302,7 +302,7 @@ struct RcloneAddServerView: View {
             if certificateRejected {
                 Toggle(isOn: $allowInsecureTLS) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Trust this certificate")
+                        Text(AppLocalized("Trust this certificate"))
                         Text("The server's certificate isn't signed by a known authority — usual for a NAS using its own certificate.")
                             .font(.caption)
                             .foregroundStyle(.secondary)

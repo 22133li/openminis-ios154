@@ -43,7 +43,7 @@ struct MountedFoldersSettingsView: View {
                         Image(systemName: "externaldrive.badge.plus")
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary)
-                        Text("No mounted folders")
+                        Text(AppLocalized("No mounted folders"))
                             .font(.headline)
                         Text("Tap + to pick a folder from Files (e.g. an Obsidian vault in iCloud Drive).")
                             .font(.caption)
@@ -78,7 +78,7 @@ struct MountedFoldersSettingsView: View {
                     }
                 } header: {
                     HStack {
-                        Text("Mounted Folders")
+                        Text(AppLocalized("Mounted Folders"))
                         Spacer()
                         Text("\(model.entries.count) / \(MountedFoldersManager.maxMountCount)")
                             .font(.caption.monospacedDigit())
@@ -338,7 +338,7 @@ private struct AddMountSheet: View {
                 if let url = sourceURL {
                     Section {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Source path")
+                            Text(AppLocalized("Source path"))
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
                             Text(url.path)
@@ -354,7 +354,7 @@ private struct AddMountSheet: View {
                     }
                 }
 
-                Section(header: Text("Mount name")) {
+                Section(header: Text(AppLocalized("Mount name"))) {
                     TextField("name", text: $name)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -366,7 +366,7 @@ private struct AddMountSheet: View {
                 Section {
                     Toggle(isOn: $allowWrite) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Allow writes")
+                            Text(AppLocalized("Allow writes"))
                             Text(allowWrite
                                 ? AppLocalized("AI, shell, and Files browser can modify files in this mount.")
                                 : AppLocalized("This mount will be exposed as read-only. Useful for reference vaults you don't want the AI to touch."))
@@ -375,7 +375,7 @@ private struct AddMountSheet: View {
                         }
                     }
                 } header: {
-                    Text("Permissions")
+                    Text(AppLocalized("Permissions"))
                 } footer: {
                     Text("You can change the write permission later from the mount details page.")
                         .font(.caption)

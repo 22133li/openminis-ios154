@@ -155,7 +155,7 @@ struct BackupDestinationPicker: View {
                 }
             }
         } header: {
-            Text("Saved Destinations")
+            Text(AppLocalized("Saved Destinations"))
         } footer: {
             Text("Backups are copied to the enabled destinations. Tap for details, or swipe to remove.")
         }
@@ -195,7 +195,7 @@ struct BackupDestinationPicker: View {
                 }
             }
         } header: {
-            Text("Add New")
+            Text(AppLocalized("Add New"))
         }
     }
 

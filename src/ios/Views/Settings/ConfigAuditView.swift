@@ -120,7 +120,7 @@ struct ConfigAuditView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.uturn.backward")
-                        Text("Revert")
+                        Text(AppLocalized("Revert"))
                     }
                     .font(.caption)
                 }

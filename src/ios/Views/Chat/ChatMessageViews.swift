@@ -809,7 +809,7 @@ struct ChatMessageRow: View {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.clockwise")
                             .font(.caption.weight(.semibold))
-                        Text("Retry")
+                        Text(AppLocalized("Retry"))
                             .font(.caption.weight(.semibold))
                     }
                     .foregroundStyle(ChatColors.primaryText)
@@ -844,7 +844,7 @@ struct ChatMessageRow: View {
                     HStack(spacing: 4) {
                         Image(systemName: "play.fill")
                             .font(.caption.weight(.semibold))
-                        Text("Resume")
+                        Text(AppLocalized("Resume"))
                             .font(.caption.weight(.semibold))
                     }
                     .foregroundStyle(.white)

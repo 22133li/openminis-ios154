@@ -58,8 +58,8 @@ struct LogManagementView: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("Tab", selection: $tab) {
-                Text("Logs").tag("logs")
-                Text("Config Changes").tag("config-audit")
+                Text(AppLocalized("Logs")).tag("logs")
+                Text(AppLocalized("Config Changes")).tag("config-audit")
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)
@@ -96,8 +96,8 @@ struct LogManagementView: View {
                     Picker("Detail Level", selection: $loggingManager.level) {
                         // Two fixed cases, so the localized keys are literals
                         // (AppLocalized needs a literal, not a runtime String).
-                        Text("Info").tag(AppLogger.Level.info)
-                        Text("Verbose").tag(AppLogger.Level.verbose)
+                        Text(AppLocalized("Info")).tag(AppLogger.Level.info)
+                        Text(AppLocalized("Verbose")).tag(AppLogger.Level.verbose)
                     }
                 }
             } footer: {
@@ -110,7 +110,7 @@ struct LogManagementView: View {
 
             Section("Log Files") {
                 if vm.runningFiles.isEmpty {
-                    Text("No log files")
+                    Text(AppLocalized("No log files"))
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(vm.runningFiles) { file in

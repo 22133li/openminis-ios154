@@ -297,12 +297,12 @@ struct StorageManagementView: View {
                 }
                 storageRow(icon: "ellipsis", color: .gray, label: "Other", value: vm.format(vm.otherSize))
                 HStack {
-                    Text("Total")
+                    Text(AppLocalized("Total"))
                     Spacer()
                     Text(vm.format(vm.containerTotalSize))
                 }
             } header: {
-                Text("Overview")
+                Text(AppLocalized("Overview"))
             } footer: {
                 Text("Total is the app's full container size and should match the figure iOS Settings shows for Minis. \"Other\" covers everything not itemized above, so the categories always add up to the total.")
             }
@@ -315,7 +315,7 @@ struct StorageManagementView: View {
                         Spacer()
                     }
                 } else if vm.sessions.isEmpty {
-                    Text("No sessions")
+                    Text(AppLocalized("No sessions"))
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(vm.sessions) { session in
@@ -400,7 +400,7 @@ struct SessionStorageDetailView: View {
                         }
                     }
                 } else {
-                    Text("No minis files")
+                    Text(AppLocalized("No minis files"))
                         .foregroundStyle(.secondary)
                 }
             }

@@ -160,7 +160,7 @@ struct BackupSettingsView: View {
                         Text("50 MB").tag(50)
                         Text("100 MB").tag(100)
                         Text("500 MB").tag(500)
-                        Text("Unlimited").tag(BackupSettingsView.unlimitedTag)
+                        Text(AppLocalized("Unlimited")).tag(BackupSettingsView.unlimitedTag)
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "doc.zipper")
@@ -174,7 +174,7 @@ struct BackupSettingsView: View {
                     .pickerStyle(.menu)
                 }
             } header: {
-                Text("Include")
+                Text(AppLocalized("Include"))
             } footer: {
                 // The cap's consequence is stated, because §3.4's whole point is
                 // that a skipped file leaves a tombstone rather than silently
@@ -213,7 +213,7 @@ struct BackupSettingsView: View {
                             .frame(width: 28, height: 28)
                             .background(encryptBackup ? Color.green : Color.gray,
                                         in: Circle())
-                        Text("Encrypt Backup")
+                        Text(AppLocalized("Encrypt Backup"))
                     }
                 }
                 if encryptBackup {
@@ -230,7 +230,7 @@ struct BackupSettingsView: View {
                     }
                 }
             } header: {
-                Text("Encryption")
+                Text(AppLocalized("Encryption"))
             } footer: {
                 if encryptBackup {
                     // Both halves are load-bearing: what the passphrase covers,
@@ -451,7 +451,7 @@ struct BackupSettingsView: View {
                         .font(.footnote)
                     }
                 } header: {
-                    Text("Backup Ready")
+                    Text(AppLocalized("Backup Ready"))
                 } footer: {
                     if localCopyRemoved {
                         Text("Delivered to all \(deliveryResults.count) destination(s) and verified. The copy on this iPhone was removed to save space.")
@@ -750,7 +750,7 @@ struct BackupSettingsView: View {
                     .onChange(of: deviceNameDraft) { _ in commitDeviceName() }
             }
         } header: {
-            Text("Device Name")
+            Text(AppLocalized("Device Name"))
         } footer: {
             // Says what the name is FOR — the whole point is the filename —
             // and how to get back to the default, which an empty field does
@@ -803,7 +803,7 @@ struct BackupSettingsView: View {
                     }
                 }
             } header: {
-                Text("Backup History")
+                Text(AppLocalized("Backup History"))
             } footer: {
                 Text("Records from the past month. Older ones are removed automatically.")
             }
@@ -957,7 +957,7 @@ struct BackupSettingsView: View {
                     .foregroundStyle(.orange)
             }
         } header: {
-            Text("Backup Destinations")
+            Text(AppLocalized("Backup Destinations"))
         } footer: {
             if eligible.isEmpty {
                 Text("Add a folder to also copy each backup there — including a server connected in the Files app (SMB, WebDAV) or a cloud provider.")

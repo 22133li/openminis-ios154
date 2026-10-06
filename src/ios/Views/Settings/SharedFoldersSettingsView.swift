@@ -88,7 +88,7 @@ private struct SharedFolderRow: View {
                         .font(.body)
                     accessBadge
                     if !isVisible {
-                        Text("Hidden")
+                        Text(AppLocalized("Hidden"))
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 5)

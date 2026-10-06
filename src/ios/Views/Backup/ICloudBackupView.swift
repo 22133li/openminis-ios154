@@ -103,7 +103,7 @@ struct ICloudBackupView: View {
 
             if manager.availableBackups.isEmpty && manager.isICloudAvailable {
                 Section {
-                    Text("No backups found")
+                    Text(AppLocalized("No backups found"))
                         .foregroundColor(.secondary)
                 }
             }

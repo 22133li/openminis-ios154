@@ -72,14 +72,14 @@ struct CloudSyncSettingsView: View {
             Toggle("Enable iCloud Sync", isOn: $engine.isEnabled)
 
             HStack {
-                Text("Status")
+                Text(AppLocalized("Status"))
                 Spacer()
                 statusBadge
             }
 
             if let date = engine.lastSyncDate {
                 HStack {
-                    Text("Last synced")
+                    Text(AppLocalized("Last synced"))
                     Spacer()
                     Text(date, format: .dateTime.month(.abbreviated).day().hour().minute())
                         .foregroundStyle(.secondary)
@@ -94,7 +94,7 @@ struct CloudSyncSettingsView: View {
         case .idle:
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
-                Text("Up to date")
+                Text(AppLocalized("Up to date"))
             }
             .foregroundStyle(.green)
             .font(.caption)
@@ -117,7 +117,7 @@ struct CloudSyncSettingsView: View {
         case .disabled:
             HStack(spacing: 4) {
                 Image(systemName: "minus.circle.fill")
-                Text("Disabled")
+                Text(AppLocalized("Disabled"))
             }
             .foregroundStyle(.secondary)
             .font(.caption)
@@ -129,13 +129,13 @@ struct CloudSyncSettingsView: View {
     private var uploadSection: some View {
         Section {
             HStack {
-                Text("Name")
+                Text(AppLocalized("Name"))
                 Spacer()
                 Text(DeviceIdentity.deviceName)
                     .foregroundStyle(.secondary)
             }
             HStack {
-                Text("Local Sessions")
+                Text(AppLocalized("Local Sessions"))
                 Spacer()
                 Text("\(localSessionCount)")
                     .foregroundStyle(.secondary)
@@ -144,7 +144,7 @@ struct CloudSyncSettingsView: View {
             Toggle(isOn: $engine.syncSessions) {
                 HStack {
                     settingsIcon("bubble.left.and.bubble.right", color: .blue)
-                    Text("Chat Sessions")
+                    Text(AppLocalized("Chat Sessions"))
                     Spacer()
                     Text(formatSize(sessionsSize))
                         .font(.caption)
@@ -155,13 +155,13 @@ struct CloudSyncSettingsView: View {
                 get: { engine.maxSyncFileSize },
                 set: { engine.maxSyncFileSize = $0 }
             )) {
-                Text("Not Sync").tag(0)
+                Text(AppLocalized("Not Sync")).tag(0)
                 Text("512 KB").tag(512 * 1024)
                 Text("1 MB").tag(1_048_576)
                 Text("5 MB").tag(5 * 1_048_576)
                 Text("10 MB").tag(10 * 1_048_576)
                 Text("50 MB").tag(50 * 1_048_576)
-                Text("Unlimited").tag(Int.max)
+                Text(AppLocalized("Unlimited")).tag(Int.max)
             } label: {
                 HStack {
                     settingsIcon("arrow.up.arrow.down.circle", color: .gray)
@@ -171,7 +171,7 @@ struct CloudSyncSettingsView: View {
             Toggle(isOn: $engine.syncSkills) {
                 HStack {
                     settingsIcon("puzzlepiece.extension", color: .orange)
-                    Text("Skills")
+                    Text(AppLocalized("Skills"))
                     Spacer()
                     Text(formatSize(skillsSize))
                         .font(.caption)
@@ -181,7 +181,7 @@ struct CloudSyncSettingsView: View {
             Toggle(isOn: $engine.syncProviders) {
                 HStack {
                     settingsIcon("server.rack", color: .teal)
-                    Text("Providers")
+                    Text(AppLocalized("Providers"))
                     Spacer()
                     Text(formatSize(providersSize))
                         .font(.caption)
@@ -191,7 +191,7 @@ struct CloudSyncSettingsView: View {
             Toggle(isOn: $engine.syncEnvironments) {
                 HStack {
                     settingsIcon("terminal", color: .mint)
-                    Text("Environments")
+                    Text(AppLocalized("Environments"))
                     Spacer()
                     Text(formatSize(envVarsSize))
                         .font(.caption)
@@ -233,7 +233,7 @@ struct CloudSyncSettingsView: View {
             } label: {
                 HStack {
                     settingsIcon("arrow.triangle.2.circlepath.icloud", color: .blue)
-                    Text("Force Full Sync")
+                    Text(AppLocalized("Force Full Sync"))
                         .foregroundStyle(Color.primary)
                     if case .syncing = engine.syncStatus {
                         Spacer()
@@ -262,7 +262,7 @@ struct CloudSyncSettingsView: View {
             } label: {
                 HStack {
                     settingsIcon("trash", color: .red)
-                    Text("Delete iCloud Data")
+                    Text(AppLocalized("Delete iCloud Data"))
                         .foregroundStyle(Color.primary)
                     if isDeletingCloud {
                         Spacer()
@@ -273,7 +273,7 @@ struct CloudSyncSettingsView: View {
             }
             .disabled(isDeletingCloud)
         } header: {
-            Text("Danger Zone")
+            Text(AppLocalized("Danger Zone"))
         } footer: {
             Text("Permanently erase all Minis data from iCloud. Local data on this device is not affected.")
         }
@@ -575,7 +575,7 @@ struct RemoteSkillsListView: View {
                                     if ok { copiedIds.insert(skill.id) }
                                 }
                             } label: {
-                                Text("Copy to My Device")
+                                Text(AppLocalized("Copy to My Device"))
                                     .font(.caption)
                             }
                             .buttonStyle(.bordered)
@@ -634,7 +634,7 @@ struct RemoteMemoriesListView: View {
                                     if ok { copiedIds.insert(memory.id) }
                                 }
                             } label: {
-                                Text("Copy to My Device")
+                                Text(AppLocalized("Copy to My Device"))
                                     .font(.caption)
                             }
                             .buttonStyle(.bordered)

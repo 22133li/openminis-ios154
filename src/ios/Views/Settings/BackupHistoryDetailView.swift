@@ -149,7 +149,7 @@ struct BackupHistoryDetailView: View {
                 // solving the width conflict by shrinking the label instead of
                 // wrapping the value.
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text("File")
+                    Text(AppLocalized("File"))
                     Spacer(minLength: 0)
                     Text(name)
                         .multilineTextAlignment(.trailing)
@@ -186,7 +186,7 @@ struct BackupHistoryDetailView: View {
                 Text(e).font(.footnote).foregroundStyle(.red)
             }
         } header: {
-            Text("Summary")
+            Text(AppLocalized("Summary"))
         } footer: {
             Text("Included: \(record.categories.map(displayName).joined(separator: ", "))")
         }
@@ -286,7 +286,7 @@ struct BackupHistoryDetailView: View {
                 }
             }
         } header: {
-            Text("Destinations")
+            Text(AppLocalized("Destinations"))
         }
     }
 

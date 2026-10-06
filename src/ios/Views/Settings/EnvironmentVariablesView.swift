@@ -43,7 +43,7 @@ struct EnvironmentVariablesView: View {
                         Image(systemName: "terminal")
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
-                        Text("No Environment Variables")
+                        Text(AppLocalized("No Environment Variables"))
                             .font(.headline)
                         Text("Add variables like API keys or tokens that will be available in the shell environment.")
                             .font(.caption)
@@ -242,7 +242,7 @@ private struct EnvVarFormSheet: View {
                     .submitLabel(.next)
                     .onSubmit { focusedField = .value }
                 } header: {
-                    Text("Name")
+                    Text(AppLocalized("Name"))
                 } footer: {
                     if !key.isEmpty && !isValid {
                         Text("Must start with a letter and contain only letters, digits, and underscores.")
@@ -280,7 +280,7 @@ private struct EnvVarFormSheet: View {
                             showingDeleteConfirm = true
                         } label: {
                             Label {
-                                Text("Delete Variable")
+                                Text(AppLocalized("Delete Variable"))
                             } icon: {
                                 Image(systemName: "trash.fill")
                                     .font(.system(size: 9))

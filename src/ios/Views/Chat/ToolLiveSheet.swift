@@ -273,7 +273,7 @@ private struct LazyRevealChunks<ChunkView: View>: View {
             Button {
                 revealed = chunks.count
             } label: {
-                Text("Load all")
+                Text(AppLocalized("Load all"))
                     .font(.system(size: 13, weight: .medium))
             }
         }
@@ -1107,7 +1107,7 @@ struct ToolLiveSheet: View {
                 // out to the step pill's trailing column (under the
                 // elapsed-duration "5s" text) so it lives next to where the
                 // user is already scanning timing info.
-                Text("Minis Computer")
+                Text(AppLocalized("Minis Computer"))
                     .font(.system(size: 15, weight: .semibold))
 
                 Spacer()
@@ -1528,7 +1528,7 @@ struct ToolLiveSheet: View {
                                 Image(systemName: "globe")
                                     .font(.system(size: 12))
                                     .foregroundStyle(Color(UIColor.secondaryLabel))
-                                Text("Result")
+                                Text(AppLocalized("Result"))
                                     .font(.system(size: 13, weight: .medium))
                                     .foregroundStyle(Color(UIColor.label))
                                     .lineLimit(1)
@@ -1609,7 +1609,7 @@ struct ToolLiveSheet: View {
                             Image(systemName: "globe")
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color(UIColor.secondaryLabel))
-                            Text("Result")
+                            Text(AppLocalized("Result"))
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(Color(UIColor.label))
                                 .lineLimit(1)
@@ -2014,7 +2014,7 @@ struct ToolLiveSheet: View {
                 Image(systemName: "chevron.left.forwardslash.chevron.right")
                     .font(.system(size: 11))
                     .foregroundStyle(.orange.opacity(0.7))
-                Text("JavaScript")
+                Text(AppLocalized("JavaScript"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.orange)
                     .lineLimit(1)
@@ -2285,7 +2285,7 @@ struct ToolLiveSheet: View {
                 Button {
                     revealedChunkCount = totalChunks
                 } label: {
-                    Text("Load all")
+                    Text(AppLocalized("Load all"))
                         .font(.system(size: 13, weight: .medium))
                 }
             }
@@ -2630,7 +2630,7 @@ struct ToolLiveSheet: View {
                         Circle()
                             .fill(.green)
                             .frame(width: 7, height: 7)
-                        Text("Live")
+                        Text(AppLocalized("Live"))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(ChatColors.primaryText)
                     }

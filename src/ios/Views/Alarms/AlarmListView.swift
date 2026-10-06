@@ -226,7 +226,7 @@ struct AlarmListView: View {
                         Image(systemName: "alarm")
                             .font(.system(size: 48, weight: .thin))
                             .foregroundStyle(.secondary)
-                        Text("No Alarms")
+                        Text(AppLocalized("No Alarms"))
                             .font(.title3)
                             .foregroundStyle(.secondary)
                     }
@@ -261,7 +261,7 @@ struct AlarmListView: View {
                     Button(role: .destructive) {
                         showClearConfirm = true
                     } label: {
-                        Text("Clear All")
+                        Text(AppLocalized("Clear All"))
                     }
                     .disabled(vm.alarms.isEmpty)
                     .opacity(vm.alarms.isEmpty ? 0 : 1)

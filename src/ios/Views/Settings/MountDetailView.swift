@@ -220,7 +220,7 @@ struct MountDetailView: View {
                     .foregroundStyle(.red)
             }
         } header: {
-            Text("Name")
+            Text(AppLocalized("Name"))
         } footer: {
             Text("Becomes the folder name under /var/minis/mounts/")
         }
@@ -230,7 +230,7 @@ struct MountDetailView: View {
         Section {
             Toggle(isOn: $allowWrite) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Allow writes")
+                    Text(AppLocalized("Allow writes"))
                     Text(allowWrite
                          ? AppLocalized("AI, shell, and Files browser can modify files in this mount.")
                          : AppLocalized("This mount is exposed as read-only to protect it from accidental edits."))
@@ -239,7 +239,7 @@ struct MountDetailView: View {
                 }
             }
         } header: {
-            Text("Permissions")
+            Text(AppLocalized("Permissions"))
         } footer: {
             Text("When off, the iSH shell and AI tools cannot create, edit, or delete files in this mount.")
         }
@@ -249,7 +249,7 @@ struct MountDetailView: View {
         Section {
             Toggle(isOn: $visibleInFiles) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Show in Files app")
+                    Text(AppLocalized("Show in Files app"))
                     Text(visibleInFiles
                          ? AppLocalized("This folder appears in Files → On My iPhone → Minis.")
                          : AppLocalized("This folder is hidden from the iOS Files app."))
@@ -263,7 +263,7 @@ struct MountDetailView: View {
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Files app")
+            Text(AppLocalized("Files app"))
         }
     }
 
@@ -273,7 +273,7 @@ struct MountDetailView: View {
                 showingBrowser = true
             } label: {
                 Label {
-                    Text("Browse Files")
+                    Text(AppLocalized("Browse Files"))
                 } icon: {
                     Image(systemName: "folder.fill")
                         .font(.system(size: 9))
@@ -291,7 +291,7 @@ struct MountDetailView: View {
                 showingUnmountConfirm = true
             } label: {
                 Label {
-                    Text("Unmount")
+                    Text(AppLocalized("Unmount"))
                 } icon: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 9))

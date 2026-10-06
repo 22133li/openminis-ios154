@@ -76,7 +76,7 @@ struct EnhancedBackgroundSettingsView: View {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Rate")
+                        Text(AppLocalized("Rate"))
                         Spacer()
                         Text(String(format: "%.2f", keepAlive.speechRate))
                             .foregroundColor(.secondary)
@@ -91,7 +91,7 @@ struct EnhancedBackgroundSettingsView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Pitch")
+                        Text(AppLocalized("Pitch"))
                         Spacer()
                         Text(String(format: "%.1f", keepAlive.speechPitch))
                             .foregroundColor(.secondary)
@@ -102,7 +102,7 @@ struct EnhancedBackgroundSettingsView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Volume")
+                        Text(AppLocalized("Volume"))
                         Spacer()
                         Text(String(format: "%.1f", keepAlive.speechVolume))
                             .foregroundColor(.secondary)
@@ -111,14 +111,14 @@ struct EnhancedBackgroundSettingsView: View {
                     Slider(value: $keepAlive.speechVolume, in: 0.0...1.0, step: 0.1)
                 }
             } header: {
-                Text("Speech")
+                Text(AppLocalized("Speech"))
             }
 
             Section {
                 voicePicker(label: "English Voice", language: "en", selection: $keepAlive.speechVoiceEn)
                 voicePicker(label: "中文语音", language: "zh", selection: $keepAlive.speechVoiceZh)
             } header: {
-                Text("Voice")
+                Text(AppLocalized("Voice"))
             } footer: {
                 Text("Choose a specific voice for each language. Download more voices in Settings > Accessibility > Spoken Content > Voices.")
             }
@@ -171,13 +171,13 @@ struct EnhancedBackgroundSettingsView: View {
                 }
 
                 HStack {
-                    Text("Location Permission")
+                    Text(AppLocalized("Location Permission"))
                     Spacer()
                     Text(locationStatusText)
                         .foregroundColor(locationStatusColor)
                 }
             } header: {
-                Text("Status")
+                Text(AppLocalized("Status"))
             } footer: {
                 Text("How long the app can keep working after moving to the background. Without any keep-alive mechanism, iOS suspends apps after roughly 30 seconds; enabling Location Tracking (and granting location permission) or Background Speak extends this for the duration of a task.")
             }
@@ -209,7 +209,7 @@ struct EnhancedBackgroundSettingsView: View {
             .sorted { $0.name < $1.name }
 
         Picker(label, selection: selection) {
-            Text("System Default").tag("")
+            Text(AppLocalized("System Default")).tag("")
             ForEach(voices, id: \.identifier) { voice in
                 Text(voiceDisplayName(voice)).tag(voice.identifier)
             }
