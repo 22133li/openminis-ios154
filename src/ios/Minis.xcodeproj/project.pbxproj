@@ -3086,7 +3086,6 @@
 				E5G000002 /* AgentLiveActivityManager.swift in Sources */,
 				E5G000003 /* EnhancedBackgroundSettingsView.swift in Sources */,
 				E5G000004 /* AgentActivityAttributes.swift in Sources */,
-				E5AT00004 /* AudioTogglePlaybackIntent.swift in Sources */,
 				E5I000001 /* SpeechRecognitionManager.swift in Sources */,
 				E5I000002 /* AudioWaveformView.swift in Sources */,
 				E5J000001 /* LoggingManager.swift in Sources */,
