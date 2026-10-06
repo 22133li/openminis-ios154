@@ -27,6 +27,7 @@ private let logger = AppLogger(category: "ShortcutDiag")
 /// Storage keys are namespaced under `shortcutDiag.*` in the standard
 /// UserDefaults so they survive process death but do NOT sync to iCloud
 /// (this is device-local diagnostic state).
+@available(iOS 16, *)
 enum ShortcutRunTracker {
 
     // MARK: - Constants
@@ -82,6 +83,7 @@ enum ShortcutRunTracker {
     /// to finish. Persisted verbatim; the fields we snapshot are precisely
     /// what the next-foreground guidance decision needs to make sense of a
     /// stale record.
+    @available(iOS 16, *)
     struct PendingRecord: Codable {
         let id: String                        // UUID, used as dictionary key + notification id
         let intent: String
@@ -326,6 +328,7 @@ enum ShortcutRunTracker {
 
     // MARK: - Classification
 
+    @available(iOS 16, *)
     enum OrphanCategory: String {
         /// User hadn't turned on the keep-alive toggles — this is the
         /// actionable one where guidance actually helps.

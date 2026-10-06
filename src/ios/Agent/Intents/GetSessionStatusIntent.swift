@@ -50,7 +50,9 @@ struct SessionStatus: AppEntity {
     }
 }
 
+@available(iOS 16, *)
 struct SessionStatusQuery: EntityQuery {
+    @available(iOS 16, *)
     func entities(for identifiers: [String]) async throws -> [SessionStatus] {
         []
     }
@@ -68,6 +70,7 @@ struct GetSessionStatusIntent: AppIntent {
     var sessionID: String
 
     @MainActor
+    @available(iOS 16, *)
     func perform() async throws -> some IntentResult & ReturnsValue<SessionStatus> {
         let isRunning = SessionActivityTracker.shared.isActive(sessionID)
 

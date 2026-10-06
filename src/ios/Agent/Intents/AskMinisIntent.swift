@@ -27,6 +27,7 @@ struct AskMinisIntent: AppIntent {
     var session: SessionEntity?
 
     @MainActor
+    @available(iOS 16, *)
     func perform() async throws -> some IntentResult & ProvidesDialog {
         // Same eager keep-alive discipline as SendPromptIntent: arm before any
         // await so an intent-woken process isn't suspended before the send path

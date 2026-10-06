@@ -13,6 +13,7 @@ struct ModelSelectionEntity: AppEntity {
     var subtitle: String
     var kind: Kind
 
+    @available(iOS 16, *)
     enum Kind: String {
         case group
         case entry
@@ -37,6 +38,7 @@ struct ModelSelectionEntity: AppEntity {
     }
 
     @MainActor
+    @available(iOS 16, *)
     func toSessionModelBinding(sessionId: String, store: ProviderConfigStore) -> SessionModelBinding? {
         switch kind {
         case .group:
@@ -58,6 +60,7 @@ struct ModelSelectionEntity: AppEntity {
     }
 }
 
+@available(iOS 16, *)
 struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
     typealias Result = IntentItemCollection<ModelSelectionEntity>
 
@@ -85,6 +88,7 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
     }
 
     @MainActor
+    @available(iOS 16, *)
     func entities(for identifiers: [String]) async throws -> [ModelSelectionEntity] {
         let store = ProviderConfigStore.shared
         var results: [ModelSelectionEntity] = []
@@ -97,6 +101,7 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
     }
 
     @MainActor
+    @available(iOS 16, *)
     func entities(matching string: String) async throws -> IntentItemCollection<ModelSelectionEntity> {
         let store = ProviderConfigStore.shared
         let query = string.lowercased()
@@ -127,6 +132,7 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
     }
 
     @MainActor
+    @available(iOS 16, *)
     func suggestedEntities() async throws -> IntentItemCollection<ModelSelectionEntity> {
         let store = ProviderConfigStore.shared
 
@@ -148,6 +154,7 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
                 return id
             }
 
+        @available(iOS 16, *)
         func providerItems(for instanceId: String) -> [IntentItem<ModelSelectionEntity>] {
             store.config.modelEntries
                 .filter { $0.providerInstanceId == instanceId && isOfferable($0, store: store) }

@@ -4,6 +4,7 @@ import UserNotifications
 
 /// Predefined tasks that Siri can invoke by name in a single utterance.
 /// e.g. "Minis analyze sleep" (or the same phrase pattern in the user's locale).
+@available(iOS 16, *)
 enum QuickTask: String, AppEnum {
     case analyzeSleep
     case healthReport
@@ -74,6 +75,7 @@ struct QuickTaskIntent: AppIntent {
     var sendCompletionNotification: Bool
 
     @MainActor
+    @available(iOS 16, *)
     func perform() async throws -> some IntentResult & ReturnsValue<SendPromptResult> & ProvidesDialog {
         BackgroundKeepAliveManager.shared.setup()
 

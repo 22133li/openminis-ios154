@@ -12,6 +12,7 @@ struct OpenSessionIntent: AppIntent {
     var session: SessionEntity
 
     @MainActor
+    @available(iOS 16, *)
     func perform() async throws -> some IntentResult {
         NotificationCenter.default.post(
             name: .openSessionFromIntent,
@@ -22,6 +23,7 @@ struct OpenSessionIntent: AppIntent {
     }
 }
 
+@available(iOS 16, *)
 extension Notification.Name {
     static let openSessionFromIntent = Notification.Name("openSessionFromIntent")
 }

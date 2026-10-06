@@ -28,7 +28,9 @@ struct SessionEntity: AppEntity {
     }
 }
 
+@available(iOS 16, *)
 struct SessionEntityQuery: EntityQuery {
+    @available(iOS 16, *)
     func entities(for identifiers: [String]) async throws -> [SessionEntity] {
         var results: [SessionEntity] = []
         for id in identifiers {
@@ -39,6 +41,7 @@ struct SessionEntityQuery: EntityQuery {
         return results
     }
 
+    @available(iOS 16, *)
     func suggestedEntities() async throws -> [SessionEntity] {
         let sessions = await ChatStore.shared.listSessions().filter { !$0.isChild }
         return sessions.prefix(100).map { SessionEntity(from: $0) }

@@ -8,6 +8,7 @@ struct ListSessionsIntent: AppIntent {
     static var description = IntentDescription("Lists all Minis chat sessions with their titles and IDs.")
     static var openAppWhenRun = false
 
+    @available(iOS 16, *)
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
         let sessions = await ChatStore.shared.listSessions().filter { !$0.isChild }
 

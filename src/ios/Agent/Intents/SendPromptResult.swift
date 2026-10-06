@@ -46,7 +46,9 @@ struct SendPromptResult: AppEntity {
 }
 
 /// Minimal query — result entities are ephemeral, not persisted.
+@available(iOS 16, *)
 struct SendPromptResultQuery: EntityQuery {
+    @available(iOS 16, *)
     func entities(for identifiers: [String]) async throws -> [SendPromptResult] {
         []
     }

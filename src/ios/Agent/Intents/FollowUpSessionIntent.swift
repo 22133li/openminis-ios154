@@ -29,6 +29,7 @@ struct FollowUpSessionIntent: AppIntent {
     var sendCompletionNotification: Bool
 
     @MainActor
+    @available(iOS 16, *)
     func perform() async throws -> some IntentResult & ReturnsValue<SendPromptResult> & ProvidesDialog {
         BackgroundKeepAliveManager.shared.setup()
 
