@@ -2,6 +2,7 @@ import AppIntents
 import Foundation
 
 /// Structured status result for a session, usable in Shortcuts conditionals and text blocks.
+@available(iOS 16, *)
 struct SessionStatus: AppEntity {
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Session Status")
     static var defaultQuery = SessionStatusQuery()
@@ -57,6 +58,7 @@ struct SessionStatusQuery: EntityQuery {
 
 /// Queries the current status of a session — whether the agent is still running,
 /// the latest message text, last tool summary, etc. Use after SendPrompt to poll.
+@available(iOS 16, *)
 struct GetSessionStatusIntent: AppIntent {
     static var title: LocalizedStringResource = "Get Session Status"
     static var description = IntentDescription("Gets the current status of a Minis session, including whether the agent is still running, the latest message, and last tool call.")

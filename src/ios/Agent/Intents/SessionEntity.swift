@@ -2,6 +2,7 @@ import AppIntents
 import Foundation
 
 /// Wraps a ChatSession as an AppEntity so Shortcuts can reference sessions by name.
+@available(iOS 16, *)
 struct SessionEntity: AppEntity {
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "New Session")
     static var defaultQuery = SessionEntityQuery()

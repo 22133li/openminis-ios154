@@ -2,6 +2,7 @@ import AppIntents
 import Foundation
 
 /// Structured result returned by SendPromptIntent, usable in Shortcuts automation chains.
+@available(iOS 16, *)
 struct SendPromptResult: AppEntity {
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Prompt Result")
     static var defaultQuery = SendPromptResultQuery()
