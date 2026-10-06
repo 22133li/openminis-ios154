@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E5IN0002 /* IntentNotificationNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5IN0001 /* IntentNotificationNames.swift */; };
 		E5T000001 /* SessionEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000011 /* SessionEntity.swift */; };
 		E5T000002 /* ListSessionsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000012 /* ListSessionsIntent.swift */; };
 		E5T000003 /* SendPromptIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5T000013 /* SendPromptIntent.swift */; };
@@ -642,6 +643,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E5IN0001 /* IntentNotificationNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/IntentNotificationNames.swift; sourceTree = "<group>"; };
 		E5T000011 /* SessionEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/SessionEntity.swift; sourceTree = "<group>"; };
 		E5T000012 /* ListSessionsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/ListSessionsIntent.swift; sourceTree = "<group>"; };
 		E5T000013 /* SendPromptIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/SendPromptIntent.swift; sourceTree = "<group>"; };
@@ -2795,19 +2797,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E5T000001 /* SessionEntity.swift in Sources */,
-				E5T000002 /* ListSessionsIntent.swift in Sources */,
-				E5T000003 /* SendPromptIntent.swift in Sources */,
-				E5T000004 /* OpenSessionIntent.swift in Sources */,
-				E5T000005 /* MinisShortcutsProvider.swift in Sources */,
-				E5T000006 /* SendPromptResult.swift in Sources */,
-				E5T000007 /* GetSessionStatusIntent.swift in Sources */,
-				E5T000008 /* QuickTaskIntent.swift in Sources */,
-				E5T000009 /* FollowUpSessionIntent.swift in Sources */,
-				E5T00000A /* RetryRunIntent.swift in Sources */,
-				E5T00000B /* UserMessageEntity.swift in Sources */,
-				E5T0000A1 /* AskMinisIntent.swift in Sources */,
-				E5F200006 /* ModelSelectionEntity.swift in Sources */,
+				E5IN0002 /* IntentNotificationNames.swift in Sources */,
 				AC0000202 /* ProviderCustomizationGenerated.swift in Sources */,
 				E54000AC1 /* DebugSkillGenerated.swift in Sources */,
 				E5FP00100 /* AppGroupChangeWatcher.swift in Sources */,
