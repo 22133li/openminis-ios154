@@ -269,18 +269,31 @@ extension AIChatViewModel {
     /// FileProvider extension. Keep ONLY user-facing subdirs (shared, skills,
     /// memory) here — anything else leaks into "On My iPhone → Minis".
     nonisolated static var minisAppGroupRoot: URL {
-        FileManager.default.containerURL(
+        // iOS 15.4 侧载修复：App Group 在侧载时可能不可用（containerURL 返回 nil），
+        // 之前这里强制解包导致启动直接闪退。不可用时降级到 Library 目录。
+        if let container = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: SharedContainerStore.appGroupID
-        )!.appendingPathComponent("MinisFileProvider", isDirectory: true)
+        ) {
+            return container.appendingPathComponent("MinisFileProvider", isDirectory: true)
+        }
+        let library = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+        return library.appendingPathComponent("MinisFileProvider", isDirectory: true)
     }
 
     /// App Group subdirectory for private metadata that must NOT be exposed
     /// to iOS Files (mounted-folders.json, FileProvider extension logs, etc).
     /// Sibling of `minisAppGroupRoot` inside the same App Group container.
     nonisolated static var minisConfigRoot: URL {
-        let url = FileManager.default.containerURL(
+        let base: URL
+        if let container = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: SharedContainerStore.appGroupID
-        )!.appendingPathComponent("MinisConfig", isDirectory: true)
+        ) {
+            base = container
+        } else {
+            // 侧载时 App Group 不可用，降级到 Library
+            base = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+        }
+        let url = base.appendingPathComponent("MinisConfig", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
