@@ -54,7 +54,7 @@ final class EnvVarStore: ObservableObject {
         Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             let url = await self.resolveFileURL()
-            let loaded = Self.loadEntries(from: url)
+            let loaded = await Self.loadEntries(from: url)
             await MainActor.run { [weak self] in
                 guard let self else { return }
                 // 更新真实 fileURL（init 时可能用了 temporaryDirectory 兜底）
