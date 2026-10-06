@@ -641,19 +641,19 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		E5T000011 /* SessionEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionEntity.swift; sourceTree = "<group>"; };
-		E5T000012 /* ListSessionsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListSessionsIntent.swift; sourceTree = "<group>"; };
-		E5T000013 /* SendPromptIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendPromptIntent.swift; sourceTree = "<group>"; };
-		E5T000014 /* OpenSessionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSessionIntent.swift; sourceTree = "<group>"; };
-		E5T000015 /* MinisShortcutsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinisShortcutsProvider.swift; sourceTree = "<group>"; };
-		E5T000016 /* SendPromptResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendPromptResult.swift; sourceTree = "<group>"; };
-		E5T000017 /* GetSessionStatusIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetSessionStatusIntent.swift; sourceTree = "<group>"; };
-		E5T000018 /* QuickTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickTaskIntent.swift; sourceTree = "<group>"; };
-		E5T000019 /* FollowUpSessionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowUpSessionIntent.swift; sourceTree = "<group>"; };
-		E5T00001A /* RetryRunIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryRunIntent.swift; sourceTree = "<group>"; };
-		E5T00001B /* UserMessageEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserMessageEntity.swift; sourceTree = "<group>"; };
-		E5T0000A2 /* AskMinisIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskMinisIntent.swift; sourceTree = "<group>"; };
-		E5F200016 /* ModelSelectionEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelSelectionEntity.swift; sourceTree = "<group>"; };
+		E5T000011 /* SessionEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/SessionEntity.swift; sourceTree = "<group>"; };
+		E5T000012 /* ListSessionsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/ListSessionsIntent.swift; sourceTree = "<group>"; };
+		E5T000013 /* SendPromptIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/SendPromptIntent.swift; sourceTree = "<group>"; };
+		E5T000014 /* OpenSessionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/OpenSessionIntent.swift; sourceTree = "<group>"; };
+		E5T000015 /* MinisShortcutsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/MinisShortcutsProvider.swift; sourceTree = "<group>"; };
+		E5T000016 /* SendPromptResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/SendPromptResult.swift; sourceTree = "<group>"; };
+		E5T000017 /* GetSessionStatusIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/GetSessionStatusIntent.swift; sourceTree = "<group>"; };
+		E5T000018 /* QuickTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/QuickTaskIntent.swift; sourceTree = "<group>"; };
+		E5T000019 /* FollowUpSessionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/FollowUpSessionIntent.swift; sourceTree = "<group>"; };
+		E5T00001A /* RetryRunIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/RetryRunIntent.swift; sourceTree = "<group>"; };
+		E5T00001B /* UserMessageEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/UserMessageEntity.swift; sourceTree = "<group>"; };
+		E5T0000A2 /* AskMinisIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/AskMinisIntent.swift; sourceTree = "<group>"; };
+		E5F200016 /* ModelSelectionEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent/Intents/ModelSelectionEntity.swift; sourceTree = "<group>"; };
 		0ED149397BEA7E0408C92688 /* GroupVoiceModelsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GroupVoiceModelsView.swift; sourceTree = "<group>"; };
 		E5BP0001 /* ShapeBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeBackport.swift; sourceTree = "<group>"; };
 		E5BP0003 /* LabeledContentBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabeledContentBackport.swift; sourceTree = "<group>"; };
