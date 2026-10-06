@@ -39,6 +39,11 @@ struct CollectionViewMessageListV3: View {
                 }
             }
             .listStyle(.plain)
+            // 底部留出输入栏高度，避免最后一条消息被遮住
+            .safeAreaInset(edge: .bottom) {
+                Color.clear
+                    .frame(height: floatingBarHeight + inputBarHeight)
+            }
             .onChange(of: vm.messages.count) { _ in
                 scrollToBottom(proxy: proxy)
             }
