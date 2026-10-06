@@ -56,3 +56,29 @@ jobs:
         with:
           name: Minis-iOS154
           path: build/ipa/Minis-iOS154.ipa
+
+  uitest:
+    runs-on: macos-15
+    timeout-minutes: 60
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: |
+          cp src/ios/Configs/ProviderCustomization.xcconfig.example \
+             src/ios/Configs/ProviderCustomization.xcconfig || true
+      - name: Run UI smoke tests on simulator
+        run: |
+          cd src/ios
+          # 找一个可用的 iPhone 模拟器
+          SIM=$(xcrun simctl list devices available | grep "iPhone 16" | head -1 | sed -E 's/.*\(([-A-F0-9]+)\).*/\1/')
+          echo "Using simulator: $SIM"
+          xcodebuild test \
+            -project Minis.xcodeproj \
+            -scheme Minis \
+            -destination "platform=iOS Simulator,id=$SIM" \
+            -only-testing:MinisUITests/SmokeTests \
+            -derivedDataPath ../../build/uitest-derived \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" \
+            2>&1 | tail -50
