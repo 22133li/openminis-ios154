@@ -110,19 +110,15 @@ struct RcloneAddServerView: View {
                 set: { if $0 == nil { errorText = nil } }))
             .navigationTitle(connectedRemote == nil ? "Add Server" : "Choose Folder")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                Group {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { cancelAndDismiss() }
-                    }
+            .navigationBarItems(
+                leading: Button("Cancel") { cancelAndDismiss() },
+                trailing: Group {
                     if connectedRemote != nil {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Save Here") { saveHere() }
-                                .disabled(isListing)
-                        }
+                        Button("Save Here") { saveHere() }
+                            .disabled(isListing)
                     }
                 }
-            }
+            )
             .alert("New Folder", isPresented: $showNewFolder) {
                 TextField("Folder name", text: $newFolderName)
                     .textInputAutocapitalization(.never)

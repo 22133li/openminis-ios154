@@ -46,15 +46,11 @@ struct ProviderInstanceDetailView: View {
         }
         .navigationTitle(instance?.label ?? "Provider")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showExportShare = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-            }
-        }
+        .navigationBarItems(trailing: Button {
+            showExportShare = true
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+        })
         .sheet(item: $thinkingEditorRequest) { req in
             ThinkingRuleEditorView(
                 instanceId: instanceId,

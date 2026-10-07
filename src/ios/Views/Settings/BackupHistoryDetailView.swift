@@ -27,19 +27,15 @@ struct BackupHistoryDetailView: View {
         .navigationTitle(record.startedAt.formatted(date: .abbreviated, time: .shortened))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { keepScreenAwake = BackupScreenAwake.isEnabled }
-        .toolbar {
-            Group {
-                if !isLive {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(role: .destructive) {
-                            showDeleteConfirm = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
+        .navigationBarItems(trailing: Group {
+            if !isLive {
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
                 }
             }
-        }
+        })
         // Confirmed, unlike the list's swipe action: a swipe is deliberate and
         // undoable-by-redoing-the-backup, but a toolbar button sits next to
         // Back and is easy to hit by accident on the way out.

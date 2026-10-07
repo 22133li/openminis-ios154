@@ -164,16 +164,12 @@ struct FileBrowserView: View {
             }
         }
         .animation(.spring(response: 0.3), value: copiedToast)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Close") {
-                    dismiss()
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                moreMenu
-            }
-        }
+        .navigationBarItems(
+            leading: Button("Close") {
+                dismiss()
+            },
+            trailing: moreMenu
+        )
         .sheet(isPresented: $showExportSheet) {
             if let file = exportingFile {
                 DocumentExportView(fileURL: file.url)
@@ -413,11 +409,7 @@ private struct FilePreviewSheet: View {
             content
                 .navigationTitle(item.name)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") { dismiss() }
-                    }
-                }
+                .navigationBarItems(trailing: Button("Done") { dismiss() })
         }
     }
 
