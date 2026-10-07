@@ -912,6 +912,9 @@ struct MinisSkillsBrowserView: View {
             }
             .navigationTitle("Minis Skills")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(leading: Button { dismiss() } label: {
+                Image(systemName: "xmark")
+            })
             .alert(AppLocalized("Skill Already Exists"), isPresented: $coordinator.showOverwriteConfirm) {
                 Button(AppLocalized("Update"), role: .destructive) {
                     coordinator.confirmOverwrite()
