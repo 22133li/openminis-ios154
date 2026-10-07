@@ -885,7 +885,7 @@ private struct SkillFileDetailView: View {
                 if hasChanges {
                     Button(AppLocalized("Save")) { save() }
                 }
-            }))
+            })
             .onAppear {
                 content = store.readSkillFile(skillId, relativePath: relativePath) ?? ""
             }
