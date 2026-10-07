@@ -72,6 +72,22 @@ struct CollectionViewMessageListV3: View {
     }
 }
 
+// MARK: - Markdown Text (iOS 15 backport: AttributedString markdown parsing)
+
+private struct MarkdownText: View {
+    let content: String
+    
+    var body: some View {
+        if let attributed = try? AttributedString(markdown: content, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)) {
+            Text(attributed)
+                .textSelection(.enabled)
+        } else {
+            Text(verbatim: content)
+                .textSelection(.enabled)
+        }
+    }
+}
+
 // MARK: - Message Row
 
 private struct MessageRowView: View {
@@ -106,8 +122,7 @@ private struct MessageRowView: View {
                 }
                 // Fallback to content if no blocks
                 if message.blocks.isEmpty && !message.content.isEmpty {
-                    Text(verbatim: message.content)
-                        .textSelection(.enabled)
+                    MarkdownText(content: message.content)
                 }
                 // Error state with retry
                 if let error = message.error {
@@ -168,8 +183,7 @@ private struct BlockView: View {
         switch block.kind {
         case .text:
             if !block.content.isEmpty {
-                Text(verbatim: block.content)
-                    .textSelection(.enabled)
+                MarkdownText(content: block.content)
             }
         case .thinking:
             DisclosureGroup("思考过程") {
