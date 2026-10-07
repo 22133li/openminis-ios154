@@ -39,18 +39,12 @@ struct CollectionViewMessageListV3: View {
                 }
                 // 底部 spacer：确保 scrollTo(.bottom) 时最后一条消息不会被输入栏遮住
                 Color.clear
-                    .frame(height: floatingBarHeight + inputBarHeight + 24)
+                    .frame(height: floatingBarHeight + inputBarHeight + 8)
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
             }
             .listStyle(.plain)
-            // 底部留出输入栏高度，避免最后一条消息被遮住
-            // (+12pt 缓冲：几何测量有舍入误差，home indicator 区域也需要留白)
-            .safeAreaInset(edge: .bottom) {
-                Color.clear
-                    .frame(height: floatingBarHeight + inputBarHeight + 12)
-            }
             .onChange(of: vm.messages.count) { _ in
                 scrollToBottom(proxy: proxy)
             }
