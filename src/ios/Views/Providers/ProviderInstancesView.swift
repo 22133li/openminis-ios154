@@ -117,6 +117,29 @@ struct ProviderInstancesView: View {
         }
         .navigationTitle("Providers")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if !store.instances.isEmpty {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    EditButton()
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button {
+                        showAddProvider = true
+                    } label: {
+                        Label(AppLocalized("Add Provider"), systemImage: "plus")
+                    }
+                    Button {
+                        showImportFile = true
+                    } label: {
+                        Label(AppLocalized("Import Provider"), systemImage: "square.and.arrow.down")
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+        }
         .sheet(isPresented: $showAddProvider) {
             NavigationView {
                 AddProviderView()
