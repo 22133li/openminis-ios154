@@ -13,12 +13,12 @@ struct LabeledContent<Content: View, Label: View>: View {
 
     init(_ label: String, @ViewBuilder content: () -> Content) where Label == Text {
         self.content = content()
-        self.label = Text(label)
+        self.label = Text(LocalizedStringKey(label))
     }
 
     init(_ label: String, value: String) where Content == Text, Label == Text {
         self.content = Text(value)
-        self.label = Text(label)
+        self.label = Text(LocalizedStringKey(label))
     }
 
     var body: some View {
