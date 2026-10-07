@@ -269,6 +269,22 @@ private struct MemoryContentView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarItems(trailing:
+            Group {
+                if fileURL != nil {
+                    if isEditing {
+                        Button("Save") { save() }
+                    } else {
+                        Button {
+                            editedContent = content
+                            isEditing = true
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+                    }
+                }
+            }
+        )
         .overlay(alignment: .bottom) {
             if saved {
                 Text("Saved")
@@ -351,6 +367,28 @@ private struct MemoryWriteDetailView: View {
         }
         .navigationTitle(item.title)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarItems(trailing:
+            HStack {
+                if isEditing {
+                    Button("Save") { saveEdit() }
+                } else {
+                    if item.writtenContent != nil {
+                        Button {
+                            editedContent = item.writtenContent ?? ""
+                            isEditing = true
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+                    }
+                    Button {
+                        showRevokeAlert = true
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward")
+                    }
+                    .disabled(item.writtenContent == nil)
+                }
+            }
+        )
         .overlay(alignment: .bottom) {
             if saved {
                 Text("Saved")

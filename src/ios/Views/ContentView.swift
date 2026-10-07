@@ -1814,6 +1814,7 @@ struct ContentView: View {
             case .rootfsManagement:
                 NavigationView {
                     RootfsManagementView()
+                        .navigationBarItems(trailing: Button("Done") { activeToolSheet = nil })
                 }
             case .browser:
                 BrowserSheetView(pool: browserPool)
@@ -1824,6 +1825,7 @@ struct ContentView: View {
             case .syncMigrationDetail:
                 NavigationView {
                     SyncMigrationDetailView()
+                        .navigationBarItems(trailing: Button("Done") { activeToolSheet = nil })
                 }
             }
         }

@@ -472,6 +472,19 @@ private struct MarkdownFilePreview: View {
                 }
             }
         }
+        .navigationBarItems(leading:
+            Group {
+                if case .loaded = loadState {
+                    Button {
+                        renderMode = (renderMode == .rendered) ? .source : .rendered
+                    } label: {
+                        Image(systemName: renderMode == .rendered
+                              ? "chevron.left.forwardslash.chevron.right"
+                              : "doc.richtext")
+                    }
+                }
+            }
+        )
         .task { await load() }
     }
 

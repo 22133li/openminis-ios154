@@ -284,6 +284,15 @@ private struct ImportSkillSheet: View {
             }
             .navigationTitle(AppLocalized("Import Skill"))
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(
+                leading: Button(AppLocalized("Cancel")) { dismiss() },
+                trailing: Group {
+                    if importMode != .file {
+                        Button(AppLocalized("Import")) { performImport() }
+                            .disabled(isImporting || (importMode == .url ? urlText.isEmpty : pastedContent.isEmpty))
+                    }
+                }
+            )
             .overlay {
                 if isImporting {
                     ProgressView("Importing…")
@@ -655,6 +664,9 @@ private struct SkillDetailView: View {
         }
         .navigationTitle(skill?.name ?? "Skill")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarItems(trailing: Button { shareSkill() } label: {
+            Image(systemName: "square.and.arrow.up")
+        }.disabled(skill == nil))
         .onAppear { refreshUpdatedAgo() }
         .sheet(isPresented: Binding(get: { shareZipURL != nil }, set: { if !$0 { cleanupShareZip() } })) {
             if let url = shareZipURL {
@@ -869,6 +881,11 @@ private struct SkillFileDetailView: View {
             }
             .navigationTitle(fileName)
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(trailing: Group {
+                if hasChanges {
+                    Button(AppLocalized("Save")) { save() }
+                }
+            }))
             .onAppear {
                 content = store.readSkillFile(skillId, relativePath: relativePath) ?? ""
             }

@@ -129,6 +129,18 @@ struct ProviderInstanceDetailView: View {
                 }
                 .navigationTitle("Manual Bearer Token")
                 .navigationBarTitleDisplayMode(.inline)
+                .navigationBarItems(
+                    leading: Button("Cancel") {
+                        showManualTokenInput = false
+                        manualTokenInputText = ""
+                    },
+                    trailing: Button("Save") {
+                        let cleaned = manualTokenInputText.components(separatedBy: .whitespacesAndNewlines).joined()
+                        ProviderKeychainHelper.saveOAuthString(cleaned, instanceId: instanceId, account: "manual-oauth-token")
+                        manualTokenInputText = ""
+                        showManualTokenInput = false
+                    }
+                )
             }
         }
         .alert("Delete Provider", isPresented: $showDeleteConfirm) {
@@ -1272,6 +1284,12 @@ struct AddCustomModelSheet: View {
             }
             .navigationTitle("Add Custom Model")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(
+                leading: Button("Cancel") { dismiss() },
+                trailing: Button("Add") { addModel() }
+                    .font(.body.weight(.semibold))
+                    .disabled(modelId.trimmingCharacters(in: .whitespaces).isEmpty)
+            )
             .onAppear { initializeModalityFromProvider() }
         }
     }
