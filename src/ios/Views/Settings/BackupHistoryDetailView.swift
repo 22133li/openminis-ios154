@@ -28,12 +28,14 @@ struct BackupHistoryDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { keepScreenAwake = BackupScreenAwake.isEnabled }
         .toolbar {
-            if !isLive {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(role: .destructive) {
-                        showDeleteConfirm = true
-                    } label: {
-                        Label("Delete", systemImage: "trash")
+            Group {
+                if !isLive {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(role: .destructive) {
+                            showDeleteConfirm = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
             }

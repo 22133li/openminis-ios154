@@ -118,9 +118,11 @@ struct ProviderInstancesView: View {
         .navigationTitle("Providers")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if !store.instances.isEmpty {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    EditButton()
+            Group {
+                if !store.instances.isEmpty {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        EditButton()
+                    }
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
