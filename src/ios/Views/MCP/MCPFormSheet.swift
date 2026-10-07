@@ -121,6 +121,22 @@ struct MCPFormSheet: View {
             }
             .navigationTitle(Text(isEditing ? "Edit Server" : "Add Server"))
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(AppLocalized("Cancel")) { dismiss() }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button {
+                            DispatchQueue.main.async { copyJSON() }
+                        } label: {
+                            Label(AppLocalized("Copy JSON"), systemImage: "doc.on.doc")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
             // Full-width primary Save pinned to the bottom, above the keyboard.
             .safeAreaInset(edge: .bottom) {
                 Button(action: save) {

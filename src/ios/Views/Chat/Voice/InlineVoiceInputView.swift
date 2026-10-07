@@ -792,6 +792,17 @@ struct InlineVoiceInputView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(ChatColors.primaryText)
                 .onAppear { editFocused = true }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button {
+                            viewModel.endEditing(resume: false)
+                        } label: {
+                            Text("Done", comment: "Finish transcript editing")
+                                .font(.body.weight(.semibold))
+                        }
+                    }
+                }
                 // Fill the band and let the text view scroll inside it. Without
                 // an explicit height the field would size to its content and
                 // overflow the fixed-height band instead of scrolling.

@@ -52,6 +52,11 @@ struct SessionMemoryView: View {
             }
             .navigationTitle("Memories in Session")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
     }
 
