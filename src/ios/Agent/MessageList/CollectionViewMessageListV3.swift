@@ -37,6 +37,12 @@ struct CollectionViewMessageListV3: View {
                     .listRowBackground(Color.clear)
                     .id(message.id)
                 }
+                // 底部 spacer：确保 scrollTo(.bottom) 时最后一条消息不会被输入栏遮住
+                Color.clear
+                    .frame(height: floatingBarHeight + inputBarHeight + 24)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
             }
             .listStyle(.plain)
             // 底部留出输入栏高度，避免最后一条消息被遮住

@@ -227,17 +227,17 @@ struct UsageStatsView: View {
                 // Grand totals
                 Section("Total Usage") {
                     let grandTotalAllInput = vm.grandTotalInput + vm.grandTotalCacheRead + vm.grandTotalCacheCreation
-                    LabeledContent("Total Input (incl. Cache)", value: formatCount(grandTotalAllInput))
-                    LabeledContent("Output Tokens", value: formatCount(vm.grandTotalOutput))
+                    LabeledContent(LocalizedStringKey("Total Input (incl. Cache)"), value: formatCount(grandTotalAllInput))
+                    LabeledContent(LocalizedStringKey("Output Tokens"), value: formatCount(vm.grandTotalOutput))
                     if vm.grandTotalCacheRead > 0 {
-                        LabeledContent("Cache Read", value: formatCount(vm.grandTotalCacheRead))
+                        LabeledContent(LocalizedStringKey("Cache Read"), value: formatCount(vm.grandTotalCacheRead))
                     }
                     if vm.grandTotalCacheCreation > 0 {
-                        LabeledContent("Cache Creation", value: formatCount(vm.grandTotalCacheCreation))
+                        LabeledContent(LocalizedStringKey("Cache Creation"), value: formatCount(vm.grandTotalCacheCreation))
                     }
                     if grandTotalAllInput > 0 && vm.grandTotalCacheRead > 0 {
                         let grandHitRate = Double(vm.grandTotalCacheRead) / Double(grandTotalAllInput) * 100
-                        LabeledContent("Cache Hit Rate", value: String(format: "%.1f%%", grandHitRate))
+                        LabeledContent(LocalizedStringKey("Cache Hit Rate"), value: String(format: "%.1f%%", grandHitRate))
                     }
                 }
 
@@ -300,23 +300,23 @@ struct UsageStatsView: View {
     @ViewBuilder
     private func modelDetailRows(_ model: UsageStatsViewModel.ModelStats) -> some View {
         Group {
-            LabeledContent("Input", value: formatCount(model.inputTokens))
-            LabeledContent("Output", value: formatCount(model.outputTokens))
+            LabeledContent(LocalizedStringKey("Input"), value: formatCount(model.inputTokens))
+            LabeledContent(LocalizedStringKey("Output"), value: formatCount(model.outputTokens))
             if model.cacheReadTokens > 0 {
-                LabeledContent("Cache Read", value: formatCount(model.cacheReadTokens))
+                LabeledContent(LocalizedStringKey("Cache Read"), value: formatCount(model.cacheReadTokens))
             }
             if model.cacheCreationTokens > 0 {
-                LabeledContent("Cache Creation", value: formatCount(model.cacheCreationTokens))
+                LabeledContent(LocalizedStringKey("Cache Creation"), value: formatCount(model.cacheCreationTokens))
             }
             let totalInputForRate = model.inputTokens + model.cacheReadTokens + model.cacheCreationTokens
             if totalInputForRate > 0 && model.cacheReadTokens > 0 {
                 let hitRate = Double(model.cacheReadTokens) / Double(totalInputForRate) * 100
-                LabeledContent("Cache Hit Rate", value: String(format: "%.1f%%", hitRate))
+                LabeledContent(LocalizedStringKey("Cache Hit Rate"), value: String(format: "%.1f%%", hitRate))
             }
-            LabeledContent("Daily Avg", value: formatCount(model.dailyAvgTokens))
-            LabeledContent("Per-Session Avg", value: formatCount(model.sessionAvgTokens))
-            LabeledContent("Sessions", value: "\(model.distinctSessions.count)")
-            LabeledContent("Active Days", value: "\(model.distinctDays.count)")
+            LabeledContent(LocalizedStringKey("Daily Avg"), value: formatCount(model.dailyAvgTokens))
+            LabeledContent(LocalizedStringKey("Per-Session Avg"), value: formatCount(model.sessionAvgTokens))
+            LabeledContent(LocalizedStringKey("Sessions"), value: "\(model.distinctSessions.count)")
+            LabeledContent(LocalizedStringKey("Active Days"), value: "\(model.distinctDays.count)")
         }
         .font(.subheadline)
     }
