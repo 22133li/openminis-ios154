@@ -1276,7 +1276,7 @@ struct AIChatView: View {
         .fileImporter(
             isPresented: $showDocumentPicker,
             allowedContentTypes: [.image, .pdf, .plainText, .json, .sourceCode, .presentation, .spreadsheet, .data],
-            allowsMultipleSelection: true
+            allowsMultipleSelection: false
         ) { result in
             switch result {
             case .success(let urls):
