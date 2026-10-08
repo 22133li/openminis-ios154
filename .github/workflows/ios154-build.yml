@@ -18,18 +18,12 @@ jobs:
           brew install ninja llvm libarchive pkg-config meson
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
       - run: xcodebuild -downloadComponent MetalToolchain || true
-      - name: Patch iSH VDSO (skip lld, use stub)
+      - name: Verify lld for iSH VDSO build
         run: |
-          # lld is unavailable on runner; force the VDSO stub by overwriting meson.build
-          cat > deps/ish/vdso/arm64/meson.build << 'MESONEOF'
-          # iOS 15.4 backport CI patch: VDSO disabled (no lld on runner).
-          # The empty stub keeps the iSH build going; VDSO is a guest optimization.
-          vdso = custom_target('vdso-arm64-stub',
-              output: 'libvdso.so.elf',
-              command: ['touch', '@OUTPUT@'])
-          MESONEOF
-          echo "--- patched meson.build ---"
-          cat deps/ish/vdso/arm64/meson.build
+          # The iSH VDSO (aarch64-linux-gnu ELF) requires lld. Homebrew llvm includes it.
+          export PATH="$(brew --prefix llvm)/bin:$PATH"
+          which ld.lld || ls $(brew --prefix llvm)/bin/ | grep -i lld
+          ld.lld --version | head -2
       - run: |
           cp src/ios/Configs/ProviderCustomization.xcconfig.example \
              src/ios/Configs/ProviderCustomization.xcconfig || true
