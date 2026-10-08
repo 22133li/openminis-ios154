@@ -795,8 +795,15 @@ struct AIChatView: View {
             kernelBootOverlay
         }
         .background(ChatColors.background)
+        // [T-ios154-drop-crash] Disabled on iOS 15: NSItemProvider drop handling
+        // throws uncaught ObjC exception (SIGABRT) on 15.4. File attachment
+        // via + button (fileImporter) remains available.
         .onDrop(of: [.image, .movie, .fileURL, .data], isTargeted: $isDropTargeted) { providers in
-            handleDropProviders(providers)
+            if #available(iOS 16, *) {
+                handleDropProviders(providers)
+            } else {
+                minisLogger.warning("[Drop] disabled on iOS 15 (crash workaround)")
+            }
             return true
         }
         .overlay {
