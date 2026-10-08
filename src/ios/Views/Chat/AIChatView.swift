@@ -1280,19 +1280,21 @@ struct AIChatView: View {
                 }
             )
         }
-        .fileImporter(
-            isPresented: $showDocumentPicker,
-            allowedContentTypes: [.image, .pdf, .plainText, .json, .sourceCode, .presentation, .spreadsheet, .data],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                for url in urls {
-                    vm.addFileAttachment(from: url)
+        .sheet(isPresented: $showDocumentPicker) {
+            // [T-ios154-fileimporter] UIKit wrapper instead of .fileImporter
+            // (SwiftUI presentation bug on iOS 15.4 — completion never fires).
+            MinisDocumentPicker(
+                allowedContentTypes: [.image, .pdf, .plainText, .json, .sourceCode, .presentation, .spreadsheet, .data],
+                onComplete: { urls in
+                    showDocumentPicker = false
+                    for url in urls {
+                        vm.addFileAttachment(from: url)
+                    }
+                },
+                onCancel: {
+                    showDocumentPicker = false
                 }
-            case .failure(let error):
-                minisLogger.error("File import failed: \(error.localizedDescription)")
-            }
+            )
         }
         // [T-minisurl-wrong-active-session] A draft opened from the UI has
         // sessionId nil at onAppear; when send() creates the real session,
@@ -7054,6 +7056,47 @@ struct MinisPHPicker: UIViewControllerRepresentable {
             } else {
                 onComplete(results)
             }
+        }
+    }
+}
+
+// [T-ios154-fileimporter] UIKit UIDocumentPickerViewController wrapper.
+// SwiftUI .fileImporter does not call its completion on iOS 15.4 when attached
+// to a view with multiple sheet/fullScreenCover modifiers (presentation bug).
+// This bypasses SwiftUI's presentation and uses UIKit directly.
+struct MinisDocumentPicker: UIViewControllerRepresentable {
+    var allowedContentTypes: [UTType]
+    var onComplete: ([URL]) -> Void
+    var onCancel: () -> Void
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedContentTypes, asCopy: true)
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = false
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onComplete: onComplete, onCancel: onCancel)
+    }
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onComplete: ([URL]) -> Void
+        let onCancel: () -> Void
+
+        init(onComplete: @escaping ([URL]) -> Void, onCancel: @escaping () -> Void) {
+            self.onComplete = onComplete
+            self.onCancel = onCancel
+        }
+
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            onComplete(urls)
+        }
+
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            onCancel()
         }
     }
 }
