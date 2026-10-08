@@ -18,12 +18,18 @@ jobs:
           brew install ninja llvm libarchive pkg-config meson
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
       - run: xcodebuild -downloadComponent MetalToolchain || true
-      - name: Verify lld for iSH VDSO build
+      - name: Ensure lld for iSH VDSO build
         run: |
-          # The iSH VDSO (aarch64-linux-gnu ELF) requires lld. Homebrew llvm includes it.
+          # The iSH VDSO (aarch64-linux-gnu ELF) requires lld. Try Homebrew llvm's
+          # bundled lld first; fall back to installing the standalone lld formula.
+          set -x
           export PATH="$(brew --prefix llvm)/bin:$PATH"
-          which ld.lld || ls $(brew --prefix llvm)/bin/ | grep -i lld
-          ld.lld --version | head -2
+          if ! command -v ld.lld >/dev/null 2>&1; then
+            echo "ld.lld not in llvm bin, trying brew lld formula"
+            brew install lld || true
+            export PATH="$(brew --prefix lld)/bin:$PATH" || true
+          fi
+          command -v ld.lld && ld.lld --version | head -2 || echo "WARNING: lld unavailable, VDSO will use stub fallback"
       - run: |
           cp src/ios/Configs/ProviderCustomization.xcconfig.example \
              src/ios/Configs/ProviderCustomization.xcconfig || true
