@@ -11,7 +11,7 @@
 		<key>NSExtensionFileProviderSupportsTrash</key>
 		<false/>
 		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.fileprovider-nonui</string>
+		<string>com.apple.fileprovider-nonshared</string>
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).FileProviderExtension</string>
 	</dict>

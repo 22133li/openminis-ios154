@@ -2,13 +2,22 @@ import FileProvider
 import UniformTypeIdentifiers
 import os.log
 
-/// Replicated File Provider extension that exposes MinisFileProvider/ to the system Files app.
+/// Classic File Provider extension (NSFileProviderExtension, iOS 11+) that exposes
+/// MinisFileProvider/ to the system Files app.
 /// Structure: Minis → { memory, skills, shared }
-/// Uses the modern NSFileProviderReplicatedExtension protocol (iOS 16+).
-@available(iOS 16, *)
-final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
-
-    let domain: NSFileProviderDomain
+///
+/// iOS 15-compatible implementation. The classic API has no domain concept and no
+/// explicit create/modify/delete callbacks — the App Group directory (providerRoot)
+/// is the source of truth, and the extension materializes files into its document
+/// storage on demand.
+///
+/// Write support: edits to existing files sync back via itemChanged(at:); new
+/// files/folders can be created under shared/; memory/ and skills/ are read-only.
+/// Deletions made in Files do NOT propagate (the file reappears on next
+/// enumeration) — the classic API offers no delete callback, and
+/// stopProvidingItem(at:) signals cache eviction, not user deletes, so it must
+/// not touch providerRoot.
+final class FileProviderExtension: NSFileProviderExtension {
 
     private static let log = OSLog(subsystem: "com.openminis.app.FileProvider", category: "Extension")
 
@@ -25,8 +34,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
     /// The three top-level subdirectories exposed via the FileProvider.
     static let topLevelSubdirs = ["memory", "skills", "shared"]
 
-    required init(domain: NSFileProviderDomain) {
-        self.domain = domain
+    override init() {
         super.init()
         let fm = FileManager.default
         let root = Self.providerRoot
@@ -34,9 +42,8 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
             try? fm.createDirectory(at: root.appendingPathComponent(sub, isDirectory: true),
                                     withIntermediateDirectories: true)
         }
-        os_log("FileProviderExtension init — domain: %{public}@, providerRoot: %{public}@",
-               log: Self.log, type: .info,
-               domain.identifier.rawValue, root.path)
+        os_log("FileProviderExtension init — providerRoot: %{public}@",
+               log: Self.log, type: .info, root.path)
 
         let resolvedRoot = root.resolvingSymlinksInPath().path
         var rootSummaries: [String] = []
@@ -46,14 +53,8 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
             rootSummaries.append("\(sub)=\(count)")
         }
         // [T-ios-fp-mac-bootcrash] Stamp every SUCCESSFUL launch with the app
-        // version and the executable's mtime. The pre-main SIGILL launches
-        // (TestFlight D8_ZguC2Ikr7Wl0fRI7Ubn, macOS 27 beta) can never log —
-        // dyld dies before our code runs — so the diagnosis has to come from
-        // the other side: the main app appends an "app-updated" line to this
-        // same trace file when the bundle changes, and each init line here
-        // carries the executable generation. If a .crash timestamp falls
-        // between an "app-updated" line and the next init with a NEW exec
-        // mtime, the bundle-replacement theory is confirmed from field data.
+        // version and the executable's mtime. See the replicated-extension
+        // implementation history for the full rationale.
         let bundle = Bundle.main
         let ver = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
@@ -63,16 +64,9 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
             execStamp = ISO8601DateFormatter().string(from: mod)
         }
         let onMac = ProcessInfo.processInfo.isiOSAppOnMac
-        FPSyncTraceLog.log("init domain=\(domain.identifier.rawValue) ver=\(ver)(\(build)) exec=\(execStamp) mac=\(onMac) providerRoot=\(root.path) resolved=\(resolvedRoot) [\(rootSummaries.joined(separator: " "))]")
+        FPSyncTraceLog.log("init classic ver=\(ver)(\(build)) exec=\(execStamp) mac=\(onMac) providerRoot=\(root.path) resolved=\(resolvedRoot) [\(rootSummaries.joined(separator: " "))]")
 
-        // [T-ios-fp-mac-bootcrash] Liveness heartbeat for the main app's
-        // circuit breaker. Reaching this line means the appex bootstrapped —
-        // dyld bound the entry stub and our code is running, which is exactly
-        // what the pre-main SIGILL launches never achieve. The breaker in
-        // MinisApp arms a pending marker when it registers the domain and
-        // clears it when it sees this heartbeat; registrations that never get
-        // one are what trip it. Written for the CURRENT executable generation
-        // so a new build always starts from a clean slate.
+        // Liveness heartbeat for the main app's circuit breaker.
         FileProviderBootHealth.recordSuccessfulBoot(generation: execStamp)
 
         Self.recoverFakeTrashDirIfNeeded(root: root)
@@ -80,26 +74,15 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
         Self.cleanupLegacyMountedFoldersIfNeeded(root: root)
     }
 
-    /// Delete leftover FileProvider extension log directories.
-    /// Two historical locations exist:
-    ///   1. `<providerRoot>/logs/` — original buggy location (leaked
-    ///      into iOS Files).
-    ///   2. `<App Group>/MinisConfig/logs/` — second iteration; private
-    ///      to the app, but still grew unbounded with one log file
-    ///      written per FileProvider invocation.
-    /// Both are now dead — the extension no longer writes any file
-    /// logs (relies on `os_log` only), so we delete whatever is there.
+    /// Delete leftover FileProvider extension log directories (see replicated
+    /// implementation for the two historical locations).
     private static func cleanupLegacyLogsDirIfNeeded(root: URL) {
         let fm = FileManager.default
-
-        // Location 1: under providerRoot (would leak into iOS Files).
         let inProvider = root.appendingPathComponent("logs", isDirectory: true)
         var isDir: ObjCBool = false
         if fm.fileExists(atPath: inProvider.path, isDirectory: &isDir), isDir.boolValue {
             try? fm.removeItem(at: inProvider)
         }
-
-        // Location 2: under MinisConfig (private but still pure cruft).
         if let container = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.openminis.app") {
             let inConfig = container.appendingPathComponent("MinisConfig/logs", isDirectory: true)
             if fm.fileExists(atPath: inConfig.path, isDirectory: &isDir), isDir.boolValue {
@@ -108,17 +91,12 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
         }
     }
 
-    /// Delete a residual `mounted-folders.json` file that the main app
-    /// already migrated to `MinisConfig/`. If both copies exist the main
-    /// app prefers the current-location one and drops the legacy one,
-    /// but if migration didn't run (e.g. extension launched first on a
-    /// cold boot) we should still not expose the stale copy to Files.
+    /// Delete a residual `mounted-folders.json` that the main app already
+    /// migrated to `MinisConfig/`.
     private static func cleanupLegacyMountedFoldersIfNeeded(root: URL) {
         let fm = FileManager.default
         let legacy = root.appendingPathComponent("mounted-folders.json")
         guard fm.fileExists(atPath: legacy.path) else { return }
-        // Only delete if the canonical copy already exists under MinisConfig —
-        // otherwise we'd lose the data.
         guard let container = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.openminis.app") else { return }
         let canonical = container.appendingPathComponent("MinisConfig/mounted-folders.json")
         if fm.fileExists(atPath: canonical.path) {
@@ -127,14 +105,7 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
     }
 
     /// Clean up any leftover `NSFileProviderTrashContainerItemIdentifier`
-    /// directory under providerRoot. Historical bug: `createItem` /
-    /// `modifyItem` would happily use this literal string as a path
-    /// component when iOS Files tried to move an item to trash, creating
-    /// a real directory whose name collides with the system-reserved
-    /// identifier. The framework then gets confused and paused syncing.
-    ///
-    /// Contents are moved into `shared/_recovered_trash/` so no data is
-    /// lost, and the fake directory is removed.
+    /// directory under providerRoot (see replicated implementation).
     private static func recoverFakeTrashDirIfNeeded(root: URL) {
         let fm = FileManager.default
         let fakeTrash = root.appendingPathComponent("NSFileProviderTrashContainerItemIdentifier", isDirectory: true)
@@ -142,14 +113,12 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
         guard fm.fileExists(atPath: fakeTrash.path, isDirectory: &isDir), isDir.boolValue else {
             return
         }
-
         let recovered = root.appendingPathComponent("shared/_recovered_trash", isDirectory: true)
         do {
             try fm.createDirectory(at: recovered, withIntermediateDirectories: true)
         } catch {
             return
         }
-
         if let entries = try? fm.contentsOfDirectory(atPath: fakeTrash.path) {
             for name in entries {
                 let src = fakeTrash.appendingPathComponent(name)
@@ -165,59 +134,269 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
                 try? fm.moveItem(at: src, to: dst)
             }
         }
-
         try? fm.removeItem(at: fakeTrash)
     }
 
-    func invalidate() {
-        os_log("FileProviderExtension invalidate", log: Self.log, type: .info)
+    // MARK: - Document storage mapping
+
+    /// System-managed document storage for this extension. Materialized files live here;
+    /// providerRoot (App Group) remains the source of truth.
+    private var documentStorageURL: URL {
+        NSFileProviderManager.default.documentStorageURL
     }
 
-    // MARK: - Signal helper
+    /// Map a document-storage URL back to its item identifier.
+    /// Identifier scheme is unchanged from the replicated implementation:
+    /// identifier.rawValue == providerRoot-relative path.
+    private func identifierForDocumentURL(_ url: URL) -> NSFileProviderItemIdentifier? {
+        let base = documentStorageURL.standardized.path
+        let path = url.standardized.path
+        guard path.hasPrefix(base) else { return nil }
+        let relative = String(path.dropFirst(base.count))
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        if relative.isEmpty { return .rootContainer }
+        return NSFileProviderItemIdentifier(relative)
+    }
 
-    /// Notify the system that a container's contents changed so it re-enumerates.
-    private func signalParent(_ parentIdentifier: NSFileProviderItemIdentifier) {
-        NSFileProviderManager(for: domain)?.signalEnumerator(for: parentIdentifier) { error in
+    /// Whether a new item may be created at the given providerRoot-relative path.
+    /// Only shared/ (and its subdirectories) is writable; root, memory/, skills/
+    /// are fixed/read-only.
+    private static func canCreate(atRelativePath relativePath: String) -> Bool {
+        guard !relativePath.isEmpty else { return false }
+        let first = relativePath.split(separator: "/").first.map(String.init) ?? ""
+        return first == "shared"
+    }
+
+    /// Whether the existing item at the given providerRoot-relative path may be
+    /// modified. Mirrors the replicated implementation's guards.
+    private static func isWritable(relativePath: String) -> Bool {
+        if topLevelSubdirs.contains(relativePath) { return false }
+        if relativePath == "memory" || relativePath == "skills" { return false }
+        if relativePath.hasPrefix("memory/") || relativePath.hasPrefix("skills/") { return false }
+        return true
+    }
+
+    /// Signal the parent enumerator to re-list after a local change.
+    private func signalParent(of identifier: NSFileProviderItemIdentifier) {
+        let raw = identifier.rawValue
+        let parentPath = (raw as NSString).deletingLastPathComponent
+        let parentID: NSFileProviderItemIdentifier =
+            parentPath.isEmpty ? .rootContainer : NSFileProviderItemIdentifier(parentPath)
+        NSFileProviderManager.default.signalEnumerator(for: parentID) { error in
             if let error {
                 os_log("signalEnumerator(%{public}@) error: %{public}@",
                        log: Self.log, type: .error,
-                       parentIdentifier.rawValue, error.localizedDescription)
+                       parentID.rawValue, error.localizedDescription)
             }
         }
     }
 
-    // MARK: - Item Lookup
+    // MARK: - Item lookup
 
-    func item(for identifier: NSFileProviderItemIdentifier, request: NSFileProviderRequest,
-              completionHandler: @escaping (NSFileProviderItem?, Error?) -> Void) -> Progress {
+    override func item(for identifier: NSFileProviderItemIdentifier,
+                       completionHandler: @escaping (NSFileProviderItem?, Error?) -> Void) {
         os_log("item(for: %{public}@)", log: Self.log, type: .debug, identifier.rawValue)
         if identifier == .rootContainer {
             completionHandler(FileProviderItem(url: Self.providerRoot, parentIdentifier: .rootContainer, isRoot: true), nil)
-            return Progress()
+            return
         }
         if identifier == .trashContainer {
             completionHandler(nil, NSFileProviderError(.noSuchItem))
-            return Progress()
+            return
         }
         let url = Self.providerRoot.appendingPathComponent(identifier.rawValue)
         guard FileManager.default.fileExists(atPath: url.path) else {
             completionHandler(nil, NSFileProviderError(.noSuchItem))
-            return Progress()
+            return
         }
         let parentPath = (identifier.rawValue as NSString).deletingLastPathComponent
         let parentID = parentPath.isEmpty
             ? NSFileProviderItemIdentifier.rootContainer
             : NSFileProviderItemIdentifier(parentPath)
         completionHandler(FileProviderItem(url: url, parentIdentifier: parentID), nil)
-        return Progress()
+    }
+
+    // MARK: - URL mapping
+
+    override func urlForItem(withPersistentIdentifier identifier: NSFileProviderItemIdentifier,
+                             completionHandler: @escaping (URL?, Error?) -> Void) {
+        if identifier == .rootContainer {
+            completionHandler(documentStorageURL, nil)
+            return
+        }
+        if identifier == .trashContainer || identifier == .workingSet {
+            completionHandler(nil, NSFileProviderError(.noSuchItem))
+            return
+        }
+        completionHandler(documentStorageURL.appendingPathComponent(identifier.rawValue), nil)
+    }
+
+    override func persistentIdentifierForItem(at url: URL,
+                                              completionHandler: @escaping (NSFileProviderItemIdentifier?, Error?) -> Void) {
+        guard let identifier = identifierForDocumentURL(url) else {
+            completionHandler(nil, NSFileProviderError(.noSuchItem))
+            return
+        }
+        completionHandler(identifier, nil)
+    }
+
+    // MARK: - Providing items
+
+    override func providePlaceholder(at url: URL, completionHandler: @escaping (Error?) -> Void) {
+        guard let identifier = identifierForDocumentURL(url) else {
+            completionHandler(NSFileProviderError(.noSuchItem))
+            return
+        }
+        let fm = FileManager.default
+        do {
+            try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let placeholderURL = NSFileProviderExtension.placeholderURL(for: url)
+            if fm.fileExists(atPath: placeholderURL.path) {
+                try fm.removeItem(at: placeholderURL)
+            }
+            if identifier == .rootContainer {
+                try writePlaceholder(at: placeholderURL,
+                                     withMetadata: FileProviderItem(url: Self.providerRoot,
+                                                                    parentIdentifier: .rootContainer,
+                                                                    isRoot: true))
+            } else {
+                let sourceURL = Self.providerRoot.appendingPathComponent(identifier.rawValue)
+                if fm.fileExists(atPath: sourceURL.path) {
+                    // Existing item — placeholder from real metadata.
+                    item(for: identifier) { item, error in
+                        if let item {
+                            do {
+                                try self.writePlaceholder(at: placeholderURL, withMetadata: item)
+                                completionHandler(nil)
+                            } catch {
+                                completionHandler(error)
+                            }
+                        } else {
+                            completionHandler(error ?? NSFileProviderError(.noSuchItem))
+                        }
+                    }
+                    return
+                } else if Self.canCreate(atRelativePath: identifier.rawValue) {
+                    // New item under shared/ — materialize an empty file in
+                    // providerRoot first so identifier ↔ path stays consistent,
+                    // then write the placeholder from its metadata.
+                    // (Directory creation via Files pre-creates the dir in
+                    // document storage; detect that and mirror it.)
+                    var isDir: ObjCBool = false
+                    let preCreatedDir = fm.fileExists(atPath: url.path, isDirectory: &isDir) && isDir.boolValue
+                    if preCreatedDir {
+                        try fm.createDirectory(at: sourceURL, withIntermediateDirectories: true)
+                    } else {
+                        fm.createFile(atPath: sourceURL.path, contents: nil)
+                    }
+                    item(for: identifier) { item, error in
+                        if let item {
+                            do {
+                                try self.writePlaceholder(at: placeholderURL, withMetadata: item)
+                                completionHandler(nil)
+                            } catch {
+                                completionHandler(error)
+                            }
+                        } else {
+                            completionHandler(error ?? NSFileProviderError(.noSuchItem))
+                        }
+                    }
+                    self.signalParent(of: identifier)
+                    return
+                } else {
+                    completionHandler(NSError(domain: NSCocoaErrorDomain,
+                                              code: NSFileWriteNoPermissionError))
+                    return
+                }
+            }
+            completionHandler(nil)
+        } catch {
+            completionHandler(error)
+        }
+    }
+
+    override func startProvidingItem(at url: URL, completionHandler: @escaping (Error?) -> Void) {
+        guard let identifier = identifierForDocumentURL(url) else {
+            completionHandler(NSFileProviderError(.noSuchItem))
+            return
+        }
+        let fm = FileManager.default
+        let sourceURL: URL
+        if identifier == .rootContainer {
+            sourceURL = Self.providerRoot
+        } else {
+            sourceURL = Self.providerRoot.appendingPathComponent(identifier.rawValue)
+        }
+        do {
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: sourceURL.path, isDirectory: &isDir) else {
+                completionHandler(NSFileProviderError(.noSuchItem))
+                return
+            }
+            // Remove any stale file at the destination, then materialize.
+            if fm.fileExists(atPath: url.path) {
+                try fm.removeItem(at: url)
+            }
+            try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if isDir.boolValue {
+                try fm.createDirectory(at: url, withIntermediateDirectories: true)
+            } else {
+                try fm.copyItem(at: sourceURL, to: url)
+            }
+            completionHandler(nil)
+        } catch {
+            completionHandler(error)
+        }
+    }
+
+    override func itemChanged(at url: URL, completionHandler: @escaping (Error?) -> Void) {
+        guard let identifier = identifierForDocumentURL(url),
+              identifier != .rootContainer else {
+            completionHandler(nil)
+            return
+        }
+        let relativePath = identifier.rawValue
+        guard Self.isWritable(relativePath: relativePath) else {
+            // Read-only tree — revert the document-storage copy from providerRoot.
+            let sourceURL = Self.providerRoot.appendingPathComponent(relativePath)
+            let fm = FileManager.default
+            if fm.fileExists(atPath: sourceURL.path) {
+                try? fm.removeItem(at: url)
+                try? fm.copyItem(at: sourceURL, to: url)
+            }
+            completionHandler(nil)
+            return
+        }
+        let sourceURL = Self.providerRoot.appendingPathComponent(relativePath)
+        let fm = FileManager.default
+        do {
+            var isDir: ObjCBool = false
+            if fm.fileExists(atPath: url.path, isDirectory: &isDir), !isDir.boolValue {
+                if fm.fileExists(atPath: sourceURL.path) {
+                    try fm.removeItem(at: sourceURL)
+                }
+                try fm.createDirectory(at: sourceURL.deletingLastPathComponent(),
+                                       withIntermediateDirectories: true)
+                try fm.copyItem(at: url, to: sourceURL)
+                signalParent(of: identifier)
+            }
+            completionHandler(nil)
+        } catch {
+            completionHandler(error)
+        }
+    }
+
+    override func stopProvidingItem(at url: URL, completionHandler: @escaping (Error?) -> Void) {
+        // Cache eviction only — never touch providerRoot here. A user delete in
+        // Files removes the document-storage copy without a callback; the item
+        // reappears on next enumeration (documented limitation).
+        completionHandler(nil)
     }
 
     // MARK: - Enumeration
 
-    func enumerator(for containerItemIdentifier: NSFileProviderItemIdentifier,
-                    request: NSFileProviderRequest) throws -> NSFileProviderEnumerator {
+    override func enumerator(for containerItemIdentifier: NSFileProviderItemIdentifier) throws -> NSFileProviderEnumerator {
         os_log("enumerator(for: %{public}@)", log: Self.log, type: .info, containerItemIdentifier.rawValue)
-
         switch containerItemIdentifier {
         case .rootContainer:
             return FileProviderEnumerator(containerItemIdentifier: .rootContainer)
@@ -228,191 +407,5 @@ final class FileProviderExtension: NSObject, NSFileProviderReplicatedExtension {
         default:
             return FileProviderEnumerator(containerItemIdentifier: containerItemIdentifier)
         }
-    }
-
-    // MARK: - Fetch Contents
-
-    func fetchContents(for itemIdentifier: NSFileProviderItemIdentifier,
-                       version requestedVersion: NSFileProviderItemVersion?,
-                       request: NSFileProviderRequest,
-                       completionHandler: @escaping (URL?, NSFileProviderItem?, Error?) -> Void) -> Progress {
-        let url = Self.providerRoot.appendingPathComponent(itemIdentifier.rawValue)
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            completionHandler(nil, nil, NSFileProviderError(.noSuchItem))
-            return Progress()
-        }
-        let parentPath = (itemIdentifier.rawValue as NSString).deletingLastPathComponent
-        let parentID = parentPath.isEmpty
-            ? NSFileProviderItemIdentifier.rootContainer
-            : NSFileProviderItemIdentifier(parentPath)
-        let item = FileProviderItem(url: url, parentIdentifier: parentID)
-
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        do {
-            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-            let tempFile = tempDir.appendingPathComponent(url.lastPathComponent)
-            try FileManager.default.copyItem(at: url, to: tempFile)
-            completionHandler(tempFile, item, nil)
-        } catch {
-            completionHandler(nil, nil, error)
-        }
-        return Progress()
-    }
-
-    // MARK: - Create Item
-
-    func createItem(basedOn itemTemplate: NSFileProviderItem,
-                    fields: NSFileProviderItemFields,
-                    contents url: URL?,
-                    options: NSFileProviderCreateItemOptions = [],
-                    request: NSFileProviderRequest,
-                    completionHandler: @escaping (NSFileProviderItem?, NSFileProviderItemFields, Bool, Error?) -> Void) -> Progress {
-        // Block creation directly under root — only the fixed subdirs live there.
-        // Block creation under memory/ or skills/ (read-only trees).
-        // Block creation under trashContainer — we do not support a trash and
-        // must not let iOS Files materialize a directory named after the
-        // system-reserved identifier in providerRoot.
-        let parentRaw = itemTemplate.parentItemIdentifier.rawValue
-        if itemTemplate.parentItemIdentifier == .rootContainer
-            || itemTemplate.parentItemIdentifier == .trashContainer
-            || parentRaw == "memory" || parentRaw.hasPrefix("memory/")
-            || parentRaw == "skills" || parentRaw.hasPrefix("skills/") {
-            completionHandler(nil, [], false,
-                              NSError(domain: NSCocoaErrorDomain,
-                                      code: NSFileWriteNoPermissionError))
-            return Progress()
-        }
-
-        let parentURL = Self.providerRoot.appendingPathComponent(itemTemplate.parentItemIdentifier.rawValue)
-        let destURL = parentURL.appendingPathComponent(itemTemplate.filename)
-
-        do {
-            if itemTemplate.contentType == .folder {
-                try FileManager.default.createDirectory(at: destURL, withIntermediateDirectories: true)
-            } else if let sourceURL = url {
-                if FileManager.default.fileExists(atPath: destURL.path) {
-                    try FileManager.default.removeItem(at: destURL)
-                }
-                try FileManager.default.copyItem(at: sourceURL, to: destURL)
-            }
-            let item = FileProviderItem(url: destURL, parentIdentifier: itemTemplate.parentItemIdentifier)
-            completionHandler(item, [], false, nil)
-            signalParent(itemTemplate.parentItemIdentifier)
-        } catch {
-            completionHandler(nil, [], false, error)
-        }
-        return Progress()
-    }
-
-    // MARK: - Modify Item
-
-    func modifyItem(_ item: NSFileProviderItem,
-                    baseVersion version: NSFileProviderItemVersion,
-                    changedFields: NSFileProviderItemFields,
-                    contents newContents: URL?,
-                    options: NSFileProviderModifyItemOptions = [],
-                    request: NSFileProviderRequest,
-                    completionHandler: @escaping (NSFileProviderItem?, NSFileProviderItemFields, Bool, Error?) -> Void) -> Progress {
-        let idRaw = item.itemIdentifier.rawValue
-
-        // Block rename/move of the three fixed top-level subdirectories.
-        if Self.topLevelSubdirs.contains(idRaw),
-           changedFields.contains(.filename) || changedFields.contains(.parentItemIdentifier) {
-            completionHandler(nil, [], false,
-                              NSError(domain: NSCocoaErrorDomain,
-                                      code: NSFileWriteNoPermissionError))
-            return Progress()
-        }
-
-        // Block modifications to items under memory/ or skills/ (read-only).
-        if idRaw.hasPrefix("memory/") || idRaw.hasPrefix("skills/") {
-            completionHandler(nil, [], false,
-                              NSError(domain: NSCocoaErrorDomain,
-                                      code: NSFileWriteNoPermissionError))
-            return Progress()
-        }
-
-        // Block moving items into the trash — we don't support a trash and
-        // must not materialize a "NSFileProviderTrashContainerItemIdentifier"
-        // directory in providerRoot. iOS Files will fall back to a hard
-        // delete when it can't use the trash.
-        if changedFields.contains(.parentItemIdentifier),
-           item.parentItemIdentifier == .trashContainer {
-            completionHandler(nil, [], false,
-                              NSError(domain: NSCocoaErrorDomain,
-                                      code: NSFileWriteNoPermissionError))
-            return Progress()
-        }
-
-        let srcURL = Self.providerRoot.appendingPathComponent(item.itemIdentifier.rawValue)
-
-        do {
-            var destURL = srcURL
-            if changedFields.contains(.filename) || changedFields.contains(.parentItemIdentifier) {
-                let parentURL: URL
-                if item.parentItemIdentifier == .rootContainer {
-                    parentURL = Self.providerRoot
-                } else {
-                    parentURL = Self.providerRoot.appendingPathComponent(item.parentItemIdentifier.rawValue)
-                }
-                destURL = parentURL.appendingPathComponent(item.filename)
-                if srcURL != destURL {
-                    try FileManager.default.moveItem(at: srcURL, to: destURL)
-                }
-            }
-
-            if changedFields.contains(.contents), let newContents {
-                if FileManager.default.fileExists(atPath: destURL.path) {
-                    try FileManager.default.removeItem(at: destURL)
-                }
-                try FileManager.default.copyItem(at: newContents, to: destURL)
-            }
-
-            let resultItem = FileProviderItem(url: destURL, parentIdentifier: item.parentItemIdentifier)
-            completionHandler(resultItem, [], false, nil)
-            signalParent(item.parentItemIdentifier)
-        } catch {
-            completionHandler(nil, [], false, error)
-        }
-        return Progress()
-    }
-
-    // MARK: - Delete Item
-
-    func deleteItem(identifier: NSFileProviderItemIdentifier,
-                    baseVersion version: NSFileProviderItemVersion,
-                    options: NSFileProviderDeleteItemOptions = [],
-                    request: NSFileProviderRequest,
-                    completionHandler: @escaping (Error?) -> Void) -> Progress {
-        os_log("deleteItem id=%{public}@", log: Self.log, type: .info, identifier.rawValue)
-
-        let idRaw = identifier.rawValue
-        if Self.topLevelSubdirs.contains(idRaw)
-            || idRaw.hasPrefix("memory/") || idRaw.hasPrefix("skills/") {
-            completionHandler(NSError(domain: NSCocoaErrorDomain,
-                                      code: NSFileWriteNoPermissionError))
-            return Progress()
-        }
-
-        let url = Self.providerRoot.appendingPathComponent(identifier.rawValue)
-        if FileManager.default.fileExists(atPath: url.path) {
-            do {
-                try FileManager.default.removeItem(at: url)
-            } catch {
-                os_log("deleteItem removeItem error: %{public}@",
-                       log: Self.log, type: .error, error.localizedDescription)
-                completionHandler(error)
-                return Progress()
-            }
-        }
-
-        // Derive parent identifier and signal it to re-enumerate.
-        let parentPath = (identifier.rawValue as NSString).deletingLastPathComponent
-        let parentID = parentPath.isEmpty
-            ? NSFileProviderItemIdentifier.rootContainer
-            : NSFileProviderItemIdentifier(parentPath)
-        completionHandler(nil)
-        signalParent(parentID)
-        return Progress()
     }
 }

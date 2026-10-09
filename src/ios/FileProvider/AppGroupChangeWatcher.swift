@@ -301,6 +301,23 @@ final class AppGroupChangeWatcher {
 
     private func deliverSignal(itemID: NSFileProviderItemIdentifier) {
         pendingSignals.removeValue(forKey: itemID)
+        // iOS 16+: signal through the registered domain. iOS 15 (classic
+        // NSFileProviderExtension): no domains exist — signal the default manager.
+        if #available(iOS 16, *) {
+            deliverSignalViaDomain(itemID: itemID)
+        } else {
+            NSFileProviderManager.default.signalEnumerator(for: itemID) { [logger] signalErr in
+                if let signalErr {
+                    logger.warning("[FPSyncTrace] signalEnumerator(\(itemID.rawValue)) failed: \(signalErr.localizedDescription)")
+                } else {
+                    logger.debug("[FPSyncTrace] signalled id=\(itemID.rawValue)")
+                }
+            }
+        }
+    }
+
+    @available(iOS 16, *)
+    private func deliverSignalViaDomain(itemID: NSFileProviderItemIdentifier) {
         let domainID = domainIdentifier
         NSFileProviderManager.getDomainsWithCompletionHandler { [logger] domains, error in
             if let error {
