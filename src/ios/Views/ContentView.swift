@@ -7995,61 +7995,87 @@ private struct SettingsSheet: View {
     @State private var navPath: [SettingsDestination] = []
 
     /// iOS 15 backport: replaces `.navigationDestination(for: SettingsDestination.self)`.
+    /// Renders navPath as nested NavigationLinks, so a two-level deep link
+    /// (providers → provider detail, model groups → group detail) keeps its
+    /// parent on the stack: back from the detail lands on the list, not
+    /// straight on the Settings root. (Deep links push at most 2 levels.)
     @ViewBuilder
     private var settingsDestinationView: some View {
-        if let dest = navPath.last {
-            switch dest {
-                case .providers:
-                    ProviderInstancesView()
-                case .providerDetail(let id):
-                    ProviderInstanceDetailView(instanceId: id)
-                case .modelGroups:
-                    ModelGroupsView()
-                case .modelGroupDetail(let id):
-                    ModelGroupDetailView(groupId: id)
-                case .usage:
-                    UsageStatsView()
-                case .skills:
-                    SkillsManagementView()
-                case .soul:
-                    SoulSettingsView()
-                case .tools:
-                    ToolsSettingsView()
-                case .memory:
-                    MemoryManagementView()
-                case .storage:
-                    StorageManagementView()
-                case .mountedFolders:
-                    MountedFoldersSettingsView()
-                case .sharedFolders:
-                    SharedFoldersSettingsView()
-                case .logs:
-                    // Pull a one-shot tab hint from the deep link router
-                    // (e.g. `?tab=config-audit`). LogManagementView clears
-                    // its local state independently; the published value
-                    // here is consumed once and reset to nil.
-                    LogManagementView(initialTab: deepLink.pendingLogsTab ?? "logs")
-                        .onAppear { deepLink.pendingLogsTab = nil }
-                case .appearance:
-                    AppearanceSettingsView()
-                case .background:
-                    EnhancedBackgroundSettingsView()
-                case .about:
-                    AboutView()
-                case .environments:
-                    EnvironmentVariablesView()
-                case .permissions:
-                    OffloadPermissionSettingsView()
+        if !navPath.isEmpty {
+            destinationView(for: navPath[0])
+                .background(
+                    NavigationLink(
+                        destination: Group {
+                            if navPath.count >= 2 {
+                                destinationView(for: navPath[1])
+                            } else {
+                                EmptyView()
+                            }
+                        },
+                        isActive: Binding(
+                            get: { navPath.count >= 2 },
+                            set: { if !$0 { navPath = Array(navPath.prefix(1)) } }
+                        )
+                    ) {
+                        EmptyView()
+                    }
+                )
+        } else {
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func destinationView(for dest: SettingsDestination) -> some View {
+        switch dest {
+            case .providers:
+                ProviderInstancesView()
+            case .providerDetail(let id):
+                ProviderInstanceDetailView(instanceId: id)
+            case .modelGroups:
+                ModelGroupsView()
+            case .modelGroupDetail(let id):
+                ModelGroupDetailView(groupId: id)
+            case .usage:
+                UsageStatsView()
+            case .skills:
+                SkillsManagementView()
+            case .soul:
+                SoulSettingsView()
+            case .tools:
+                ToolsSettingsView()
+            case .memory:
+                MemoryManagementView()
+            case .storage:
+                StorageManagementView()
+            case .mountedFolders:
+                MountedFoldersSettingsView()
+            case .sharedFolders:
+                SharedFoldersSettingsView()
+            case .logs:
+                // Pull a one-shot tab hint from the deep link router
+                // (e.g. `?tab=config-audit`). LogManagementView clears
+                // its local state independently; the published value
+                // here is consumed once and reset to nil.
+                LogManagementView(initialTab: deepLink.pendingLogsTab ?? "logs")
+                .onAppear { deepLink.pendingLogsTab = nil }
+            case .appearance:
+                AppearanceSettingsView()
+            case .background:
+                EnhancedBackgroundSettingsView()
+            case .about:
+                AboutView()
+            case .environments:
+                EnvironmentVariablesView()
+            case .permissions:
+                OffloadPermissionSettingsView()
                 // [T-mcp-oauth-deeplink] Detail = the list view told to open
                 // the server's edit sheet on appear; a deleted/unknown server
                 // just lands on the list (no crash, sensible fallback).
-                case .mcpIntegrations:
-                    MCPIntegrationsView()
-                case .mcpServerDetail(let serverId):
-                    MCPIntegrationsView(initialEditServerId: serverId)
-                }
-        } else {
-            EmptyView()
+            case .mcpIntegrations:
+                MCPIntegrationsView()
+            case .mcpServerDetail(let serverId):
+                MCPIntegrationsView(initialEditServerId: serverId)
         }
     }
 

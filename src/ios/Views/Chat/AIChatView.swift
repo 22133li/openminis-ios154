@@ -2805,6 +2805,13 @@ struct AIChatView: View {
                 onScreenshotImage: { image in
                     screenshotPreview = ChatScreenshotPreview(image: image)
                 },
+                // iOS 15 backport: message attachments open via the same
+                // minis:// tap handler the rest of the transcript uses.
+                onOpenAttachment: { [self] meta in
+                    if let url = URL(string: meta.minisURL) {
+                        _ = handleMinisURLTap(url)
+                    }
+                },
                 maxContentWidth: maxContentWidth ?? 0,
                 floatingBarHeight: floatingBarHeight,
                 inputBarHeight: inputBarHeight
@@ -7024,11 +7031,15 @@ final class ComposerActionChannel {
 struct MinisPHPicker: UIViewControllerRepresentable {
     var onComplete: ([PHPickerResult]) -> Void
     var onCancel: () -> Void
+    /// iOS 15 backport parity: callers that need single-image (e.g. SOUL
+    /// avatar) override these; the chat attachment picker keeps the defaults.
+    var selectionLimit: Int = 50
+    var filter: PHPickerFilter = .any(of: [.images, .videos])
 
     func makeUIViewController(context: Context) -> PHPickerViewController {
         var config = PHPickerConfiguration(photoLibrary: .shared())
-        config.selectionLimit = 50
-        config.filter = .any(of: [.images, .videos])
+        config.selectionLimit = selectionLimit
+        config.filter = filter
         config.preferredAssetRepresentationMode = .current
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = context.coordinator

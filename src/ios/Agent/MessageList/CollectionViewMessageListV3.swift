@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // iOS 15 backport: CollectionViewMessageListV3 uses UIHostingConfiguration (iOS 16+).
 // This is a functional iOS 15-compatible implementation using SwiftUI List.
@@ -21,6 +22,8 @@ struct CollectionViewMessageListV3: View {
     var onRevertCompact: (() -> Void)?
     var onForceSync: (() -> Void)?
     var onScreenshotImage: ((UIImage) -> Void)?
+    /// iOS 15 backport: open a message attachment (routes to handleMinisURLTap).
+    var onOpenAttachment: ((AttachmentMeta) -> Void)?
     var maxContentWidth: CGFloat
     var floatingBarHeight: CGFloat
     var inputBarHeight: CGFloat
@@ -29,13 +32,26 @@ struct CollectionViewMessageListV3: View {
         ScrollViewReader { proxy in
             List {
                 ForEach(vm.messages) { message in
-                    MessageRowView(message: message, onRetry: {
-                        onRetryMessage?(message.id)
-                    })
+                    MessageRowView(
+                        message: message,
+                        onRetry: { onRetryMessage?(message.id) },
+                        onEdit: { onEdit?(message.id) },
+                        onDeleteFrom: { onDeleteFrom?(message.id) },
+                        onWithdraw: { onWithdraw?(message.id) },
+                        onStop: onStop,
+                        onCompact: { onCompact?(message.id) },
+                        onOpenAttachment: { onOpenAttachment?($0) }
+                    )
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
                     .listRowBackground(Color.clear)
                     .id(message.id)
+                    // Track whether the first turn is visible: drives the
+                    // floating scroll-up button in AIChatView. (The UIKit
+                    // list reported this via its scroll delegate; the
+                    // simplified List had left isAtFirstTurn stuck at false.)
+                    .onAppear { if message.id == vm.messages.first?.id { vm.isAtFirstTurn = true } }
+                    .onDisappear { if message.id == vm.messages.first?.id { vm.isAtFirstTurn = false } }
                 }
                 // 底部 spacer：确保 scrollTo(.bottom) 时最后一条消息不会被输入栏遮住
                 Color.clear
@@ -43,20 +59,31 @@ struct CollectionViewMessageListV3: View {
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
+                    // Track bottom visibility: while the user has scrolled up
+                    // to read history, streaming updates must not yank them
+                    // back down. (The UIKit list reported this via its scroll
+                    // delegate; the simplified List had left isNearBottom
+                    // stuck at true, which also kept the floating scroll
+                    // buttons permanently hidden.)
+                    .onAppear { vm.isNearBottom = true }
+                    .onDisappear { vm.isNearBottom = false }
             }
             .listStyle(.plain)
             .onChange(of: vm.messages.count) { _ in
-                scrollToBottom(proxy: proxy)
+                scrollToBottomIfNear(proxy: proxy)
             }
             // 流式输出时：直接观察最后一条消息的 content 变化
             //（ChatMessage 是 ObservableObject，content 是 @Published）
             .background(
                 LastMessageScrollTrigger(message: vm.messages.last) {
-                    scrollToBottom(proxy: proxy)
+                    scrollToBottomIfNear(proxy: proxy)
                 }
             )
             .onReceive(vm.forceScrollToBottom) { _ in
                 scrollToBottom(proxy: proxy)
+            }
+            .onReceive(vm.forceScrollToTop) { _ in
+                scrollToTop(proxy: proxy)
             }
             .onAppear {
                 scrollToBottom(proxy: proxy)
@@ -70,21 +97,84 @@ struct CollectionViewMessageListV3: View {
             proxy.scrollTo(last.id, anchor: .bottom)
         }
     }
+
+    /// Auto-scroll for streaming / count changes: suppressed while the user
+    /// is reading history (bottom spacer off-screen). Explicit
+    /// forceScrollToBottom (floating button, new turn) still goes through.
+    private func scrollToBottomIfNear(proxy: ScrollViewProxy) {
+        guard vm.isNearBottom else { return }
+        scrollToBottom(proxy: proxy)
+    }
+
+    private func scrollToTop(proxy: ScrollViewProxy) {
+        guard let first = vm.messages.first else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+            proxy.scrollTo(first.id, anchor: .top)
+        }
+    }
 }
 
 // MARK: - Markdown Text (iOS 15 backport: AttributedString markdown parsing)
 
 private struct MarkdownText: View {
     let content: String
-    
+
     var body: some View {
-        if let attributed = try? AttributedString(markdown: content, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnly)) {
-            Text(attributed)
-                .textSelection(.enabled)
+        // iOS 15's AttributedString markdown parser only handles inline
+        // syntax, so fenced code blocks (```) are split out and rendered
+        // as monospaced blocks. (Tables remain plain text: iOS 15 has no
+        // table support in AttributedString.)
+        let segments = content.components(separatedBy: "```")
+        if segments.count == 1 {
+            inlineText(content)
         } else {
-            Text(verbatim: content)
-                .textSelection(.enabled)
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(segments.indices, id: \.self) { i in
+                    if i % 2 == 1 {
+                        CodeBlockView(code: segments[i])
+                    } else if !segments[i].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        inlineText(segments[i])
+                    }
+                }
+            }
         }
+    }
+
+    private func inlineText(_ s: String) -> some View {
+        Group {
+            if let attributed = try? AttributedString(markdown: s, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnly)) {
+                Text(attributed)
+            } else {
+                Text(verbatim: s)
+            }
+        }
+        .textSelection(.enabled)
+    }
+}
+
+private struct CodeBlockView: View {
+    let code: String
+
+    /// Drop a leading language tag line (```swift\n...) if present.
+    private var bodyCode: String {
+        var lines = code.components(separatedBy: .newlines)
+        if lines.count >= 2, let first = lines.first,
+           !first.isEmpty, !first.contains(" "), !first.contains("\t") {
+            lines.removeFirst()
+        }
+        return lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            Text(verbatim: bodyCode)
+                .font(.system(.caption, design: .monospaced))
+                .textSelection(.enabled)
+                .padding(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(Color.secondary.opacity(0.12))
+        .cornerRadius(8)
     }
 }
 
@@ -93,6 +183,24 @@ private struct MarkdownText: View {
 private struct MessageRowView: View {
     @ObservedObject var message: ChatMessage
     var onRetry: (() -> Void)?
+    var onEdit: (() -> Void)?
+    var onDeleteFrom: (() -> Void)?
+    var onWithdraw: (() -> Void)?
+    var onStop: (() -> Void)?
+    var onCompact: (() -> Void)?
+    var onOpenAttachment: ((AttachmentMeta) -> Void)?
+
+    /// Display text with the <user-attached-files> model XML stripped, in
+    /// case a stored message carries it.
+    private var displayContent: String {
+        var text = message.content
+        if let start = text.range(of: "<user-attached-files>") {
+            let endBound = text.range(of: "</user-attached-files>")?.upperBound ?? text.endIndex
+            text = String(text[text.startIndex..<start.lowerBound] + text[endBound...])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return text
+    }
 
     var body: some View {
         switch message.role {
@@ -100,16 +208,34 @@ private struct MessageRowView: View {
             HStack {
                 Spacer(minLength: 60)
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text(verbatim: message.content)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(18)
-                    if !message.attachments.isEmpty {
-                        Text("附件 \(message.attachments.count) 个")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    if !displayContent.isEmpty {
+                        Text(verbatim: displayContent)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(18)
+                    }
+                    ForEach(message.attachments) { attachment in
+                        AttachmentRowView(attachment: attachment) {
+                            onOpenAttachment?(attachment)
+                        }
+                    }
+                }
+            }
+            .contextMenu {
+                Button { onRetry?() } label: {
+                    Label("重试", systemImage: "arrow.clockwise")
+                }
+                Button { onEdit?() } label: {
+                    Label("编辑", systemImage: "pencil")
+                }
+                Button { onDeleteFrom?() } label: {
+                    Label("从这里删除", systemImage: "trash")
+                }
+                if message.isQueued {
+                    Button { onWithdraw?() } label: {
+                        Label("撤回", systemImage: "arrow.uturn.backward")
                     }
                 }
             }
@@ -146,10 +272,27 @@ private struct MessageRowView: View {
                         Text("思考中…")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                        if onStop != nil {
+                            Button("停止") { onStop?() }
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contextMenu {
+                Button {
+                    UIPasteboard.general.string = message.content
+                } label: {
+                    Label("复制", systemImage: "doc.on.doc")
+                }
+                if onCompact != nil {
+                    Button { onCompact?() } label: {
+                        Label("压缩到此处", systemImage: "arrow.down.right.and.arrow.up.left")
+                    }
+                }
+            }
         case .compactDivider:
             HStack {
                 Rectangle().frame(height: 1).foregroundColor(.secondary.opacity(0.3))
@@ -170,6 +313,46 @@ private struct MessageRowView: View {
                     .cornerRadius(10)
                 Spacer()
             }
+        }
+    }
+}
+
+// MARK: - Attachment Row
+
+/// iOS 15 backport: the simplified list showed only "附件 N 个". Restore the
+/// file rows (name + size) with tap-to-open, matching the reference package.
+private struct AttachmentRowView: View {
+    let attachment: AttachmentMeta
+    var onOpen: () -> Void
+
+    private var iconName: String {
+        if attachment.isImage { return "photo" }
+        if attachment.isVideo { return "video" }
+        return "doc"
+    }
+
+    var body: some View {
+        Button(action: onOpen) {
+            HStack(spacing: 8) {
+                Image(systemName: iconName)
+                    .foregroundColor(.white.opacity(0.9))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(attachment.fileName)
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    Text(ByteCountFormatter.string(fromByteCount: Int64(attachment.size), countStyle: .file))
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.white.opacity(0.15))
+            .cornerRadius(10)
         }
     }
 }

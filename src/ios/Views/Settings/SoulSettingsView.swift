@@ -14,6 +14,7 @@ struct SoulSettingsView: View {
     @State private var icon: String = SoulMetadata.default.icon
     @State private var showIconOptions = false
     @State private var showEmojiPrompt = false
+    @State private var showPhotoPicker = false
     @State private var emojiDraft = ""
     @State private var iconError: String? = nil
     @State private var style: String = SoulMetadata.default.style
@@ -131,6 +132,7 @@ struct SoulSettingsView: View {
         .modifier(SoulIconEditing(
             icon: $icon,
             showEmojiPrompt: $showEmojiPrompt,
+            showPhotoPicker: $showPhotoPicker,
             emojiDraft: $emojiDraft,
             iconError: $iconError
         ))
@@ -209,6 +211,7 @@ struct SoulSettingsView: View {
                     emojiDraft = (icon.isEmpty || SoulIconImage.isDataURI(icon)) ? "" : icon
                     showEmojiPrompt = true
                 }
+                Button(AppLocalized("Choose Image…")) { showPhotoPicker = true }
                 if !icon.isEmpty {
                     Button(AppLocalized("Use Default"), role: .destructive) { icon = "" }
                 }
@@ -514,6 +517,7 @@ private struct SoulEmojiPickerSheet: View {
 private struct SoulIconEditing: ViewModifier {
     @Binding var icon: String
     @Binding var showEmojiPrompt: Bool
+    @Binding var showPhotoPicker: Bool
     @Binding var emojiDraft: String
     @Binding var iconError: String?
 
@@ -526,7 +530,19 @@ private struct SoulIconEditing: ViewModifier {
                     icon = chosen
                 }
             }
-            // iOS 15 backport: PhotosPicker removed
+            // iOS 15 backport: SwiftUI .photosPicker is iOS 16+, so the photo
+            // path goes through the UIKit PHPicker wrapper (single image).
+            .sheet(isPresented: $showPhotoPicker) {
+                MinisPHPicker(
+                    onComplete: { results in
+                        showPhotoPicker = false
+                        if let first = results.first { applyPickedImage(first) }
+                    },
+                    onCancel: { showPhotoPicker = false },
+                    selectionLimit: 1,
+                    filter: .images
+                )
+            }
             .alert(AppLocalized("Can't use that image"),
                    isPresented: Binding(get: { iconError != nil },
                                         set: { if !$0 { iconError = nil } })) {
@@ -553,5 +569,31 @@ private struct SoulIconEditing: ViewModifier {
     }
 
     /// Load, validate and normalize a picked photo into the stored form.
-
+    /// iOS 15 backport of the removed PhotosPickerItem path: same
+    /// `SoulIconImage.encode` rules (square crop, 96px cap, PNG data URI).
+    private func applyPickedImage(_ result: PHPickerResult) {
+        let provider = result.itemProvider
+        guard provider.canLoadObject(ofClass: UIImage.self) else {
+            iconError = AppLocalized("That image couldn't be read.")
+            return
+        }
+        provider.loadObject(ofClass: UIImage.self) { object, _ in
+            DispatchQueue.main.async {
+                guard let image = object as? UIImage else {
+                    iconError = AppLocalized("That image couldn't be read.")
+                    return
+                }
+                // [T-soul-icon-opaque-rounded] Opaque images are accepted —
+                // the transparency requirement was a presentation concern and
+                // moved to `SoulIconView`, which clips every image to a
+                // rounded rectangle. Only an undecodable image is refused.
+                switch SoulIconImage.encode(image) {
+                case .success(let uri):
+                    icon = uri
+                case .failure:
+                    iconError = AppLocalized("That image couldn't be read.")
+                }
+            }
+        }
+    }
 }
