@@ -344,24 +344,23 @@ private struct AttachmentRowView: View {
         Button(action: onOpen) {
             HStack(spacing: 8) {
                 Image(systemName: iconName)
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundStyle(.secondary)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(attachment.fileName)
                         .font(.caption)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                     Text(ByteCountFormatter.string(fromByteCount: Int64(attachment.size), countStyle: .file))
                         .font(.caption2)
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundStyle(.secondary)
                 }
                 Image(systemName: "chevron.right")
                     .font(.caption2)
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(Color.white.opacity(0.15))
-            .cornerRadius(10)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray5)))
         }
     }
 }
@@ -393,21 +392,20 @@ private struct PendingAttachmentRowView: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: iconName)
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 2) {
                 Text(attachment.fileName)
                     .font(.caption)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(sizeString)
                     .font(.caption2)
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(Color.white.opacity(0.15))
-        .cornerRadius(10)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray5)))
         .opacity(0.7)
     }
 }
