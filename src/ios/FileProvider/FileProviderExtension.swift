@@ -41,7 +41,7 @@ final class FileProviderExtension: NSFileProviderExtension {
     }()
 
     /// The three fixed top-level folders exposed under the root.
-    private static let topLevelSubdirs = ["memory", "skills", "shared"]
+    static let topLevelSubdirs = ["memory", "skills", "shared"]
 
     override init() {
         super.init()
