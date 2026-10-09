@@ -216,9 +216,18 @@ private struct MessageRowView: View {
                             .foregroundColor(.white)
                             .cornerRadius(18)
                     }
-                    ForEach(message.attachments) { attachment in
-                        AttachmentRowView(attachment: attachment) {
-                            onOpenAttachment?(attachment)
+                    if !message.attachments.isEmpty {
+                        ForEach(message.attachments) { attachment in
+                            AttachmentRowView(attachment: attachment) {
+                                onOpenAttachment?(attachment)
+                            }
+                        }
+                    } else if !message.inputAttachments.isEmpty {
+                        // Queued / in-flight send: files not yet copied to uploads,
+                        // so no AttachmentMeta exists — preview from cache.
+                        // Mirrors upstream ChatMessageViews' QueuedAttachmentPreview fallback.
+                        ForEach(message.inputAttachments) { inputAttachment in
+                            PendingAttachmentRowView(attachment: inputAttachment)
                         }
                     }
                 }
@@ -358,6 +367,50 @@ private struct AttachmentRowView: View {
 }
 
 // MARK: - Block View
+
+/// Row for a not-yet-uploaded attachment (queued or in-flight send).
+/// The file lives only in `message.inputAttachments` (app Caches) until the
+/// send task / queue drain copies it to uploads and swaps in the real
+/// `AttachmentMeta`s — until then there is no minis:// URL to open, so the
+/// row is display-only, dimmed like upstream's QueuedAttachmentPreview.
+private struct PendingAttachmentRowView: View {
+    let attachment: InputAttachment
+
+    private var iconName: String {
+        switch attachment.kind {
+        case .image: return "photo"
+        case .video: return "video"
+        case .document: return "doc"
+        }
+    }
+
+    private var sizeString: String {
+        let bytes = (try? FileManager.default.attributesOfItem(atPath: attachment.cacheURL.path)[.size] as? Int) ?? 0
+        guard bytes > 0 else { return "等待发送" }
+        return ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: iconName)
+                .foregroundColor(.white.opacity(0.9))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(attachment.fileName)
+                    .font(.caption)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                Text(sizeString)
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.white.opacity(0.15))
+        .cornerRadius(10)
+        .opacity(0.7)
+    }
+}
 
 private struct BlockView: View {
     @ObservedObject var block: AssistantBlock
