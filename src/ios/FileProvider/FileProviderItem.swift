@@ -77,12 +77,6 @@ final class FileProviderItem: NSObject, NSFileProviderItem {
                 .allowsDeleting]
     }
 
-    var itemVersion: NSFileProviderItemVersion {
-        let modDate = (attrs?[.modificationDate] as? Date) ?? Date()
-        let stamp = "\(modDate.timeIntervalSince1970)".data(using: .utf8) ?? Data()
-        return NSFileProviderItemVersion(contentVersion: stamp, metadataVersion: stamp)
-    }
-
     var documentSize: NSNumber? {
         guard let size = attrs?[.size] as? UInt64 else { return nil }
         return NSNumber(value: size)

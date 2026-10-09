@@ -111,11 +111,8 @@ final class FileProviderEnumerator: NSObject, NSFileProviderEnumerator {
     }
 
     private func listItems() -> [FileProviderItem] {
-        // Trash is not supported — always return empty.
-        if containerItemIdentifier == .trashContainer {
-            return []
-        }
-
+        // Note: .trashContainer is iOS 16+ and never reaches this classic
+        // provider on iOS 15; the enumerator(for:) override already rejects it.
         let dirURL = directoryURL()
         let fm = FileManager.default
         if containerItemIdentifier == .rootContainer {
