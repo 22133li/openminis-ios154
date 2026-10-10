@@ -440,6 +440,8 @@ private struct BlockView: View {
             ToolBlockView(icon: "photo.fill", title: "查看图片", detail: path, content: block.content)
         case .memoryTool(let action):
             ToolBlockView(icon: "brain.head.profile", title: "记忆 \(action)", detail: "", content: block.content)
+        case .vaultTool(let action):
+            ToolBlockView(icon: "key.fill", title: "保险库 \(action)", detail: "", content: block.content)
         case .delegateTool(let title):
             ToolBlockView(icon: "person.2.fill", title: title, detail: "", content: block.content)
         case .info:

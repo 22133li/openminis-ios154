@@ -1334,6 +1334,8 @@ struct ToolLiveSheet: View {
             return "read_image(\(truncateParam(path)))"
         case .memoryTool(let action):
             return "\(truncateParam(action))"
+        case .vaultTool(let action):
+            return "vault(\(truncateParam(action)))"
         case .delegateTool(let title):
             return "delegate_task(\(truncateParam(title)))"
         case .info:
@@ -1355,6 +1357,7 @@ struct ToolLiveSheet: View {
         case .browserTool: Image(systemName: "globe")
         case .readImageTool: Image(systemName: "photo")
         case .memoryTool: Image(systemName: "brain.head.profile")
+        case .vaultTool: Image(systemName: "key.fill")
         case .delegateTool: Image(systemName: HelperAccent.icon)
         case .info: Image(systemName: "arrow.triangle.2.circlepath")
         case .text: Image(systemName: "text.alignleft")
@@ -2692,6 +2695,7 @@ struct ToolLiveSheet: View {
         case .browserTool: return "Minis is using Browser"
         case .readImageTool: return "Minis is reading Image"
         case .memoryTool: return "Minis is using Memory"
+        case .vaultTool: return "Minis is using Credential Vault"
         case .delegateTool: return "Minis is using an Agent"
         case .info: return "Minis"
         case .text: return "Minis"
@@ -2726,6 +2730,7 @@ struct ToolLiveSheet: View {
         case .browserTool: return .blue
         case .readImageTool: return .purple
         case .memoryTool: return .pink
+        case .vaultTool: return .blue
         case .delegateTool: return HelperAccent.color
         case .info: return .secondary
         case .text: return .primary
@@ -3130,6 +3135,7 @@ private struct ToolPreviewThumbnail: View {
         case .browserTool: return .blue
         case .readImageTool: return .purple
         case .memoryTool: return .pink
+        case .vaultTool: return .blue
         case .delegateTool: return HelperAccent.color
         case .info: return .secondary
         case .text: return .primary

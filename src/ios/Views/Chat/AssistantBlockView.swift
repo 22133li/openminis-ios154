@@ -66,6 +66,10 @@ struct AssistantBlockView: View {
             ToolCapsuleView(block: block, icon: "brain.head.profile", accentColor: .pink,
                             commandStartTime: commandStartTime, onStop: onStop,
                             toolSnapshots: toolSnapshots, detailBlock: $detailBlock)
+        case .vaultTool:
+            ToolCapsuleView(block: block, icon: "key.fill", accentColor: .blue,
+                            commandStartTime: commandStartTime, onStop: onStop,
+                            toolSnapshots: toolSnapshots, detailBlock: $detailBlock)
         case .delegateTool:
             if HelperBlockInfo.controlSummary(block) != nil {
                 // [T-subagent-control-capsule] A status / steer / cancel /
@@ -297,6 +301,7 @@ struct ToolCapsuleView: View {
         case .browserTool:   toolName = "browser_use"
         case .readImageTool: toolName = "read_image"
         case .memoryTool:    toolName = "memory"
+        case .vaultTool:     toolName = "vault"
         case .delegateTool:  toolName = SubAgentDefinition.toolName
         case .text, .thinking, .info: toolName = "unknown"
         }

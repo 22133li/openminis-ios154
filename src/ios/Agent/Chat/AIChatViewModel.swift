@@ -5418,6 +5418,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
                 case .browserTool: return "browser"
                 case .readImageTool: return "readImage"
                 case .memoryTool: return "memory"
+                case .vaultTool: return "vault"
                 case .delegateTool: return SubAgentDefinition.toolName
                 case .info: return "info"
                 }

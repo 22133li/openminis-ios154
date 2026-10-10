@@ -275,6 +275,8 @@ struct ChatMessageRow: View {
                 parts.append("Image: \(path)")
             case .memoryTool(let action):
                 parts.append("Memory: \(action)\n\(block.content)")
+            case .vaultTool(let action):
+                parts.append("Vault: \(action)\n\(block.content)")
             case .delegateTool(let title):
                 parts.append("Agent: \(title)\n\(block.content)")
             case .thinking:

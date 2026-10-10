@@ -67,9 +67,9 @@ final class CredentialVaultStore: ObservableObject {
     private var fileURL: URL
 
     /// Entry ids the user approved for agent use during the CURRENT turn.
-    /// Lock-guarded: read from nonisolated contexts (ISH runner).
-    private let approvalLock = NSLock()
-    private var approvedIds: Set<String> = []
+    /// A `let` box so nonisolated readers (ISH runner) can reach it: `var`
+    /// state on a @MainActor class is not visible off the main actor.
+    private let turnApprovals = TurnApprovals()
 
     nonisolated static func vaultFileURL() -> URL {
         let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
@@ -170,7 +170,7 @@ final class CredentialVaultStore: ObservableObject {
     func delete(id: String) {
         entries.removeAll { $0.id == id }
         Self.deleteValue(forAccount: id)
-        _ = approvalLock.withLock { approvedIds.remove(id) }
+        turnApprovals.remove(id)
         saveEntries()
     }
 
@@ -179,13 +179,13 @@ final class CredentialVaultStore: ObservableObject {
     /// Grant the agent use of this entry for the rest of the current turn.
     /// Called only after explicit per-use user approval.
     func approveForTurn(id: String) {
-        _ = approvalLock.withLock { approvedIds.insert(id) }
+        turnApprovals.insert(id)
     }
 
     /// Env dict of turn-approved secrets, for injection into shell_execute.
     /// Nonisolated: called from the ISH runner off the main thread.
     nonisolated func envForApprovedTurn() -> [String: String] {
-        let ids: Set<String> = approvalLock.withLock { approvedIds }
+        let ids = turnApprovals.snapshot()
         guard !ids.isEmpty else { return [:] }
         let entries = Self.loadEntries(from: Self.vaultFileURL())
         var out: [String: String] = [:]
@@ -200,7 +200,7 @@ final class CredentialVaultStore: ObservableObject {
     /// Drop all turn approvals. Called when the user sends a new message
     /// (turn boundary) so a grant never leaks into the next turn.
     func endTurn() {
-        approvalLock.withLock { approvedIds.removeAll() }
+        turnApprovals.removeAll()
     }
 
     /// All current values, for the always-on vault redactor. Nonisolated.
@@ -314,6 +314,33 @@ final class CredentialVaultStore: ObservableObject {
     /// Non-isolated read for the reveal UI (called after Face ID auth).
     nonisolated static func loadValueSync(forId id: String) -> String? {
         loadValue(forAccount: id)
+    }
+}
+
+// MARK: - TurnApprovals
+
+/// Lock-guarded set of vault entry ids approved for the current turn.
+/// `@unchecked Sendable` + NSLock: the guarded value is a plain Set, and
+/// every access goes through the lock — the same shape as
+/// ProviderCredentialCache.
+private final class TurnApprovals: @unchecked Sendable {
+    private let lock = NSLock()
+    private var ids: Set<String> = []
+
+    func insert(_ id: String) {
+        lock.withLock { _ = ids.insert(id) }
+    }
+
+    func remove(_ id: String) {
+        lock.withLock { _ = ids.remove(id) }
+    }
+
+    func removeAll() {
+        lock.withLock { ids.removeAll() }
+    }
+
+    func snapshot() -> Set<String> {
+        lock.withLock { ids }
     }
 }
 
