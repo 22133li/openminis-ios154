@@ -7980,6 +7980,7 @@ private enum SettingsDestination: Hashable {
     case about
     case permissions
     case environments
+    case credentialVault
     // [T-mcp-oauth-deeplink]
     case mcpIntegrations
     case mcpServerDetail(serverId: String)
@@ -8067,6 +8068,8 @@ private struct SettingsSheet: View {
                 AboutView()
             case .environments:
                 EnvironmentVariablesView()
+            case .credentialVault:
+                CredentialVaultView()
             case .permissions:
                 OffloadPermissionSettingsView()
                 // [T-mcp-oauth-deeplink] Detail = the list view told to open
@@ -8228,6 +8231,19 @@ private struct SettingsSheet: View {
                                 .foregroundStyle(.white)
                                 .frame(width: 21, height: 21)
                                 .background(.green, in: Circle())
+                        }
+                    }
+                    NavigationLink {
+                        CredentialVaultView()
+                    } label: {
+                        Label {
+                            Text("Credential Vault")
+                        } icon: {
+                            Image(systemName: "key.fill")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.white)
+                                .frame(width: 21, height: 21)
+                                .background(.blue, in: Circle())
                         }
                     }
                 }
@@ -8516,6 +8532,8 @@ private struct SettingsSheet: View {
             navPath.append(SettingsDestination.permissions)
         case .environments:
             navPath.append(SettingsDestination.environments)
+        case .credentialVault:
+            navPath.append(SettingsDestination.credentialVault)
         case .mcpIntegrations:
             navPath.append(SettingsDestination.mcpIntegrations)
         case .mcpServerDetail(let id):

@@ -146,4 +146,52 @@ enum EnvVarRedactor {
         }
         return out
     }
+
+    // MARK: - Credential Vault (always-on)
+
+    /// Cached vault values + lock. Separate from the env-var cache because
+    /// vault masking is NOT gated by Privacy Mode — a vault secret must
+    /// never reach the model or the chat transcript, unconditionally.
+    nonisolated(unsafe) private static var cachedVaultValues: [String]?
+    private static let vaultCacheLock = NSLock()
+    nonisolated(unsafe) private static var vaultCacheGeneration: UInt64 = 0
+
+    /// Drop the cached vault values. Called on every vault mutation so a
+    /// new/changed/removed secret is (un)masked from the very next output.
+    static func invalidateVaultCache() {
+        vaultCacheLock.withLock {
+            cachedVaultValues = nil
+            vaultCacheGeneration &+= 1
+        }
+    }
+
+    /// Mask any vault secret values appearing in `output`. Always applied
+    /// to shell tool results (unlike `redactIfEnabled`, not gated by the
+    /// Privacy Mode toggle). Returns the rewritten string.
+    static func redactVaultSecrets(_ output: String) -> String {
+        let values = loadVaultValues()
+        guard !values.isEmpty else { return output }
+        let (masked, _) = redact(output, against: values)
+        return masked
+    }
+
+    private static func loadVaultValues() -> [String] {
+        vaultCacheLock.lock()
+        if let cachedVaultValues {
+            vaultCacheLock.unlock()
+            return cachedVaultValues
+        }
+        let generationAtStart = vaultCacheGeneration
+        vaultCacheLock.unlock()
+
+        let loaded = CredentialVaultStore.allValuesForRedaction()
+
+        // Same fill-race guard as the env-var cache: publish only if no
+        // invalidate raced this load.
+        vaultCacheLock.withLock {
+            if vaultCacheGeneration == generationAtStart { cachedVaultValues = loaded }
+        }
+        return loaded
+    }
 }
+

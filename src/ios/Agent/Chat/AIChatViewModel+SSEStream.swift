@@ -701,6 +701,12 @@ extension AIChatViewModel {
                         if let cmd = extractPartialStringValue("command", from: accumulated) {
                             return .shellTool(command: cmd)
                         }
+                    case "vault_list":
+                        return .vaultTool(action: "List credentials")
+                    case "vault_use_secret":
+                        if let vname = extractPartialStringValue("name", from: accumulated) {
+                            return .vaultTool(action: vname)
+                        }
                     case "browser_use":
                         if let action = extractPartialStringValue("action", from: accumulated) {
                             return .browserTool(action: action)
@@ -815,6 +821,12 @@ extension AIChatViewModel {
                     case "shell_execute":
                         if let cmd = args["command"] as? String {
                             messages[msgIdx].blocks[blockIdx].kind = .shellTool(command: cmd)
+                        }
+                    case "vault_list":
+                        messages[msgIdx].blocks[blockIdx].kind = .vaultTool(action: "List credentials")
+                    case "vault_use_secret":
+                        if let vname = args["name"] as? String {
+                            messages[msgIdx].blocks[blockIdx].kind = .vaultTool(action: vname)
                         }
                     case "browser_use":
                         if let action = args["action"] as? String {

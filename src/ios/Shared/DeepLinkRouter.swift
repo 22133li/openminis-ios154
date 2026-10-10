@@ -201,6 +201,9 @@ enum DeepLinkRouter {
             }
             coord.pendingSettingsTarget = .environments
 
+        case "vault", "credential-vault", "credentialvault":
+            coord.pendingSettingsTarget = .credentialVault
+
         case "rootfs", "rootfs-management", "rootfs_management",
              "mirrors":
             // RootfsManagementView lives in its own sheet on iOS, not

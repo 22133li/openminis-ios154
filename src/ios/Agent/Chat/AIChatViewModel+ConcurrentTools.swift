@@ -595,7 +595,9 @@ extension AIChatViewModel {
             if redactHits > 0 {
                 ctLogger.info("[EnvVarRedact] shell_execute: masked \(redactHits) env-var value(s) in tool result")
             }
-            toolOutput = redactedOut
+            // Vault secrets are masked unconditionally (not gated by Privacy
+            // Mode) — a vault value must never reach the model or transcript.
+            toolOutput = EnvVarRedactor.redactVaultSecrets(redactedOut)
 
         case "file_read":
             let fileResult: FileToolResult
@@ -918,6 +920,57 @@ extension AIChatViewModel {
             }
             toolOutput = memResult.output
             toolSuccess = memResult.success
+
+        case "vault_list":
+            // Names + notes only — values never leave the Keychain here.
+            let vaultStore = CredentialVaultStore.shared
+            if vaultStore.entries.isEmpty {
+                toolOutput = "The credential vault is empty. Ask the user to add credentials in Settings → Credential Vault."
+            } else {
+                var lines = ["Credential Vault (\(vaultStore.entries.count) stored):"]
+                for e in vaultStore.entries {
+                    let note = e.note.trimmingCharacters(in: .whitespacesAndNewlines)
+                    lines.append("- \(e.name)" + (note.isEmpty ? "" : " — \(note)"))
+                }
+                lines.append("To use one, call vault_use_secret with the exact name.")
+                toolOutput = lines.joined(separator: "\n")
+            }
+            toolSuccess = true
+            if msgIdx < messages.count, blockIdx < messages[msgIdx].blocks.count {
+                messages[msgIdx].blocks[blockIdx].content = toolOutput
+            }
+
+        case "vault_use_secret":
+            // Approval-gated, per-use. The raw value is NEVER placed in the
+            // tool result — on approval it is injected as $VAULT_<NAME> into
+            // this turn's shell environment (see ISHExecutionCoordinator).
+            let reqName = ((toolArgs["name"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let purpose = ((toolArgs["purpose"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let vTitle = (toolArgs["tool_title"] as? String) ?? ""
+            let vaultStore2 = CredentialVaultStore.shared
+            guard let vEntry = vaultStore2.entry(named: reqName) else {
+                toolOutput = "Error: no credential named '\(reqName)' in the vault. Call vault_list to see available names, or ask the user to add it in Settings → Credential Vault. Do not guess names."
+                toolSuccess = false
+                if msgIdx < messages.count, blockIdx < messages[msgIdx].blocks.count {
+                    messages[msgIdx].blocks[blockIdx].content = toolOutput
+                }
+                break
+            }
+            let vEnvName = CredentialVaultStore.envVarName(for: vEntry)
+            let vApproved = await CredentialVaultAccessManager.shared.requestAccess(
+                entry: vEntry, envVarName: vEnvName, purpose: purpose, toolTitle: vTitle
+            )
+            if vApproved {
+                vaultStore2.approveForTurn(id: vEntry.id)
+                toolOutput = "Approved. '\(vEntry.name)' is now available as $\(vEnvName) in shell_execute commands for the rest of this turn. Reference it as an environment variable (e.g. curl -H \"Authorization: Bearer $\(vEnvName)\") and NEVER echo or print it — output is masked, but prefer not to emit it at all."
+                toolSuccess = true
+            } else {
+                toolOutput = "The user declined to share '\(vEntry.name)'. Do not retry this call silently — ask the user how they would like to proceed (e.g. they may paste the value themselves or add a different credential)."
+                toolSuccess = false
+            }
+            if msgIdx < messages.count, blockIdx < messages[msgIdx].blocks.count {
+                messages[msgIdx].blocks[blockIdx].content = toolOutput
+            }
 
         case SubAgentDefinition.toolName:
             // [T-agents-debug-only] A refusal in the sub-agent result dialect,

@@ -622,6 +622,8 @@ final class AssistantBlock: Identifiable, ObservableObject {
             return (!path.isEmpty && name != "/" && name.contains(".")) ? name : "Read image"
         case .memoryTool(let action):
             return action.isEmpty ? "Memory" : action
+        case .vaultTool(let action):
+            return action.isEmpty ? "Credential Vault" : action
         case .info:
             return ""
         }
@@ -638,6 +640,9 @@ enum AssistantBlockKind: Equatable {
     case browserTool(action: String)
     case readImageTool(path: String)
     case memoryTool(action: String)
+    /// A `vault_list` / `vault_use_secret` call: `action` is the tool_title
+    /// or the credential name. Never carries a secret value.
+    case vaultTool(action: String)
     /// [T-p1-delegate-task] A `delegate_task` call: `title` is the helper's
     /// tool_title. The block's content is a live progress line while the
     /// helper runs and the result JSON afterwards.

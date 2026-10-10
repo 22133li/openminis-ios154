@@ -244,6 +244,36 @@ extension AIChatViewModel {
                 required: ["tool_title"],
                 propertyOrdering: ["tool_title", "action", "task", "agent", "model_choice", "context", "max_minutes", "wait", "progress_report", "job_id", "message", "child_session_id"]
             ))
+
+            // MARK: - Credential Vault tools
+            //
+            // The user's Credential Vault (Settings → Credential Vault) holds
+            // named secrets in the iOS Keychain. These two tools are the only
+            // agent-visible surface: listing names never exposes values, and
+            // using a secret requires explicit per-use user approval — the
+            // raw value is injected as $VAULT_<NAME> into the shell
+            // environment for the rest of the turn and never reaches the
+            // model or the chat transcript.
+            tools.append(AgentToolDefinition(
+                name: "vault_list",
+                description: "List the names (and notes, not values) of credentials the user stored in Settings → Credential Vault. Use it to discover which secrets are available before asking to use one. Never invent names — only names returned here exist.",
+                parameters: [
+                    "tool_title": AgentToolParam(type: .string, description: "A concise 5-10 word summary of what this tool call does, shown to the user."),
+                ],
+                required: ["tool_title"],
+                propertyOrdering: ["tool_title"]
+            ))
+            tools.append(AgentToolDefinition(
+                name: "vault_use_secret",
+                description: "Request one-time use of a credential from the user's Credential Vault (e.g. an API token or password they stored in Settings → Credential Vault). Call this INSTEAD of asking the user to paste the secret into chat. Each call pops an approval sheet for the user; on approval the secret is injected as $VAULT_<NAME> into the shell environment for the rest of THIS TURN ONLY — reference it as an environment variable in shell_execute commands (e.g. curl -H \"Authorization: Bearer $VAULT_GITHUB_TOKEN\") and NEVER echo/print it. The raw value is never shown to you and never written to chat history. If the user denies, do not retry silently — ask them how they'd like to proceed.",
+                parameters: [
+                    "tool_title": AgentToolParam(type: .string, description: "A concise 5-10 word summary of what this tool call does, shown to the user."),
+                    "name": AgentToolParam(type: .string, description: "The credential name exactly as shown in Settings → Credential Vault (case-insensitive). Call vault_list first if you are unsure of the exact name."),
+                    "purpose": AgentToolParam(type: .string, description: "One sentence shown to the user explaining why the agent needs this credential (e.g. 'Push the release commit to GitHub'). Be specific — this is what the user approves."),
+                ],
+                required: ["tool_title", "name"],
+                propertyOrdering: ["tool_title", "name", "purpose"]
+            ))
         }
 
         return tools

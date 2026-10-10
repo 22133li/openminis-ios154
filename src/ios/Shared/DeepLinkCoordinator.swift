@@ -29,6 +29,9 @@ enum SettingsDeepLinkTarget: Equatable {
     case about
     case permissions
     case environments
+    /// Credential Vault (user's named secrets in the Keychain).
+    /// Reachable as `minis://settings/vault`.
+    case credentialVault
     /// [T-mcp-oauth-deeplink] MCP Integrations list / a specific server's
     /// edit form (where the Authorize button lives).
     case mcpIntegrations

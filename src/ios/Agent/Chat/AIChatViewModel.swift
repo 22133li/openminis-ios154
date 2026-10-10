@@ -2827,6 +2827,8 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     func send(overrideText: String? = nil) {
         // Read-only mode — cannot send messages
         guard remoteDeviceId == nil else { return }
+        // Turn boundary: a vault grant never leaks into the next turn.
+        CredentialVaultStore.shared.endTurn()
         // Every `inputText = ""` below is guarded by this: the composer is
         // emptied only when the composer is what was sent.
         let usingComposer = overrideText == nil

@@ -319,7 +319,12 @@ actor ISHExecutionCoordinator {
         let effectiveTimeout = timeout ?? 300 // 5 minute default
 
         // Load user-defined env vars (nonisolated, reads from disk + Keychain)
-        let customEnv = EnvVarStore.shared.allAsDict()
+        var customEnv = EnvVarStore.shared.allAsDict()
+        // Merge turn-approved vault secrets (empty unless the user approved
+        // a vault_use_secret call this turn).
+        for (k, v) in CredentialVaultStore.shared.envForApprovedTurn() {
+            customEnv[k] = v
+        }
 
         // Feed the command as a script via stdin pipe to /bin/sh.
         // This avoids shell quoting issues with multi-line or special-char commands.
