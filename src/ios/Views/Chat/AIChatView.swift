@@ -1126,7 +1126,13 @@ struct AIChatView: View {
                 FileBrowserView(rootPath: base, initialPath: base.appendingPathComponent("var/minis"), rootLabel: "/")
             }
         }
-        .sheet(isPresented: $showBrowserSheet) {
+        .sheet(isPresented: $showBrowserSheet, onDismiss: {
+            // Resolves a pending agent-initiated takeover
+            // (request_browser_takeover): handedBack if the user engaged
+            // takeover, declined if they just closed it. Also ends a manual
+            // takeover. No-op when no takeover is in flight.
+            vm.resumeFromBrowserTakeover()
+        }) {
             BrowserSheetView(pool: vm.browserTabPool, isAgentBusy: vm.browserTabPool.isAgentBrowsing, onTakeover: {
                 vm.browserTakeoverActive = true
             }, agentTakeoverRequest: vm.agentTakeoverRequest, onStartAgentTakeover: {

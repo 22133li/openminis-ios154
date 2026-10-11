@@ -250272,6 +250272,16 @@
           }
         }
       }
+    },
+    "Takeover active — operate the page, then close to hand back" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已接管 — 操作页面，完成后关闭交还给 Agent"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

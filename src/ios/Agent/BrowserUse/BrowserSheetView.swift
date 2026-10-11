@@ -14,8 +14,36 @@ struct BrowserSheetView: View {
     @State private var showHistory = false
     @State private var isFullscreen = false
     @FocusState private var addressFocused: Bool
+    /// True after the user taps 接管: the blocking overlay lifts and the
+    /// user gets full control of the page until the sheet is dismissed.
+    @State private var takeoverEngaged = false
 
     private var manager: BrowserUseManager? { pool.activeManager }
+
+    /// Effective busy state driving the overlay + chrome interactivity.
+    ///
+    /// Two fixes over the old frozen `isAgentBusy` snapshot:
+    /// 1. `isAgentBusy` was captured once when the sheet presented. The tab
+    ///    pool's 15s post-action grace window usually expires while the sheet
+    ///    is open, so read `pool.isAgentBrowsing` live instead — otherwise the
+    ///    blocking overlay (and its forever-pulsing pill) could never lift.
+    /// 2. Once the user taps 接管, force false: "hand the user the mouse"
+    ///    means full control, overlay included.
+    private var effectiveBusy: Bool {
+        if takeoverEngaged { return false }
+        // ToolLiveSheet's manual-takeover view passes isAgentBusy=false: the
+        // user is in control there, never show the blocking overlay.
+        guard isAgentBusy else { return false }
+        return pool.isAgentBrowsing
+    }
+
+    /// User tapped 接管: lift the overlay, give full control, and tell the vm
+    /// the user is in charge (an agent-initiated request resolves on dismiss).
+    private func engageTakeover() {
+        takeoverEngaged = true
+        onStartAgentTakeover?()
+        onTakeover?()
+    }
 
     var body: some View {
         NavigationView {
@@ -23,7 +51,7 @@ struct BrowserSheetView: View {
                 if !isFullscreen {
                     // Tab bar
                     tabBar
-                        .allowsHitTesting(!isAgentBusy)
+                        .allowsHitTesting(!effectiveBusy)
 
                     // URL bar
                     HStack(spacing: 8) {
@@ -36,7 +64,7 @@ struct BrowserSheetView: View {
                             .keyboardType(.URL)
                             .submitLabel(.go)
                             .focused($addressFocused)
-                            .disabled(isAgentBusy)
+                            .disabled(effectiveBusy)
                             .onSubmit {
                                 let trimmed = addressText.trimmingCharacters(in: .whitespacesAndNewlines)
                                 guard !trimmed.isEmpty else { return }
@@ -56,16 +84,33 @@ struct BrowserSheetView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(Color(UIColor.secondarySystemBackground))
-                    .allowsHitTesting(!isAgentBusy)
+                    .allowsHitTesting(!effectiveBusy)
                 }
 
                 // Agent-initiated takeover banner (tool:
                 // request_browser_takeover): the agent is stuck on something
-                // only the user can do — tapping through starts the same
-                // takeover flow as the manual Takeover button.
+                // only the user can do. Tapping 接管 engages takeover mode:
+                // the blocking overlay lifts and the user gets full control
+                // until the sheet is dismissed (which hands back to the agent).
+                // The banner is fully static — explicit identity transition so
+                // no implicit animation can make it pulse or zoom.
                 if let req = agentTakeoverRequest {
-                    AgentTakeoverBanner(reason: req.reason, whatToDo: req.whatToDo) {
-                        onStartAgentTakeover?()
+                    if takeoverEngaged {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Takeover active — operate the page, then close to hand back")
+                                .font(.system(size: 13, weight: .medium))
+                            Spacer()
+                        }
+                        .padding(10)
+                        .background(Color.green.opacity(0.12))
+                        .transition(.identity)
+                    } else {
+                        AgentTakeoverBanner(reason: req.reason, whatToDo: req.whatToDo) {
+                            engageTakeover()
+                        }
+                        .transition(.identity)
                     }
                 }
 
@@ -83,8 +128,8 @@ struct BrowserSheetView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
 
-                    if isAgentBusy {
-                        AgentBrowsingOverlay(onTakeover: onTakeover)
+                    if effectiveBusy {
+                        AgentBrowsingOverlay(onTakeover: (onTakeover != nil || onStartAgentTakeover != nil) ? { engageTakeover() } : nil)
                             .transition(.opacity)
                     }
 
@@ -109,7 +154,7 @@ struct BrowserSheetView: View {
                         }
                     }
                 }
-                .animation(.easeInOut(duration: 0.3), value: isAgentBusy)
+                .animation(.easeInOut(duration: 0.3), value: effectiveBusy)
 
                 // Download progress banner — visible in both normal and
                 // fullscreen modes so an in-flight download is never silent.
@@ -127,20 +172,20 @@ struct BrowserSheetView: View {
                             Image(systemName: "chevron.left")
                                 .frame(maxWidth: .infinity)
                         }
-                        .disabled(isAgentBusy || !(manager?.canGoBack ?? false))
+                        .disabled(effectiveBusy || !(manager?.canGoBack ?? false))
 
                         Button { pool.touchActivity(); manager?.goForward() } label: {
                             Image(systemName: "chevron.right")
                                 .frame(maxWidth: .infinity)
                         }
-                        .disabled(isAgentBusy || !(manager?.canGoForward ?? false))
+                        .disabled(effectiveBusy || !(manager?.canGoForward ?? false))
 
                         if manager?.isLoading ?? false {
                             Button { pool.touchActivity(); manager?.stopLoading() } label: {
                                 Image(systemName: "xmark")
                                     .frame(maxWidth: .infinity)
                             }
-                            .disabled(isAgentBusy)
+                            .disabled(effectiveBusy)
                             .transition(.identity)
                         } else {
                             Button { pool.touchActivity(); manager?.reload() } label: {
@@ -148,7 +193,7 @@ struct BrowserSheetView: View {
                                     .frame(maxWidth: .infinity)
                             }
                             .transition(.identity)
-                            .disabled(isAgentBusy)
+                            .disabled(effectiveBusy)
                         }
 
                         Button {
@@ -157,12 +202,12 @@ struct BrowserSheetView: View {
                             Image(systemName: "arrow.up.left.and.arrow.down.right")
                                 .frame(maxWidth: .infinity)
                         }
-                        .disabled(isAgentBusy)
+                        .disabled(effectiveBusy)
                     }
                     .font(.system(size: 18))
                     .padding(.vertical, 10)
                     .background(Color(UIColor.secondarySystemBackground))
-                    .allowsHitTesting(!isAgentBusy)
+                    .allowsHitTesting(!effectiveBusy)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -186,14 +231,14 @@ struct BrowserSheetView: View {
                         } label: {
                             Image(systemName: "plus")
                         }
-                        .disabled(isAgentBusy || pool.tabs.count >= BrowserTabPool.maxTabs)
+                        .disabled(effectiveBusy || pool.tabs.count >= BrowserTabPool.maxTabs)
 
                         Button {
                             showHistory = true
                         } label: {
                             Image(systemName: "clock.arrow.circlepath")
                         }
-                        .disabled(isAgentBusy)
+                        .disabled(effectiveBusy)
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -282,7 +327,7 @@ struct BrowserSheetView: View {
                     .lineLimit(1)
                     .frame(maxWidth: 120)
 
-                if !isAgentBusy {
+                if !effectiveBusy {
                     Button {
                         _ = pool.closeTab(id: tab.id)
                     } label: {
