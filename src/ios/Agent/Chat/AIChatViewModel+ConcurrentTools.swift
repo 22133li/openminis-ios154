@@ -1000,7 +1000,7 @@ extension AIChatViewModel {
             }
             let eStore = CredentialVaultStore.shared
             guard let eEntry = eStore.entry(named: eCredName) else {
-                finishEmail("Error: no credential named '\(eCredName)' in the vault. Call vault_list to see available names, or ask the user to add it in Settings \u2192 Credential Vault. Do not guess names.", false)
+                finishEmail("Error: no credential named '\(eCredName)' in the vault. Call vault_list to see available names, or ask the user to add it in Settings → Credential Vault. Do not guess names.", false)
                 break
             }
             let eFrom: String = {
@@ -1037,11 +1037,11 @@ extension AIChatViewModel {
                 usageLine: eUsageLine
             )
             guard eApproved else {
-                finishEmail("The user declined to share '\(eEntry.name)'. Do not retry this call silently \u2014 ask the user how they would like to proceed.", false)
+                finishEmail("The user declined to share '\(eEntry.name)'. Do not retry this call silently — ask the user how they would like to proceed.", false)
                 break
             }
             guard let eSecret = CredentialVaultStore.loadValueSync(forId: eEntry.id), !eSecret.isEmpty else {
-                finishEmail("Error: the credential was approved but its value could not be read from the Keychain. Ask the user to re-save it in Settings \u2192 Credential Vault.", false)
+                finishEmail("Error: the credential was approved but its value could not be read from the Keychain. Ask the user to re-save it in Settings → Credential Vault.", false)
                 break
             }
             do {
