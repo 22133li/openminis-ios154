@@ -5,6 +5,10 @@ struct BrowserSheetView: View {
     @ObservedObject var pool: BrowserTabPool
     var isAgentBusy: Bool = false
     var onTakeover: (() -> Void)? = nil
+    /// Agent-initiated takeover request (tool: request_browser_takeover).
+    /// When set, a banner explains what the agent needs the user to do.
+    var agentTakeoverRequest: AgentTakeoverRequest? = nil
+    var onStartAgentTakeover: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var addressText: String = ""
     @State private var showHistory = false
@@ -53,6 +57,16 @@ struct BrowserSheetView: View {
                     .padding(.vertical, 8)
                     .background(Color(UIColor.secondarySystemBackground))
                     .allowsHitTesting(!isAgentBusy)
+                }
+
+                // Agent-initiated takeover banner (tool:
+                // request_browser_takeover): the agent is stuck on something
+                // only the user can do — tapping through starts the same
+                // takeover flow as the manual Takeover button.
+                if let req = agentTakeoverRequest {
+                    AgentTakeoverBanner(reason: req.reason, whatToDo: req.whatToDo) {
+                        onStartAgentTakeover?()
+                    }
                 }
 
                 // Live webview + agent overlay
@@ -329,6 +343,41 @@ private struct BrowserAddressBarIcon: View {
 }
 
 // MARK: - Agent Browsing Overlay
+
+/// Banner shown when the agent explicitly asks the user to take over the
+/// browser (tool: request_browser_takeover). The reason/whatToDo are written
+/// by the model in the user's language.
+private struct AgentTakeoverBanner: View {
+    let reason: String
+    let whatToDo: String
+    var onStart: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: "hand.raised.fill")
+                    .foregroundStyle(.orange)
+                Text("Agent needs you to take over")
+                    .font(.system(size: 14, weight: .semibold))
+                Spacer()
+                Button("Take Over") { onStart() }
+                    .font(.system(size: 14, weight: .semibold))
+                    .buttonStyle(.borderedProminent)
+            }
+            Text(reason)
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+            Text(whatToDo)
+                .font(.system(size: 13))
+        }
+        .padding(12)
+        .background(Color.orange.opacity(0.12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 0)
+                .stroke(Color.orange.opacity(0.4), lineWidth: 0.5)
+        )
+    }
+}
 
 /// Breathing-light overlay shown when the agent is controlling the browser.
 /// Blocks all user interaction on the webview while providing a visual cue.

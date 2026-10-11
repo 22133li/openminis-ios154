@@ -250160,6 +250160,26 @@
           }
         }
       }
+    },
+    "Agent needs you to take over" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 需要你接管"
+          }
+        }
+      }
+    },
+    "Take Over" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接管"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

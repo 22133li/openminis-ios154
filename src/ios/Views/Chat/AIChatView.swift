@@ -1129,7 +1129,14 @@ struct AIChatView: View {
         .sheet(isPresented: $showBrowserSheet) {
             BrowserSheetView(pool: vm.browserTabPool, isAgentBusy: vm.browserTabPool.isAgentBrowsing, onTakeover: {
                 vm.browserTakeoverActive = true
+            }, agentTakeoverRequest: vm.agentTakeoverRequest, onStartAgentTakeover: {
+                vm.browserTakeoverActive = true
             })
+        }
+        .onChange(of: vm.agentTakeoverRequest != nil) { hasRequest in
+            // Agent-initiated takeover: bring the browser sheet up with the
+            // banner explaining what the agent needs.
+            if hasRequest { showBrowserSheet = true }
         }
         .sheet(isPresented: $showModelPicker) {
             NavigationView {

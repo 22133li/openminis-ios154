@@ -297,6 +297,31 @@ extension AIChatViewModel {
                 required: ["tool_title", "to", "subject", "body", "credential"],
                 propertyOrdering: ["tool_title", "to", "subject", "body", "credential", "from", "smtp_server"]
             ))
+
+            // MARK: - Agent-initiated browser takeover
+            //
+            // request_browser_takeover is the "hand the user the mouse"
+            // tool: when the agent is blocked on something only a human can
+            // do (login wall, CAPTCHA / human verification, 2FA / SMS code,
+            // payment confirmation, a judgment call on page content), it
+            // calls this instead of stalling. The user sees the reason and
+            // instructions, takes control of the live browser, and hands
+            // back when done — the call then returns a fresh screenshot of
+            // the page and the agent continues. If the user declines or
+            // doesn't respond within 10 minutes, the call returns and the
+            // agent should ask in chat or try another approach — never call
+            // it again silently.
+            tools.append(AgentToolDefinition(
+                name: "request_browser_takeover",
+                description: "Ask the USER to take over the browser, like handing them the mouse. Use ONLY when blocked on something you cannot do yourself: a login page, CAPTCHA / human-verification challenge, 2FA / SMS code, a payment or order confirmation, or a judgment call about page content that needs human eyes. Do NOT use it for ordinary browsing you can do with browser_use. The user sees your reason and instructions, operates the live browser, and hands back when done; this call then returns with a fresh screenshot and the current page URL so you can verify and continue. If the user declines or times out (10 min), ask in chat or try another approach — do not call this again silently.",
+                parameters: [
+                    "tool_title": AgentToolParam(type: .string, description: "A concise 5-10 word summary of what this tool call does, shown to the user."),
+                    "reason": AgentToolParam(type: .string, description: "One or two sentences shown to the user explaining what is blocking you (e.g. 'The checkout page asks for an SMS verification code'). Write it in the user's language."),
+                    "what_to_do": AgentToolParam(type: .string, description: "Concrete instructions for the user (e.g. 'Please enter the SMS code and complete the payment, then close this sheet'). Write it in the user's language."),
+                ],
+                required: ["tool_title", "reason", "what_to_do"],
+                propertyOrdering: ["tool_title", "reason", "what_to_do"]
+            ))
         }
 
         return tools
