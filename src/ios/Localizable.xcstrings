@@ -250262,6 +250262,16 @@
           }
         }
       }
+    },
+    "SOCKS5 only applies to the terminal; app requests need HTTP." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SOCKS5 只对终端有效；App 内请求需要 HTTP 代理。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

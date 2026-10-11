@@ -14,11 +14,6 @@ struct ProxySettingsView: View {
     @State private var testResult: String?
     @State private var testing = false
 
-    private var proxyType: ProxyStore.ProxyType {
-        get { ProxyStore.ProxyType(rawValue: proxyTypeRaw) ?? .http }
-        set { proxyTypeRaw = newValue.rawValue }
-    }
-
     var body: some View {
         List {
             Section {
@@ -29,14 +24,20 @@ struct ProxySettingsView: View {
 
             Section("Proxy Server") {
                 Picker("Type", selection: Binding(
-                    get: { proxyType },
-                    set: { proxyType = $0 }
+                    get: { ProxyStore.ProxyType(rawValue: proxyTypeRaw) ?? .http },
+                    set: { proxyTypeRaw = $0.rawValue }
                 )) {
                     ForEach(ProxyStore.ProxyType.allCases, id: \.self) { t in
                         Text(t.title).tag(t)
                     }
                 }
                 .pickerStyle(.segmented)
+
+                if !(ProxyStore.ProxyType(rawValue: proxyTypeRaw) ?? .http).shortNote.isEmpty {
+                    Text((ProxyStore.ProxyType(rawValue: proxyTypeRaw) ?? .http).shortNote)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
 
                 HStack {
                     Text("Host")

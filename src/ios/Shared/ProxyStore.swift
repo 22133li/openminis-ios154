@@ -17,6 +17,14 @@ enum ProxyStore {
             case .socks5: return "SOCKS5"
             }
         }
+
+        /// iOS URLSession cannot use SOCKS — it only applies to the terminal.
+        var shortNote: String {
+            switch self {
+            case .http: return ""
+            case .socks5: return "SOCKS5 only applies to the terminal; app requests need HTTP."
+            }
+        }
     }
 
     private static let enabledKey = "proxyEnabled"
@@ -64,26 +72,20 @@ enum ProxyStore {
 
     /// Dictionary for URLSessionConfiguration.connectionProxyDictionary.
     /// Nil when the proxy is not active.
+    ///
+    /// iOS limitation: only the HTTP proxy keys exist on iOS
+    /// (kCFNetworkProxiesHTTPS* / kCFNetworkProxiesSOCKS* are macOS-only).
+    /// HTTPS traffic goes through the HTTP proxy via CONNECT, so HTTP type
+    /// covers https URLs. SOCKS5 cannot be applied to URLSession on iOS —
+    /// it still works for the terminal via proxyEnvironment.
     static var proxyDictionary: [AnyHashable: Any]? {
-        guard isActive else { return nil }
+        guard isActive, type == .http else { return nil }
         let h = host.trimmingCharacters(in: .whitespacesAndNewlines)
-        switch type {
-        case .http:
-            return [
-                kCFNetworkProxiesHTTPEnable as String: true,
-                kCFNetworkProxiesHTTPProxy as String: h,
-                kCFNetworkProxiesHTTPPort as String: port,
-                kCFNetworkProxiesHTTPSEnable as String: true,
-                kCFNetworkProxiesHTTPSProxy as String: h,
-                kCFNetworkProxiesHTTPSPort as String: port,
-            ]
-        case .socks5:
-            return [
-                kCFNetworkProxiesSOCKSEnable as String: true,
-                kCFNetworkProxiesSOCKSProxy as String: h,
-                kCFNetworkProxiesSOCKSPort as String: port,
-            ]
-        }
+        return [
+            kCFNetworkProxiesHTTPEnable as String: true,
+            kCFNetworkProxiesHTTPProxy as String: h,
+            kCFNetworkProxiesHTTPPort as String: port,
+        ]
     }
 
     /// Env vars for shell sessions (ISH terminal): http_proxy / https_proxy /
