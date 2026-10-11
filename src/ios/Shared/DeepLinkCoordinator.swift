@@ -32,6 +32,9 @@ enum SettingsDeepLinkTarget: Equatable {
     /// Credential Vault (user's named secrets in the Keychain).
     /// Reachable as `minis://settings/vault`.
     case credentialVault
+    /// Auto-Compact settings (global auto-compaction switch + context
+    /// budget). Reachable as `minis://settings/auto-compact`.
+    case autoCompact
     /// [T-mcp-oauth-deeplink] MCP Integrations list / a specific server's
     /// edit form (where the Authorize button lives).
     case mcpIntegrations

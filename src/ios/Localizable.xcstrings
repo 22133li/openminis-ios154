@@ -250050,6 +250050,106 @@
           }
         }
       }
+    },
+    "Auto-Compact" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动压缩"
+          }
+        }
+      }
+    },
+    "Enable Auto-Compact" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用自动压缩"
+          }
+        }
+      }
+    },
+    "Auto-Compact is a global setting and can be turned off anytime." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动压缩是全局设置，可随时关闭。"
+          }
+        }
+      }
+    },
+    "Context Budget" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文预算"
+          }
+        }
+      }
+    },
+    "Compact trigger (current model or budget): %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "压缩触发线（当前模型或预算参考）：%@"
+          }
+        }
+      }
+    },
+    "The weaker model / group limit wins; this budget never changes or raises a model's context window." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "较弱的模型 / 模型组上限优先；此预算不会改变或提高模型上下文窗口。"
+          }
+        }
+      }
+    },
+    "How It Works" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作方式"
+          }
+        }
+      }
+    },
+    "The budget is a soft target — fixed prompts and the current turn may push a compacted request over budget." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预算是软目标，固定提示词和当前回合可能使压缩后的请求仍超出预算。"
+          }
+        }
+      }
+    },
+    "Turning off Auto-Compact does not disable the existing near-window safety protection." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭自动压缩不会关闭原有的接近窗口上限安全保护。"
+          }
+        }
+      }
+    },
+    "Compaction uses history summaries and may lose detail; the original chat history is kept." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "压缩使用历史摘要，可能丢失细节；原始聊天记录仍保留。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
