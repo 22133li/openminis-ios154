@@ -12,7 +12,6 @@ struct BrowserSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var addressText: String = ""
     @State private var showHistory = false
-    @State private var isFullscreen = false
     @FocusState private var addressFocused: Bool
     /// True after the user taps 接管: the blocking overlay lifts and the
     /// user gets full control of the page until the sheet is dismissed.
@@ -48,44 +47,43 @@ struct BrowserSheetView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                if !isFullscreen {
-                    // Tab bar
-                    tabBar
-                        .allowsHitTesting(!effectiveBusy)
-
-                    // URL bar
-                    HStack(spacing: 8) {
-                        BrowserAddressBarIcon(isLoading: manager?.isLoading ?? false)
-
-                        TextField("Search or enter URL", text: $addressText)
-                            .font(.system(size: 13, design: .monospaced))
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .keyboardType(.URL)
-                            .submitLabel(.go)
-                            .focused($addressFocused)
-                            .disabled(effectiveBusy)
-                            .onSubmit {
-                                let trimmed = addressText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                guard !trimmed.isEmpty else { return }
-                                pool.touchActivity()
-                                manager?.loadURL(trimmed)
-                            }
-
-                        if manager?.isLoading ?? false {
-                            Button { manager?.webView.stopLoading() } label: {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(.secondary)
-                            }
-                            .transition(.identity)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(UIColor.secondarySystemBackground))
+                // Tab bar — always visible. (Was gated on !isFullscreen;
+                // the conditional caused the top chrome to flicker.)
+                tabBar
                     .allowsHitTesting(!effectiveBusy)
+
+                // URL bar
+                HStack(spacing: 8) {
+                    BrowserAddressBarIcon(isLoading: manager?.isLoading ?? false)
+
+                    TextField("Search or enter URL", text: $addressText)
+                        .font(.system(size: 13, design: .monospaced))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                        .submitLabel(.go)
+                        .focused($addressFocused)
+                        .disabled(effectiveBusy)
+                        .onSubmit {
+                            let trimmed = addressText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !trimmed.isEmpty else { return }
+                            pool.touchActivity()
+                            manager?.loadURL(trimmed)
+                        }
+
+                    if manager?.isLoading ?? false {
+                        Button { manager?.webView.stopLoading() } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .transition(.identity)
+                    }
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(UIColor.secondarySystemBackground))
+                .allowsHitTesting(!effectiveBusy)
 
                 // Agent-initiated takeover banner (tool:
                 // request_browser_takeover): the agent is stuck on something
@@ -132,27 +130,6 @@ struct BrowserSheetView: View {
                         AgentBrowsingOverlay(onTakeover: (onTakeover != nil || onStartAgentTakeover != nil) ? { engageTakeover() } : nil)
                             .transition(.opacity)
                     }
-
-                    // Fullscreen exit button
-                    if isFullscreen {
-                        VStack {
-                            HStack {
-                                Spacer()
-                                Button {
-                                    withAnimation(.easeInOut(duration: 0.25)) { isFullscreen = false }
-                                } label: {
-                                    Image(systemName: "arrow.down.right.and.arrow.up.left")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundStyle(.white)
-                                        .padding(8)
-                                        .background(Circle().fill(Color.black.opacity(0.5)))
-                                }
-                                .padding(.trailing, 12)
-                                .padding(.top, 8)
-                            }
-                            Spacer()
-                        }
-                    }
                 }
                 .animation(.easeInOut(duration: 0.3), value: effectiveBusy)
 
@@ -162,53 +139,42 @@ struct BrowserSheetView: View {
                     BrowserDownloadBanner(manager: manager)
                 }
 
-                if !isFullscreen {
-                    // Separator
-                    Divider()
+                // Bottom navigation toolbar — always visible.
+                Divider()
 
-                    // Bottom navigation toolbar
-                    HStack(spacing: 0) {
-                        Button { pool.touchActivity(); manager?.goBack() } label: {
-                            Image(systemName: "chevron.left")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .disabled(effectiveBusy || !(manager?.canGoBack ?? false))
+                HStack(spacing: 0) {
+                    Button { pool.touchActivity(); manager?.goBack() } label: {
+                        Image(systemName: "chevron.left")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(effectiveBusy || !(manager?.canGoBack ?? false))
 
-                        Button { pool.touchActivity(); manager?.goForward() } label: {
-                            Image(systemName: "chevron.right")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .disabled(effectiveBusy || !(manager?.canGoForward ?? false))
+                    Button { pool.touchActivity(); manager?.goForward() } label: {
+                        Image(systemName: "chevron.right")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(effectiveBusy || !(manager?.canGoForward ?? false))
 
-                        if manager?.isLoading ?? false {
-                            Button { pool.touchActivity(); manager?.stopLoading() } label: {
-                                Image(systemName: "xmark")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .disabled(effectiveBusy)
-                            .transition(.identity)
-                        } else {
-                            Button { pool.touchActivity(); manager?.reload() } label: {
-                                Image(systemName: "arrow.clockwise")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .transition(.identity)
-                            .disabled(effectiveBusy)
-                        }
-
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.25)) { isFullscreen = true }
-                        } label: {
-                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    if manager?.isLoading ?? false {
+                        Button { pool.touchActivity(); manager?.stopLoading() } label: {
+                            Image(systemName: "xmark")
                                 .frame(maxWidth: .infinity)
                         }
                         .disabled(effectiveBusy)
+                        .transition(.identity)
+                    } else {
+                        Button { pool.touchActivity(); manager?.reload() } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .transition(.identity)
+                        .disabled(effectiveBusy)
                     }
+                }
                     .font(.system(size: 18))
                     .padding(.vertical, 10)
                     .background(Color(UIColor.secondarySystemBackground))
                     .allowsHitTesting(!effectiveBusy)
-                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
