@@ -972,6 +972,91 @@ extension AIChatViewModel {
                 messages[msgIdx].blocks[blockIdx].content = toolOutput
             }
 
+        case "send_email":
+            // Approval-gated, per-use. The SMTP auth secret is used in-memory
+            // for AUTH LOGIN only — it is NEVER placed in the tool result,
+            // the model context, or the chat transcript.
+            let eTo = ((toolArgs["to"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let eSubject = (toolArgs["subject"] as? String) ?? ""
+            let eBody = (toolArgs["body"] as? String) ?? ""
+            let eCredName = ((toolArgs["credential"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let eFromParam = ((toolArgs["from"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let eSmtpParam = ((toolArgs["smtp_server"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let eTitle = (toolArgs["tool_title"] as? String) ?? ""
+            func finishEmail(_ output: String, _ success: Bool) {
+                toolOutput = output
+                toolSuccess = success
+                if msgIdx < messages.count, blockIdx < messages[msgIdx].blocks.count {
+                    messages[msgIdx].blocks[blockIdx].content = output
+                }
+            }
+            guard Self.isValidEmail(eTo) else {
+                finishEmail("Error: 'to' is not a valid email address: '\(eTo)'.", false)
+                break
+            }
+            guard !eCredName.isEmpty else {
+                finishEmail("Error: 'credential' is required — the Credential Vault entry name holding the SMTP auth secret. Call vault_list to see available names.", false)
+                break
+            }
+            let eStore = CredentialVaultStore.shared
+            guard let eEntry = eStore.entry(named: eCredName) else {
+                finishEmail("Error: no credential named '\(eCredName)' in the vault. Call vault_list to see available names, or ask the user to add it in Settings \u2192 Credential Vault. Do not guess names.", false)
+                break
+            }
+            let eFrom: String = {
+                if !eFromParam.isEmpty { return eFromParam }
+                if Self.isValidEmail(eEntry.name) { return eEntry.name }
+                return ""
+            }()
+            guard Self.isValidEmail(eFrom) else {
+                finishEmail("Error: could not determine the sender address. Pass 'from' explicitly, or name the vault credential with the full email address.", false)
+                break
+            }
+            let eSmtp: (host: String, port: Int)? = {
+                if !eSmtpParam.isEmpty {
+                    let parts = eSmtpParam.split(separator: ":")
+                    if parts.count == 2, let port = Int(parts[1]) {
+                        return (String(parts[0]), port)
+                    }
+                    return (eSmtpParam, 465)
+                }
+                let domain = eFrom.split(separator: "@").last.map(String.init) ?? ""
+                return SMTPClient.preset(forDomain: domain)
+            }()
+            guard let eSmtp else {
+                let domain = eFrom.split(separator: "@").last.map(String.init) ?? ""
+                finishEmail("Error: no SMTP preset for '\(domain)'. Pass 'smtp_server' as host:port (implicit TLS).", false)
+                break
+            }
+            let eUsageLine = AppLocalized("Approved to send one email to \(eTo) via \(eSmtp.host). The secret is used for SMTP login only.")
+            let eApproved = await CredentialVaultAccessManager.shared.requestAccess(
+                entry: eEntry,
+                envVarName: CredentialVaultStore.envVarName(for: eEntry),
+                purpose: eTitle.isEmpty ? "Send email to \(eTo)" : eTitle,
+                toolTitle: eTitle,
+                usageLine: eUsageLine
+            )
+            guard eApproved else {
+                finishEmail("The user declined to share '\(eEntry.name)'. Do not retry this call silently \u2014 ask the user how they would like to proceed.", false)
+                break
+            }
+            guard let eSecret = CredentialVaultStore.loadValueSync(forId: eEntry.id), !eSecret.isEmpty else {
+                finishEmail("Error: the credential was approved but its value could not be read from the Keychain. Ask the user to re-save it in Settings \u2192 Credential Vault.", false)
+                break
+            }
+            do {
+                try await SMTPClient.send(host: eSmtp.host, port: eSmtp.port,
+                                          username: eFrom, password: eSecret,
+                                          from: eFrom, to: [eTo],
+                                          subject: eSubject, body: eBody)
+                // Also record the grant so a shell fallback in the same turn
+                // could reuse it — consistent with vault_use_secret.
+                eStore.approveForTurn(id: eEntry.id)
+                finishEmail("Email sent to \(eTo) via \(eSmtp.host).", true)
+            } catch {
+                finishEmail("Error: failed to send email: \(error.localizedDescription)", false)
+            }
+
         case SubAgentDefinition.toolName:
             // [T-agents-debug-only] A refusal in the sub-agent result dialect,
             // so HelperBlockInfo renders the block as "Rejected" (a plain
@@ -1271,5 +1356,13 @@ extension AIChatViewModel {
             snapshotItem: snapshotItem,
             cancelled: cancelledHere
         )
+    }
+
+    /// Minimal RFC 5322-ish check for send_email addresses.
+    static func isValidEmail(_ s: String) -> Bool {
+        guard !s.isEmpty, !s.contains(" ") else { return false }
+        let parts = s.split(separator: "@")
+        guard parts.count == 2, !parts[0].isEmpty, !parts[1].isEmpty else { return false }
+        return parts[1].contains(".")
     }
 }

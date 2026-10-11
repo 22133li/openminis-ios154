@@ -274,6 +274,29 @@ extension AIChatViewModel {
                 required: ["tool_title", "name"],
                 propertyOrdering: ["tool_title", "name", "purpose"]
             ))
+
+            // MARK: - Email
+            //
+            // send_email uses a credential from the user's Credential Vault as
+            // the SMTP auth secret (e.g. a QQ mail authorization code). Like
+            // vault_use_secret, every send pops an approval sheet; the raw
+            // secret is used in-memory for the SMTP AUTH LOGIN only and never
+            // reaches the model or the chat transcript.
+            tools.append(AgentToolDefinition(
+                name: "send_email",
+                description: "Send a plain-text email via SMTP using a credential the user stored in Settings \u2192 Credential Vault as the SMTP auth secret (for QQ mail this is the SMTP 'authorization code', not the login password). Each call pops an approval sheet showing the recipient and subject; the secret is used in-memory for SMTP AUTH only and never written to chat history. The sender address defaults to the credential name when it looks like an email address. If the user denies, do not retry silently \u2014 ask them how they'd like to proceed.",
+                parameters: [
+                    "tool_title": AgentToolParam(type: .string, description: "A concise 5-10 word summary of what this tool call does, shown to the user."),
+                    "to": AgentToolParam(type: .string, description: "Recipient email address (single address)."),
+                    "subject": AgentToolParam(type: .string, description: "Email subject (Chinese is fine)."),
+                    "body": AgentToolParam(type: .string, description: "Plain-text email body."),
+                    "credential": AgentToolParam(type: .string, description: "Credential Vault entry name holding the SMTP auth secret, exactly as shown in Settings \u2192 Credential Vault (case-insensitive). Call vault_list first if unsure. For QQ mail the entry name is usually the full QQ email address."),
+                    "from": AgentToolParam(type: .string, description: "Optional sender address. Defaults to the credential name when it looks like an email address."),
+                    "smtp_server": AgentToolParam(type: .string, description: "Optional SMTP override as host:port (implicit TLS). Defaults are picked from the sender domain (qq.com, 163.com, gmail.com, etc.)."),
+                ],
+                required: ["tool_title", "to", "subject", "body", "credential"],
+                propertyOrdering: ["tool_title", "to", "subject", "body", "credential", "from", "smtp_server"]
+            ))
         }
 
         return tools

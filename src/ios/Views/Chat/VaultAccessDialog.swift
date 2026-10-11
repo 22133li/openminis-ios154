@@ -47,7 +47,12 @@ private struct VaultAccessDialogContent: View {
                             .padding(.horizontal, 4)
                     }
                     VStack(alignment: .leading, spacing: 6) {
-                        Label("Approved use is limited to this turn's shell commands via $\(request.envVarName).", systemImage: "terminal")
+                        if let usageLine = request.usageLine {
+                            // Pre-localized by the caller (AppLocalized).
+                            Label(usageLine, systemImage: "terminal")
+                        } else {
+                            Label("Approved use is limited to this turn's shell commands via $\(request.envVarName).", systemImage: "terminal")
+                        }
                         Label("The raw value is never written to chat history.", systemImage: "eye.slash")
                         Label("You can revoke access anytime by deleting the credential.", systemImage: "trash")
                     }

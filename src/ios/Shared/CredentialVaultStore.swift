@@ -353,6 +353,10 @@ struct VaultAccessRequest: Identifiable {
     let envVarName: String
     let purpose: String
     let toolTitle: String
+    /// How the approved secret will be used, shown as the first bullet in
+    /// the approval sheet. Defaults to the shell-injection wording; tools
+    /// that consume the secret in-memory (e.g. send_email) pass their own.
+    let usageLine: String?
     let continuation: CheckedContinuation<Bool, Never>
 }
 
@@ -371,7 +375,7 @@ final class CredentialVaultAccessManager: ObservableObject {
     /// Ask the user whether the agent may use `entry` for `purpose`.
     /// Returns true on explicit approval, false on deny or 60s timeout.
     /// The sheet is non-dismissable: the user must choose.
-    func requestAccess(entry: VaultEntry, envVarName: String, purpose: String, toolTitle: String) async -> Bool {
+    func requestAccess(entry: VaultEntry, envVarName: String, purpose: String, toolTitle: String, usageLine: String? = nil) async -> Bool {
         await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
             let request = VaultAccessRequest(
                 id: UUID().uuidString,
@@ -379,6 +383,7 @@ final class CredentialVaultAccessManager: ObservableObject {
                 envVarName: envVarName,
                 purpose: purpose,
                 toolTitle: toolTitle,
+                usageLine: usageLine,
                 continuation: continuation
             )
             self.pendingRequest = request

@@ -250150,6 +250150,16 @@
           }
         }
       }
+    },
+    "Approved to send one email to %@ via %@. The secret is used for SMTP login only." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "批准发送一封邮件至 %@（经由 %@），该凭证仅用于 SMTP 登录。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
