@@ -1,9 +1,7 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
+    "" : {},
     "\"%@\" is due. Open Minis to see whether it ran." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25493,9 +25491,7 @@
         }
       }
     },
-    "." : {
-
-    },
+    "." : {},
     "“%1$@” (%2$@) will be permanently deleted from this folder. There is no trash to recover it from, and any data only in this backup will be lost. This cannot be undone." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26174,9 +26170,7 @@
         }
       }
     },
-    "·" : {
-
-    },
+    "·" : {},
     "· Migration backlog" : {
       "localizations" : {
         "de" : {
@@ -27624,12 +27618,8 @@
         }
       }
     },
-    "/" : {
-
-    },
-    "/%@" : {
-
-    },
+    "/" : {},
+    "/%@" : {},
     "/var/minis/mounts/%@" : {
       "localizations" : {
         "de" : {
@@ -27967,9 +27957,7 @@
         }
       }
     },
-    "%@" : {
-
-    },
+    "%@" : {},
     "%@\n%@ → %@" : {
       "localizations" : {
         "de" : {
@@ -34809,9 +34797,7 @@
         }
       }
     },
-    "•" : {
-
-    },
+    "•" : {},
     "• Reset: Delete everything\n• Backup: Save /root directory\n• Restore: Recover saved data" : {
       "localizations" : {
         "de" : {
@@ -36034,9 +36020,7 @@
         }
       }
     },
-    "✨" : {
-
-    },
+    "✨" : {},
     "❌ Task failed" : {
       "localizations" : {
         "de" : {
@@ -36929,9 +36913,7 @@
         }
       }
     },
-    "00:00" : {
-
-    },
+    "00:00" : {},
     "1 MB" : {
       "localizations" : {
         "de" : {
@@ -39630,9 +39612,7 @@
         }
       }
     },
-    "128000" : {
-
-    },
+    "128000" : {},
     "A" : {
       "localizations" : {
         "de" : {
@@ -115655,9 +115635,7 @@
         }
       }
     },
-    "https://…" : {
-
-    },
+    "https://…" : {},
     "I Understand & Agree" : {
       "localizations" : {
         "de" : {
@@ -132556,9 +132534,7 @@
         }
       }
     },
-    "Loop %lld" : {
-
-    },
+    "Loop %lld" : {},
     "Low" : {
       "localizations" : {
         "de" : {
@@ -197131,12 +197107,8 @@
         }
       }
     },
-    "session" : {
-
-    },
-    "sessions" : {
-
-    },
+    "session" : {},
+    "sessions" : {},
     "settings_memory_global_enabled" : {
       "localizations" : {
         "de" : {
@@ -250177,6 +250149,116 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "接管"
+          }
+        }
+      }
+    },
+    "Proxy" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理"
+          }
+        }
+      }
+    },
+    "Enable Proxy" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用代理"
+          }
+        }
+      }
+    },
+    "Proxy Server" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代理服务器"
+          }
+        }
+      }
+    },
+    "Host" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主机"
+          }
+        }
+      }
+    },
+    "Port" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端口"
+          }
+        }
+      }
+    },
+    "When on, the app's network requests and the terminal go through this proxy." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启后，App 的网络请求和终端都将走此代理。长连接在 App 重启后生效。"
+          }
+        }
+      }
+    },
+    "Fetches api.github.com through the proxy." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过代理访问 api.github.com。"
+          }
+        }
+      }
+    },
+    "The in-app browser follows the iOS system proxy (Settings → WLAN → HTTP Proxy, or a VPN app) and cannot use this proxy. Everything else in Minis — AI requests and the terminal — uses it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用内浏览器使用 iOS 系统代理（设置 → 无线局域网 → HTTP 代理，或 VPN 应用），无法使用此处配置的代理。Minis 的其他部分——AI 请求和终端——会使用此代理。"
+          }
+        }
+      }
+    },
+    "OK — GitHub is reachable through the proxy (HTTP \\(code))." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正常 — 可通过代理访问 GitHub（HTTP \\(code)）。"
+          }
+        }
+      }
+    },
+    "GitHub returned HTTP \\(code) — proxy works but GitHub responded oddly." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 返回了 HTTP \\(code)——代理通，但 GitHub 响应异常。"
+          }
+        }
+      }
+    },
+    "Failed: \\(error.localizedDescription)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "失败：\\(error.localizedDescription)"
           }
         }
       }

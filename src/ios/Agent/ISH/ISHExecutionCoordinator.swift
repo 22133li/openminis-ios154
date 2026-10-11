@@ -325,6 +325,12 @@ actor ISHExecutionCoordinator {
         for (k, v) in CredentialVaultStore.shared.envForApprovedTurn() {
             customEnv[k] = v
         }
+        // Proxy env vars (Settings → Proxy). Lets curl/git/gh in the
+        // terminal reach the outside through the user's proxy.
+        for (k, v) in ProxyStore.proxyEnvironment {
+            // Don't stomp on a user-defined var of the same name.
+            if customEnv[k] == nil { customEnv[k] = v }
+        }
 
         // Feed the command as a script via stdin pipe to /bin/sh.
         // This avoids shell quoting issues with multi-line or special-char commands.

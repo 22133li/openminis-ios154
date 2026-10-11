@@ -40,7 +40,7 @@ final class AntigravityProvider: LLMProvider {
         logFullRequest(request)
         #endif
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppNetwork.shared.data(for: request)
         try checkHTTPResponse(response, data: data)
 
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
@@ -69,7 +69,7 @@ final class AntigravityProvider: LLMProvider {
         logFullRequest(request)
         #endif
 
-        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        let (bytes, response) = try await AppNetwork.shared.bytes(for: request)
         try await checkStreamHTTPResponse(response, bytes: bytes)
 
         return AsyncThrowingStream { continuation in
@@ -144,7 +144,7 @@ final class AntigravityProvider: LLMProvider {
         logFullRequest(request)
         #endif
 
-        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        let (bytes, response) = try await AppNetwork.shared.bytes(for: request)
         try await checkStreamHTTPResponse(response, bytes: bytes)
 
         return AsyncThrowingStream { continuation in
@@ -207,7 +207,7 @@ final class AntigravityProvider: LLMProvider {
         logFullRequest(request)
         #endif
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppNetwork.shared.data(for: request)
         try checkHTTPResponse(response, data: data)
 
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]

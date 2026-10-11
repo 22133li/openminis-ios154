@@ -7982,6 +7982,7 @@ private enum SettingsDestination: Hashable {
     case environments
     case credentialVault
     case autoCompact
+    case proxy
     // [T-mcp-oauth-deeplink]
     case mcpIntegrations
     case mcpServerDetail(serverId: String)
@@ -8073,6 +8074,8 @@ private struct SettingsSheet: View {
                 CredentialVaultView()
             case .autoCompact:
                 AutoCompactSettingsView()
+            case .proxy:
+                ProxySettingsView()
             case .permissions:
                 OffloadPermissionSettingsView()
                 // [T-mcp-oauth-deeplink] Detail = the list view told to open
@@ -8260,6 +8263,19 @@ private struct SettingsSheet: View {
                                 .foregroundStyle(.white)
                                 .frame(width: 21, height: 21)
                                 .background(.orange, in: Circle())
+                        }
+                    }
+                    NavigationLink {
+                        ProxySettingsView()
+                    } label: {
+                        Label {
+                            Text("Proxy")
+                        } icon: {
+                            Image(systemName: "network")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.white)
+                                .frame(width: 21, height: 21)
+                                .background(.teal, in: Circle())
                         }
                     }
                 }
@@ -8552,6 +8568,8 @@ private struct SettingsSheet: View {
             navPath.append(SettingsDestination.credentialVault)
         case .autoCompact:
             navPath.append(SettingsDestination.autoCompact)
+        case .proxy:
+            navPath.append(SettingsDestination.proxy)
         case .mcpIntegrations:
             navPath.append(SettingsDestination.mcpIntegrations)
         case .mcpServerDetail(let id):

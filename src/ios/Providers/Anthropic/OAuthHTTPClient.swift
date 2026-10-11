@@ -80,6 +80,7 @@ final class OAuthHTTPClient: HTTPClient {
         TokenBoxRegistry.shared.register(id: rid, box: box)
 
         let config = URLSessionConfiguration.default
+        config.applyProxySettings()
         config.timeoutIntervalForRequest = 600  // 10 min — SSE streams can be idle during large tool generation
         config.protocolClasses = [OAuthURLProtocol.self]
         config.httpAdditionalHeaders = (config.httpAdditionalHeaders ?? [:]).merging(
@@ -1705,6 +1706,7 @@ final class EagerStreamingHTTPClient: HTTPClient {
     ///   gate on client UA). The SDK never sets User-Agent itself, so this takes effect.
     init(customUserAgent: String? = nil) {
         let config = URLSessionConfiguration.default
+        config.applyProxySettings()
         config.timeoutIntervalForRequest = 600  // 10 min — SSE streams can be idle during large tool generation
         config.protocolClasses = [EagerStreamingURLProtocol.self]
         if let ua = customUserAgent {
@@ -1732,6 +1734,7 @@ final class DualAuthHTTPClient: HTTPClient {
     /// - Parameter customUserAgent: see `EagerStreamingHTTPClient.init`.
     init(customUserAgent: String? = nil) {
         let config = URLSessionConfiguration.default
+        config.applyProxySettings()
         config.timeoutIntervalForRequest = 600
         config.protocolClasses = [DualAuthURLProtocol.self]
         if let ua = customUserAgent {

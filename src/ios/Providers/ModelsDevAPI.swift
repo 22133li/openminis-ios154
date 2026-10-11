@@ -702,7 +702,7 @@ enum ModelsDevAPI {
             guard let url = URL(string: sourceURL) else { return }
             var request = URLRequest(url: url)
             request.timeoutInterval = 15
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await AppNetwork.shared.data(for: request)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 logger.error("models.dev HTTP error: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
                 return

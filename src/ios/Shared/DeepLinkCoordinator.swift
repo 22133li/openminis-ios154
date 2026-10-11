@@ -35,6 +35,9 @@ enum SettingsDeepLinkTarget: Equatable {
     /// Auto-Compact settings (global auto-compaction switch + context
     /// budget). Reachable as `minis://settings/auto-compact`.
     case autoCompact
+    /// Proxy settings (app-wide HTTP/SOCKS5 proxy).
+    /// Reachable as `minis://settings/proxy`.
+    case proxy
     /// [T-mcp-oauth-deeplink] MCP Integrations list / a specific server's
     /// edit form (where the Authorize button lives).
     case mcpIntegrations

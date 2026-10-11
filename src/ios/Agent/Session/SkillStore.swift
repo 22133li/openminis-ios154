@@ -826,7 +826,7 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
     /// Download and parse SKILL.md without importing. Returns (name, id, content) for preflight checks.
     func preflightGitHubImport(urlString: String) async throws -> (name: String, id: String, content: String) {
         let rawURL = try Self.githubToRawURL(urlString)
-        let (data, response) = try await URLSession.shared.data(from: rawURL)
+        let (data, response) = try await AppNetwork.shared.data(from: rawURL)
 
         if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
             throw SkillError.downloadFailed(statusCode: httpResponse.statusCode)
@@ -2062,7 +2062,7 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
             var request = URLRequest(url: url)
             request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
             do {
-                let (data, response) = try await URLSession.shared.data(for: request)
+                let (data, response) = try await AppNetwork.shared.data(for: request)
                 guard let httpResp = response as? HTTPURLResponse else {
                     lastReason = "GitHub contents API non-HTTP response for \(apiURL)"
                     continue
@@ -2097,7 +2097,7 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
         guard let url = URL(string: downloadURL) else { return nil }
         for attempt in 0..<2 {
             do {
-                let (data, response) = try await URLSession.shared.data(from: url)
+                let (data, response) = try await AppNetwork.shared.data(from: url)
                 if let http = response as? HTTPURLResponse {
                     if (200..<300).contains(http.statusCode) { return data }
                     let isTransient = http.statusCode == 403 || http.statusCode == 429 || (500..<600).contains(http.statusCode)

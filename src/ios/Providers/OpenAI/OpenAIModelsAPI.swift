@@ -216,7 +216,7 @@ enum OpenAIModelsAPI {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let accountId { request.setValue(accountId, forHTTPHeaderField: "Chatgpt-Account-Id") }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppNetwork.shared.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? -1
         guard (200..<300).contains(status) else {
             let body = String(data: data, encoding: .utf8) ?? ""
@@ -290,7 +290,7 @@ enum OpenAIModelsAPI {
     }
 
     private static func performFetch(_ request: URLRequest, filterOpenAIOnly: Bool = true) async throws -> [LLMModel] {
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppNetwork.shared.data(for: request)
         let http = response as? HTTPURLResponse
         let statusCode = http?.statusCode ?? -1
 

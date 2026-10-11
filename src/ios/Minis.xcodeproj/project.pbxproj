@@ -382,6 +382,8 @@
 		E5ACCB01 /* ContextBudgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5ACCB11 /* ContextBudgetStore.swift */; };
 		E5ACST01 /* AutoCompactSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5ACST11 /* AutoCompactSettingsView.swift */; };
 		E5SMTP01 /* MiniSMTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SMTP11 /* MiniSMTPClient.swift */; };
+		E5PRX001 /* ProxyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5PRX011 /* ProxyStore.swift */; };
+		E5PRX002 /* ProxySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5PRX012 /* ProxySettingsView.swift */; };
 		E5P000002 /* EnvironmentVariablesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000012 /* EnvironmentVariablesView.swift */; };
 		E5P000003 /* DeepLinkCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000013 /* DeepLinkCoordinator.swift */; };
 		E5P000004 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000014 /* DeepLinkRouter.swift */; };
@@ -1117,6 +1119,8 @@
 		E5ACCB11 /* ContextBudgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextBudgetStore.swift; sourceTree = "<group>"; };
 		E5ACST11 /* AutoCompactSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoCompactSettingsView.swift; sourceTree = "<group>"; };
 		E5SMTP11 /* MiniSMTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniSMTPClient.swift; sourceTree = "<group>"; };
+		E5PRX011 /* ProxyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyStore.swift; sourceTree = "<group>"; };
+		E5PRX012 /* ProxySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxySettingsView.swift; sourceTree = "<group>"; };
 		E5P000012 /* EnvironmentVariablesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentVariablesView.swift; sourceTree = "<group>"; };
 		E5P000013 /* DeepLinkCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkCoordinator.swift; sourceTree = "<group>"; };
 		E5P000014 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
@@ -1912,6 +1916,7 @@
 				E5PRIV11 /* EnvVarPrivacyStore.swift */,
 				E5PRIV12 /* EnvVarRedactor.swift */,
 				E5VAULT11 /* CredentialVaultStore.swift */,
+				E5PRX011 /* ProxyStore.swift */,
 				E5Q000014 /* FontSettings.swift */,
 				E5J000022 /* FileHandleSafeWrite.h */,
 				E5J000021 /* FileHandleSafeWrite.m */,
@@ -2350,6 +2355,7 @@
 				E5P000012 /* EnvironmentVariablesView.swift */,
 				E5VAULT12 /* CredentialVaultView.swift */,
 				E5ACST11 /* AutoCompactSettingsView.swift */,
+				E5PRX012 /* ProxySettingsView.swift */,
 				E5J000012 /* LogManagementView.swift */,
 				E5J000013 /* ConfigAuditView.swift */,
 				E5N0000142F3B941A00049557 /* MemoryManagementView.swift */,
@@ -3159,6 +3165,8 @@
 				E5ACCB01 /* ContextBudgetStore.swift in Sources */,
 				E5ACST01 /* AutoCompactSettingsView.swift in Sources */,
 				E5SMTP01 /* MiniSMTPClient.swift in Sources */,
+				E5PRX001 /* ProxyStore.swift in Sources */,
+				E5PRX002 /* ProxySettingsView.swift in Sources */,
 				E5P000003 /* DeepLinkCoordinator.swift in Sources */,
 				E5P000004 /* DeepLinkRouter.swift in Sources */,
 				E5CFG0001 /* ConfigAuditEntry.swift in Sources */,

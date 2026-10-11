@@ -55,7 +55,7 @@ enum AntigravityModelsAPI {
 
         logger.info("POST \(urlString)")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppNetwork.shared.data(for: request)
         let http = response as? HTTPURLResponse
         let statusCode = http?.statusCode ?? -1
         let responseBody = String(data: data, encoding: .utf8) ?? "<binary>"

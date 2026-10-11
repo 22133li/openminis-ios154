@@ -54,7 +54,7 @@ enum OpenRouterModelsAPI {
         request.setValue("Minis App", forHTTPHeaderField: "X-Title")
         logger.info("Fetching OpenRouter models \(path)")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppNetwork.shared.data(for: request)
         let http = response as? HTTPURLResponse
         let statusCode = http?.statusCode ?? -1
 

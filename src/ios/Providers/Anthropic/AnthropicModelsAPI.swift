@@ -102,7 +102,7 @@ enum AnthropicModelsAPI {
     }
 
     private static func performFetch(_ request: URLRequest) async throws -> [LLMModel] {
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await AppNetwork.shared.data(for: request)
 
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(statusCode) else {
