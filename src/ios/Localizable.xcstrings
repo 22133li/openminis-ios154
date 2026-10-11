@@ -249830,6 +249830,226 @@
           }
         }
       }
+    },
+    "No Saved Credentials" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有保存的凭证"
+          }
+        }
+      }
+    },
+    "Store API tokens or passwords here. The agent can use them only with your approval each time — values never appear in chat." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在此存储 API 令牌或密码。Agent 每次使用都需要你的授权——原始值不会出现在聊天中。"
+          }
+        }
+      }
+    },
+    "Credentials" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "凭证"
+          }
+        }
+      }
+    },
+    "Tap a credential to view it (Face ID / passcode required). When the agent needs one, it asks for your approval each time; approved credentials are injected as $VAULT_NAME into that turn's shell commands only, and the raw value is never written to chat history." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻触凭证查看（需要 Face ID / 密码验证）。Agent 需要使用时会请求你的授权；已批准的凭证仅以 $VAULT_名称 形式注入本轮 shell 命令，原始值不会写入聊天记录。"
+          }
+        }
+      }
+    },
+    "Credential Vault" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "凭证保险库"
+          }
+        }
+      }
+    },
+    "New value (leave empty to keep)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新值（留空则保持不变）"
+          }
+        }
+      }
+    },
+    "Note (optional)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备注（可选）"
+          }
+        }
+      }
+    },
+    "Leave the value empty to keep the current one." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "值留空则保持当前值不变。"
+          }
+        }
+      }
+    },
+    "The value is stored in the iOS Keychain. It is never shown in full except after Face ID / passcode." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "值存储在 iOS 钥匙串中。除通过 Face ID / 密码验证外，不会完整显示。"
+          }
+        }
+      }
+    },
+    "Value is required." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "必须填写值。"
+          }
+        }
+      }
+    },
+    "Could not save. The name may already exist." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存失败，该名称可能已存在。"
+          }
+        }
+      }
+    },
+    "Edit Credential" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑凭证"
+          }
+        }
+      }
+    },
+    "New Credential" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建凭证"
+          }
+        }
+      }
+    },
+    "Authentication failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "验证失败"
+          }
+        }
+      }
+    },
+    "Face ID / passcode is required to view this credential." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看此凭证需要通过 Face ID / 密码验证。"
+          }
+        }
+      }
+    },
+    "Reveal credential %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看凭证 %@"
+          }
+        }
+      }
+    },
+    "Agent Requests a Credential" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent 请求使用凭证"
+          }
+        }
+      }
+    },
+    "Approved use is limited to this turn's shell commands via $%@." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "批准的使用仅限本轮 shell 命令，通过 $%@ 引用。"
+          }
+        }
+      }
+    },
+    "The raw value is never written to chat history." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始值不会写入聊天记录。"
+          }
+        }
+      }
+    },
+    "You can revoke access anytime by deleting the credential." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你可随时删除该凭证以撤销授权。"
+          }
+        }
+      }
+    },
+    "Deny" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拒绝"
+          }
+        }
+      }
+    },
+    "Allow Once" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅允许本次"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

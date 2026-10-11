@@ -198,14 +198,14 @@ private struct VaultEntryForm: View {
         switch mode {
         case .add:
             guard !value.isEmpty else {
-                error = "Value is required."
+                error = AppLocalized("Value is required.")
                 return
             }
             if store.add(name: name, value: value, note: note) != nil {
                 onDone(true, nil)
                 dismiss()
             } else {
-                error = "Could not save. The name may already exist."
+                error = AppLocalized("Could not save. The name may already exist.")
             }
         case .edit(let entry):
             let newValue = value.isEmpty ? nil : value
@@ -213,7 +213,7 @@ private struct VaultEntryForm: View {
                 onDone(true, entry)
                 dismiss()
             } else {
-                error = "Could not save. The name may already exist."
+                error = AppLocalized("Could not save. The name may already exist.")
             }
         }
     }
@@ -227,7 +227,7 @@ private struct VaultEntryForm: View {
 private enum VaultRevealAuth {
     @MainActor
     static func run(entry: VaultEntry, done: @escaping (Bool, String?) -> Void) async {
-        let ok = await BiometricAuth.authenticate(reason: "Reveal credential \(entry.name)")
+        let ok = await BiometricAuth.authenticate(reason: AppLocalized("Reveal credential \(entry.name)"))
         done(ok, ok ? CredentialVaultStore.loadValueSync(forId: entry.id) : nil)
     }
 }
