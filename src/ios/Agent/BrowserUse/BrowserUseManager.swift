@@ -2341,10 +2341,64 @@ extension BrowserUseManager: WKNavigationDelegate {
             // Record in browsing history
             BrowserHistoryStore.shared.record(url: self.currentURL, title: self.pageTitle)
 
+            // [T-ios15-compat-shim] iOS 15's WebKit can't run some modern sites'
+            // JS (e.g. GitHub's custom-element tab switching on the sudo page),
+            // leaving interactive panels hidden. Run site-specific shims that
+            // unhide the native HTML forms so they work without JS.
+            Self.runCompatibilityShims(on: webView)
+
             if let cont = self.navigationContinuation {
                 self.navigationContinuation = nil
                 cont.resume()
             }
+        }
+    }
+
+    // MARK: - Compatibility Shims (iOS 15 WebKit vs modern sites)
+
+    /// Site-specific JS patches for pages whose own JS fails on iOS 15's older
+    /// WebKit. Each entry is a URL matcher + JS snippet. The JS must be
+    /// defensive (no-ops if elements are absent) and must not depend on the
+    /// page's own (possibly broken) JS.
+    private static let compatibilityShims: [(matches: (String) -> Bool, js: String)] = [
+        // GitHub sudo mode (/sessions/sudo): GitHub's <sudo-credential-options>
+        // tab-switching JS doesn't run on iOS 15 WebKit, so the password and
+        // mobile credential panels stay hidden. The native <form> underneath
+        // works fine without JS — just force it visible. The JS no-ops on
+        // non-sudo pages, so we match all of github.com.
+        (
+            matches: { url in url.contains("github.com") },
+            js: """
+            (function() {
+                function forceShow(el) {
+                    var n = el;
+                    while (n && n !== document.documentElement) {
+                        if (n.hasAttribute && n.hasAttribute('hidden')) n.removeAttribute('hidden');
+                        if (n.style) {
+                            var cs = window.getComputedStyle(n);
+                            if (cs.display === 'none' || cs.visibility === 'hidden') {
+                                n.style.setProperty('display', 'block', 'important');
+                                n.style.setProperty('visibility', 'visible', 'important');
+                            }
+                        }
+                        n = n.parentElement;
+                    }
+                }
+                var pwd = document.getElementById('sudo_password');
+                if (pwd) forceShow(pwd);
+                var forms = document.querySelectorAll('form[action*="/sessions/sudo"]');
+                for (var i = 0; i < forms.length; i++) forceShow(forms[i]);
+            })();
+            """
+        ),
+    ]
+
+    /// Run all compatibility shims whose URL matcher passes.
+    private static func runCompatibilityShims(on webView: WKWebView) {
+        let url = webView.url?.absoluteString ?? ""
+        guard !url.isEmpty else { return }
+        for shim in compatibilityShims where shim.matches(url) {
+            webView.evaluateJavaScript(shim.js, completionHandler: nil)
         }
     }
 
