@@ -3188,6 +3188,28 @@ struct ContentView: View {
     /// listRowBackground → contextMenu). Erasing here removes the largest
     /// single contributor to the mangled name, and it is also the chain that
     /// gets instantiated once per visible row.
+    /// WeChat-style swipe actions for a session row: Delete + Select.
+    /// Reuses the context menu's action channel so delete goes through the
+    /// same confirmation sheet flow. Captures the channel (stable lifetime)
+    /// and session id, not self, to avoid the contextMenu UAF pattern.
+    private func sessionSwipeActions(for session: ChatSession) -> some View {
+        let actions = menuActions
+        let sid = session.id
+        return Group {
+            Button(role: .destructive) {
+                actions.send(.delete(sid))
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            Button {
+                actions.send(.select(sid))
+            } label: {
+                Label("Select", systemImage: "checkmark.circle")
+            }
+            .tint(.blue)
+        }
+    }
+
     private func erasedSessionRow(_ session: ChatSession, group: SidebarGroup) -> AnyView {
         AnyView(
             SessionRow(
@@ -3243,6 +3265,10 @@ struct ContentView: View {
                     actions: menuActions
                 )
                 .equatable()
+            }
+            // [T-ios-swipe-delete] WeChat-style swipe-left to delete + select.
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                sessionSwipeActions(for: session)
             }
         )
     }
@@ -3468,6 +3494,10 @@ struct ContentView: View {
                                     }
                                 }
                                 .tag(session.id)
+                                // [T-ios-swipe-delete] WeChat-style swipe-left.
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    sessionSwipeActions(for: session)
+                                }
                                 .listRowInsets(EdgeInsets())
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(
