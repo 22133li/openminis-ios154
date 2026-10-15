@@ -373,11 +373,10 @@ private struct SkillFileDocumentPicker: UIViewControllerRepresentable {
     let onError: (String) -> Void
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        var types: [UTType] = [.plainText, .zip]
-        // .skill files are zip archives with a custom extension
-        if let skillType = UTType(filenameExtension: "skill", conformingTo: .zip) {
-            types.append(skillType)
-        }
+        // [T-skill-pick-94] iOS 15.4: UTType(filenameExtension:conformingTo:)
+        // dynamic type breaks file selectability in the picker. Use only
+        // system types; .skill files are still accepted by extension in the delegate.
+        let types: [UTType] = [.plainText, .zip]
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: types)
         picker.delegate = context.coordinator
         return picker
