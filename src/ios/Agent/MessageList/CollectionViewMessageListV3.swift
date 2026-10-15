@@ -362,6 +362,7 @@ private struct AttachmentRowView: View {
             .padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray5)))
         }
+        .buttonStyle(.plain)
     }
 }
 

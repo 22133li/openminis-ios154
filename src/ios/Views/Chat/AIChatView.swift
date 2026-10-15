@@ -2805,9 +2805,25 @@ struct AIChatView: View {
                 },
                 // iOS 15 backport: message attachments open via the same
                 // minis:// tap handler the rest of the transcript uses.
+                // [T-link-diag-90] TEMPORARY diagnostic: show exactly where
+                // the tap goes. Remove once the silent-tap root cause is found.
                 onOpenAttachment: { [self] meta in
-                    if let url = meta.fileTapURL {
-                        _ = handleMinisURLTap(url)
+                    let url = meta.fileTapURL
+                    let msg = "path=\(meta.path)\nurl=\(url?.absoluteString ?? "nil")\nsid=\(vm.sessionId ?? "nil")"
+                    let diag = UIAlertController(title: "Tap Diag", message: msg, preferredStyle: .alert)
+                    diag.addAction(UIAlertAction(title: "Continue", style: .default) { _ in
+                        if let url = url {
+                            _ = handleMinisURLTap(url)
+                        }
+                    })
+                    diag.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                    if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let root = scene.windows.first?.rootViewController {
+                        var presenter = root
+                        while let presented = presenter.presentedViewController { presenter = presented }
+                        if presenter.presentedViewController == nil {
+                            presenter.present(diag, animated: true)
+                        }
                     }
                 },
                 maxContentWidth: maxContentWidth ?? 0,
