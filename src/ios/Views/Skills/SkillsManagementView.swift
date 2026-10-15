@@ -342,6 +342,9 @@ private struct ImportSkillSheet: View {
     private func importPickedFile(_ result: SkillFilePickResult) {
         errorMessage = nil
         isImporting = true
+        // .pendingPick: file copy is running in the background; just show
+        // the progress overlay and wait for the real result.
+        guard result != .pendingPick else { return }
         Task { @MainActor in
             do {
                 switch result {
@@ -350,6 +353,8 @@ private struct ImportSkillSheet: View {
                 case .archiveURL(let url):
                     _ = try await SkillStore.shared.importFromArchive(at: url)
                     try? FileManager.default.removeItem(at: url)
+                case .pendingPick:
+                    break // unreachable: guarded above, but switch must be exhaustive
                 }
                 dismiss()
             } catch {
@@ -363,9 +368,12 @@ private struct ImportSkillSheet: View {
 // MARK: - File Picker
 
 /// Callback receives either a plain-text SKILL.md content string or a file URL for archives.
-private enum SkillFilePickResult {
+private enum SkillFilePickResult: Equatable {
     case text(String)
     case archiveURL(URL)
+    /// Picker dismissed, file copy in progress on a background task.
+    /// Shows the progress overlay; the real .archiveURL/.text follows.
+    case pendingPick
 }
 
 private struct SkillFileDocumentPicker: UIViewControllerRepresentable {
@@ -397,25 +405,38 @@ private struct SkillFileDocumentPicker: UIViewControllerRepresentable {
 
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
-            let accessed = url.startAccessingSecurityScopedResource()
-            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-
             let ext = url.pathExtension.lowercased()
-            if ext == "zip" || ext == "skill" {
-                // Copy to temp so we can access after security scope ends
-                let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
-                try? FileManager.default.removeItem(at: tmp)
-                do {
-                    try FileManager.default.copyItem(at: url, to: tmp)
-                    onImport(.archiveURL(tmp))
-                } catch {
-                    // [T-skill-import-bg-87] Surface copy failures instead of silently dropping the pick.
-                    onError("Could not copy the selected file: \(error.localizedDescription)")
+
+            // [T-skill-pick-bg-92] Don't block the main thread copying the
+            // file (a 146MB archive freezes the UI for seconds, looking like
+            // "tap does nothing"). Dismiss the picker immediately, copy in
+            // the background, then call back on the main thread.
+            Task { @MainActor in
+                // Dismiss signal: the callers set showFilePicker = false in
+                // onImport/onError; we trigger onImport with a pending state
+                // first so the progress overlay appears without delay.
+                onImport(.pendingPick)
+            }
+
+            Task.detached { [onImport, onError] in
+                let accessed = url.startAccessingSecurityScopedResource()
+                defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+
+                if ext == "zip" || ext == "skill" {
+                    // Copy to temp so we can access after security scope ends
+                    let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
+                    try? FileManager.default.removeItem(at: tmp)
+                    do {
+                        try FileManager.default.copyItem(at: url, to: tmp)
+                        await MainActor.run { onImport(.archiveURL(tmp)) }
+                    } catch {
+                        await MainActor.run { onError("Could not copy the selected file: \(error.localizedDescription)") }
+                    }
+                } else if let content = try? String(contentsOf: url, encoding: .utf8) {
+                    await MainActor.run { onImport(.text(content)) }
+                } else {
+                    await MainActor.run { onError("Could not read the selected file.") }
                 }
-            } else if let content = try? String(contentsOf: url, encoding: .utf8) {
-                onImport(.text(content))
-            } else {
-                onError("Could not read the selected file.")
             }
         }
     }
@@ -783,6 +804,8 @@ private struct SkillDetailView: View {
     private func updateFromFile(_ result: SkillFilePickResult) {
         isUpdating = true
         updateError = nil
+        // .pendingPick: background copy in progress; keep the spinner and wait.
+        guard result != .pendingPick else { return }
         Task { @MainActor in
             do {
                 switch result {
@@ -791,6 +814,8 @@ private struct SkillDetailView: View {
                 case .archiveURL(let url):
                     _ = try await store.importFromArchive(at: url)
                     try? FileManager.default.removeItem(at: url)
+                case .pendingPick:
+                    break
                 }
                 updateError = nil
             } catch {
