@@ -932,34 +932,41 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
     }
 
     @discardableResult
-    func importFromArchive(at url: URL) throws -> Skill {
-        let data = try Data(contentsOf: url)
-        let entries = try Self.readZipEntries(data: data)
+    func importFromArchive(at url: URL) async throws -> Skill {
+        // [T-skill-import-bg-87] Heavy I/O + decompression run off the main
+        // thread. The central directory is scanned for SKILL.md BEFORE
+        // anything is decompressed, so a non-skill archive (e.g. a 150MB
+        // tool bundle) fails fast instead of freezing the UI.
+        let staged = try await Task.detached(priority: .userInitiated) { () -> (skillMDName: String, content: String, entries: [ZipEntry]) in
+            let data = try Data(contentsOf: url)
+            let names = try Self.zipCentralDirectoryNames(data: data)
+            guard let skillMDName = names.first(where: {
+                $0 == "SKILL.md" || ($0.hasSuffix("/SKILL.md") && $0.components(separatedBy: "/").count == 2)
+            }) else {
+                throw SkillError.noSkillMDInArchive
+            }
+            let entries = try Self.readZipEntries(data: data)
+            guard let mdEntry = entries.first(where: { $0.name == skillMDName }),
+                  let content = String(data: mdEntry.data, encoding: .utf8),
+                  !content.isEmpty else {
+                throw SkillError.invalidContent
+            }
+            return (skillMDName, content, entries)
+        }.value
 
-        guard let skillMDEntry = entries.first(where: {
-            let name = $0.name
-            return name == "SKILL.md" || (name.hasSuffix("/SKILL.md") && name.components(separatedBy: "/").count == 2)
-        }) else {
-            throw SkillError.noSkillMDInArchive
-        }
-
-        guard let skillContent = String(data: skillMDEntry.data, encoding: .utf8), !skillContent.isEmpty else {
-            throw SkillError.invalidContent
-        }
-
-        let skill = try importSkill(content: skillContent, source: .file)
+        let skill = try importSkill(content: staged.content, source: .file)
 
         let prefix: String
-        if skillMDEntry.name == "SKILL.md" {
+        if staged.skillMDName == "SKILL.md" {
             prefix = ""
         } else {
-            prefix = String(skillMDEntry.name.dropLast("SKILL.md".count))
+            prefix = String(staged.skillMDName.dropLast("SKILL.md".count))
         }
 
         let skillDir = skillsDir.appendingPathComponent(skill.id)
         let rootfsDir = rootfsSkillsDir.appendingPathComponent(skill.id)
 
-        for entry in entries {
+        for entry in staged.entries {
             guard !entry.isDirectory else { continue }
             var relativePath = entry.name
             if !prefix.isEmpty && relativePath.hasPrefix(prefix) {
@@ -984,7 +991,7 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
         // Re-mark dirty after all bundled files are written so the sync cycle
         // picks up the complete skill (SKILL.md + scripts/assets).
         // The stability check (isSkillStable) ensures sync waits until writes settle.
-        let hasBundledFiles = entries.contains { !$0.isDirectory && $0.name != "SKILL.md" && !$0.name.hasPrefix(".") }
+        let hasBundledFiles = staged.entries.contains { !$0.isDirectory && $0.name != "SKILL.md" && !$0.name.hasPrefix(".") }
         if hasBundledFiles {
             if let idx = skills.firstIndex(where: { $0.id == skill.id }) {
                 skills[idx].updatedAt = Date()
@@ -2552,7 +2559,42 @@ extension SkillStore {
         let data: Data
     }
 
-    static func readZipEntries(data: Data) throws -> [ZipEntry] {
+    /// Parse ONLY the central directory of a ZIP archive and return entry names.
+    /// No entry data is decompressed — callers use this to fail fast (e.g.
+    /// missing SKILL.md) before paying for full extraction. [T-skill-import-bg-87]
+    nonisolated static func zipCentralDirectoryNames(data: Data) throws -> [String] {
+        guard data.count >= 22 else { throw SkillError.invalidArchive }
+
+        var eocdOffset = -1
+        let searchStart = max(0, data.count - 65557)
+        for i in stride(from: data.count - 22, through: searchStart, by: -1) {
+            if data[i] == 0x50 && data[i+1] == 0x4B && data[i+2] == 0x05 && data[i+3] == 0x06 {
+                eocdOffset = i
+                break
+            }
+        }
+        guard eocdOffset >= 0 else { throw SkillError.invalidArchive }
+
+        let entryCount = Int(readU16(data, at: eocdOffset + 10))
+        let cdOffset = Int(readU32(data, at: eocdOffset + 16))
+
+        var names: [String] = []
+        names.reserveCapacity(entryCount)
+        var pos = cdOffset
+        for _ in 0..<entryCount {
+            guard pos + 46 <= data.count else { break }
+            guard readU32(data, at: pos) == 0x02014B50 else { break }
+            let nameLen = Int(readU16(data, at: pos + 28))
+            let extraLen = Int(readU16(data, at: pos + 30))
+            let commentLen = Int(readU16(data, at: pos + 32))
+            let nameData = data[pos+46 ..< pos+46+nameLen]
+            names.append(String(data: nameData, encoding: .utf8) ?? "")
+            pos += 46 + nameLen + extraLen + commentLen
+        }
+        return names
+    }
+
+    nonisolated static func readZipEntries(data: Data) throws -> [ZipEntry] {
         guard data.count >= 22 else { throw SkillError.invalidArchive }
 
         var eocdOffset = -1
@@ -2617,18 +2659,18 @@ extension SkillStore {
         return entries
     }
 
-    private static func readU16(_ data: Data, at offset: Int) -> UInt16 {
+    nonisolated private static func readU16(_ data: Data, at offset: Int) -> UInt16 {
         UInt16(data[offset]) | (UInt16(data[offset + 1]) << 8)
     }
 
-    private static func readU32(_ data: Data, at offset: Int) -> UInt32 {
+    nonisolated private static func readU32(_ data: Data, at offset: Int) -> UInt32 {
         UInt32(data[offset]) |
         (UInt32(data[offset + 1]) << 8) |
         (UInt32(data[offset + 2]) << 16) |
         (UInt32(data[offset + 3]) << 24)
     }
 
-    private static func decompress(_ data: Data, expectedSize: Int) -> Data? {
+    nonisolated private static func decompress(_ data: Data, expectedSize: Int) -> Data? {
         guard expectedSize > 0 else { return Data() }
         var decompressed = Data(count: expectedSize)
         let result = decompressed.withUnsafeMutableBytes { destPtr -> Int in
