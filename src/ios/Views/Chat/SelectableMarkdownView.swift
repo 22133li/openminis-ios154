@@ -9563,8 +9563,16 @@ struct SelectableMarkdownView: UIViewRepresentable {
                 alert.addAction(UIAlertAction(title: AppLocalized("Copy Link"), style: .default) { _ in
                     UIPasteboard.general.string = URL.absoluteString
                 })
-                alert.addAction(UIAlertAction(title: AppLocalized("Open in Safari"), style: .default) { _ in
-                    UIApplication.shared.open(URL)
+                alert.addAction(UIAlertAction(title: AppLocalized("Open in Safari"), style: .default) { [weak self] _ in
+                    // [T-link-relative-88] minis:// and file:// links can't be
+                    // opened by UIApplication (silent no-op) — route them
+                    // through the in-app handler like a tap does.
+                    let scheme = URL.scheme?.lowercased()
+                    if scheme == "minis" || scheme == "file", let openURL = self?.openURL {
+                        openURL(URL)
+                    } else {
+                        UIApplication.shared.open(URL)
+                    }
                 })
                 alert.addAction(UIAlertAction(title: AppLocalized("Cancel"), style: .cancel))
                 if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,

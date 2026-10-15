@@ -3185,6 +3185,25 @@ struct AIChatView: View {
         return comps.url
     }
 
+    /// Map a scheme-less relative link target (bare filename or relative path)
+    /// into the minis:// namespace: `x.deb` → `minis://attachments/x.deb`,
+    /// `attachments/x.deb` → `minis://attachments/x.deb`. URLComponents
+    /// percent-encodes the result so unencoded CJK filenames are handled too.
+    private static func minisURL(fromRelativeLink rawPath: String) -> URL? {
+        let segments = rawPath.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard !segments.isEmpty else { return nil }
+        var comps = URLComponents()
+        comps.scheme = "minis"
+        if segments.count > 1 {
+            comps.host = segments[0]
+            comps.path = "/" + segments[1...].joined(separator: "/")
+        } else {
+            comps.host = "attachments"
+            comps.path = "/" + segments[0]
+        }
+        return comps.url
+    }
+
     private func handleMinisURLTap(_ url: URL) -> OpenURLAction.Result {
         if let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" {
             withAnimation { safariURL = url }
@@ -3200,6 +3219,19 @@ struct AIChatView: View {
         if scheme == "file" || scheme == nil,
            let normalized = Self.minisURL(fromFileLink: url) {
             return handleMinisURLTap(normalized)
+        }
+        // [T-link-relative-88] Models sometimes emit a bare filename or a
+        // relative path (e.g. `[pkg](TrollOpen_roothide_1.3.7-1.deb)`) instead
+        // of an absolute minis:// link. Map it into the minis:// namespace so
+        // the tap opens the share sheet (or the "not found" alert) instead of
+        // going silent via .systemAction below.
+        if scheme == nil {
+            var rawPath = url.path
+            if rawPath.isEmpty { rawPath = url.absoluteString }
+            if !rawPath.isEmpty, !rawPath.hasPrefix("/"),
+               let synthetic = Self.minisURL(fromRelativeLink: rawPath) {
+                return handleMinisURLTap(synthetic)
+            }
         }
         guard scheme == "minis" else { return .systemAction }
 
