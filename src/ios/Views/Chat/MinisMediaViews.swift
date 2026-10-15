@@ -462,7 +462,7 @@ struct AsyncVideoTile: View {
 
     var body: some View {
         Button {
-            if let url = URL(string: meta.minisURL) { openURL(url) }
+            if let url = meta.fileTapURL { openURL(url) }
         } label: {
             ZStack(alignment: .bottomLeading) {
                 if let img = thumbnail {

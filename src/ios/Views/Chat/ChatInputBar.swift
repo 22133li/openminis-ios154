@@ -711,7 +711,7 @@ struct UserAttachmentList: View {
     /// file named by its storage UUID. Tap opens the stored text preview.
     private func pastedTile(_ meta: AttachmentMeta) -> some View {
         Button {
-            if let url = URL(string: meta.minisURL) { openURL(url) }
+            if let url = meta.fileTapURL { openURL(url) }
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: "doc.text")
@@ -741,7 +741,7 @@ struct UserAttachmentList: View {
 
     private func fileTile(_ meta: AttachmentMeta) -> some View {
         Button {
-            if let url = URL(string: meta.minisURL) { openURL(url) }
+            if let url = meta.fileTapURL { openURL(url) }
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: fileIconName(for: meta.fileName))

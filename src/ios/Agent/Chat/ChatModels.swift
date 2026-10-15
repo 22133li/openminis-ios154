@@ -32,6 +32,20 @@ struct AttachmentMeta: Identifiable, Equatable {
         return "minis://\(rel)"
     }
 
+    /// URL for tap handling. Built with URLComponents so CJK/space filenames
+    /// never make `URL(string:)` return nil — a nil URL silently drops the tap
+    /// (`if let url = ...` fails with no feedback). [T-link-encode-89]
+    var fileTapURL: URL? {
+        let rel = path.hasPrefix("/var/minis/") ? String(path.dropFirst("/var/minis/".count)) : path
+        let parts = rel.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard let host = parts.first, !host.isEmpty else { return nil }
+        var comps = URLComponents()
+        comps.scheme = "minis"
+        comps.host = host
+        comps.path = "/" + parts.dropFirst().joined(separator: "/")
+        return comps.url
+    }
+
     var fileName: String {
         displayName ?? (path as NSString).lastPathComponent
     }

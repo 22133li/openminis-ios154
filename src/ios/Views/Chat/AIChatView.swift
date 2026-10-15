@@ -572,10 +572,6 @@ struct AIChatView: View {
     @State private var safariURL: URL?
     @State private var fullBrowserURL: URL?
     @State private var fullBrowserIsLocal = false
-    /// Filename to show in the "file missing" alert. Set by `handleMinisURLTap`
-    /// when `resolveMinisFileURL` returns nil for a tapped `minis://` link
-    /// (file was deleted, the session was pruned, or iCloud hasn't synced yet).
-    @State private var missingMinisFileName: String?
 
     var body: some View {
         ZStack {
@@ -1005,18 +1001,6 @@ struct AIChatView: View {
         })
         .fullScreenCover(item: $previewImageFile) { fileURL in
             MinisImageFilePreviewView(fileURL: fileURL)
-        }
-        .alert(
-            AppLocalized("File Not Found"),
-            isPresented: Binding(
-                get: { missingMinisFileName != nil },
-                set: { if !$0 { missingMinisFileName = nil } }
-            ),
-            presenting: missingMinisFileName
-        ) { _ in
-            Button(AppLocalized("OK"), role: .cancel) { missingMinisFileName = nil }
-        } message: { name in
-            Text(AppLocalized("\(name) is unavailable. It may have been deleted or not yet synced from iCloud."))
         }
         .fullScreenCover(item: $imageGallery) { presentation in
             MessageImageGallery(items: presentation.items, startIndex: presentation.startIndex)
@@ -2822,7 +2806,7 @@ struct AIChatView: View {
                 // iOS 15 backport: message attachments open via the same
                 // minis:// tap handler the rest of the transcript uses.
                 onOpenAttachment: { [self] meta in
-                    if let url = URL(string: meta.minisURL) {
+                    if let url = meta.fileTapURL {
                         _ = handleMinisURLTap(url)
                     }
                 },
@@ -3216,21 +3200,21 @@ struct AIChatView: View {
         // of falling through to .systemAction, which silently ignores
         // device-local file URLs.
         let scheme = url.scheme?.lowercased()
-        if scheme == "file" || scheme == nil,
-           let normalized = Self.minisURL(fromFileLink: url) {
-            return handleMinisURLTap(normalized)
-        }
-        // [T-link-relative-88] Models sometimes emit a bare filename or a
-        // relative path (e.g. `[pkg](TrollOpen_roothide_1.3.7-1.deb)`) instead
-        // of an absolute minis:// link. Map it into the minis:// namespace so
-        // the tap opens the share sheet (or the "not found" alert) instead of
-        // going silent via .systemAction below.
-        if scheme == nil {
-            var rawPath = url.path
-            if rawPath.isEmpty { rawPath = url.absoluteString }
-            if !rawPath.isEmpty, !rawPath.hasPrefix("/"),
-               let synthetic = Self.minisURL(fromRelativeLink: rawPath) {
-                return handleMinisURLTap(synthetic)
+        if scheme == "file" || scheme == nil {
+            // Absolute /var/minis/... path (or file:// URL) → minis:// equivalent.
+            if let normalized = Self.minisURL(fromFileLink: url) {
+                return handleMinisURLTap(normalized)
+            }
+            // Bare filename or relative/absolute path → minis://attachments/.
+            // Leading "/" is stripped so "/x.deb" doesn't fall through to
+            // .systemAction below. [T-link-relative-89]
+            if scheme == nil {
+                var rawPath = url.path
+                if rawPath.isEmpty { rawPath = url.absoluteString }
+                let stripped = rawPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                if !stripped.isEmpty, let synthetic = Self.minisURL(fromRelativeLink: stripped) {
+                    return handleMinisURLTap(synthetic)
+                }
             }
         }
         guard scheme == "minis" else { return .systemAction }
@@ -3287,12 +3271,35 @@ struct AIChatView: View {
             }
         } else {
             // File doesn't exist on disk — likely deleted, from a pruned
-            // session, or iCloud sync hasn't brought it down yet. Surface
-            // a dismissable alert so the tap isn't silently ignored.
+            // session, or sync hasn't brought it down yet. Surface a UIKit
+            // alert (not the SwiftUI .alert modifier: AIChatView stacks 8
+            // .alert modifiers and on iOS 15 the file-missing one never
+            // presents, swallowing the tap silently). [T-link-alert-89]
             let name = url.lastPathComponent.removingPercentEncoding ?? url.lastPathComponent
-            missingMinisFileName = name.isEmpty ? url.absoluteString : name
+            presentFileMissingAlert(name: name.isEmpty ? url.absoluteString : name)
         }
         return .handled
+    }
+
+    /// Present the "file not found" feedback via UIKit. AIChatView carries 8
+    /// stacked SwiftUI `.alert` modifiers; on iOS 15 only one of them presents
+    /// reliably, so the SwiftUI alert for a missing file was silently dropped
+    /// and file taps appeared dead. A directly-presented UIAlertController has
+    /// no such conflict. [T-link-alert-89]
+    private func presentFileMissingAlert(name: String) {
+        let alert = UIAlertController(
+            title: AppLocalized("File Not Found"),
+            message: AppLocalized("\(name) is unavailable. It may have been deleted or not yet synced."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: AppLocalized("OK"), style: .cancel))
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let root = scene.windows.first?.rootViewController else { return }
+        var presenter = root
+        while let presented = presenter.presentedViewController { presenter = presented }
+        // Don't stack on an already-presented alert/sheet.
+        guard presenter.presentedViewController == nil else { return }
+        presenter.present(alert, animated: true)
     }
 
     private func handleDropProviders(_ providers: [NSItemProvider]) {
