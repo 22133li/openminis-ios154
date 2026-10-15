@@ -149,6 +149,12 @@ private struct MarkdownText: View {
             }
         }
         .textSelection(.enabled)
+        // [T-link-v3-handler-91] Route link taps through the app's minis://
+        // handler. Without this, Text(AttributedString) links use the system
+        // default openURL: http(s) opens Safari (works), but minis://,
+        // file:// and bare filenames silently fail. This was the root cause
+        // of "file links do nothing" — handleMinisURLTap was never reached.
+        .modifier(MinisOpenURLHandler())
     }
 }
 
