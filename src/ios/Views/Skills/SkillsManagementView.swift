@@ -342,9 +342,6 @@ private struct ImportSkillSheet: View {
     private func importPickedFile(_ result: SkillFilePickResult) {
         errorMessage = nil
         isImporting = true
-        // .pendingPick: file copy is running in the background; just show
-        // the progress overlay and wait for the real result.
-        guard result != .pendingPick else { return }
         Task { @MainActor in
             do {
                 switch result {
@@ -353,8 +350,6 @@ private struct ImportSkillSheet: View {
                 case .archiveURL(let url):
                     _ = try await SkillStore.shared.importFromArchive(at: url)
                     try? FileManager.default.removeItem(at: url)
-                case .pendingPick:
-                    break // unreachable: guarded above, but switch must be exhaustive
                 }
                 dismiss()
             } catch {
@@ -371,9 +366,6 @@ private struct ImportSkillSheet: View {
 private enum SkillFilePickResult: Equatable {
     case text(String)
     case archiveURL(URL)
-    /// Picker dismissed, file copy in progress on a background task.
-    /// Shows the progress overlay; the real .archiveURL/.text follows.
-    case pendingPick
 }
 
 private struct SkillFileDocumentPicker: UIViewControllerRepresentable {
@@ -407,20 +399,20 @@ private struct SkillFileDocumentPicker: UIViewControllerRepresentable {
             guard let url = urls.first else { return }
             let ext = url.pathExtension.lowercased()
 
-            // [T-skill-pick-bg-92] Don't block the main thread copying the
-            // file (a 146MB archive freezes the UI for seconds, looking like
-            // "tap does nothing"). Dismiss the picker immediately, copy in
-            // the background, then call back on the main thread.
-            Task { @MainActor in
-                // Dismiss signal: the callers set showFilePicker = false in
-                // onImport/onError; we trigger onImport with a pending state
-                // first so the progress overlay appears without delay.
-                onImport(.pendingPick)
-            }
+            // [T-skill-pick-bg-93] Start security-scoped access synchronously
+            // while the delegate scope is valid. Copy the file on a background
+            // task so the main thread (and the picker UI) never freezes.
+            // The picker stays open during the copy; onImport/onError dismiss
+            // it when the copy finishes.
+            let accessed = url.startAccessingSecurityScopedResource()
 
             Task.detached { [onImport, onError] in
-                let accessed = url.startAccessingSecurityScopedResource()
-                defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+                defer {
+                    if accessed {
+                        // Balance startAccessingSecurityScopedResource on the main thread.
+                        Task { @MainActor in url.stopAccessingSecurityScopedResource() }
+                    }
+                }
 
                 if ext == "zip" || ext == "skill" {
                     // Copy to temp so we can access after security scope ends
@@ -804,8 +796,6 @@ private struct SkillDetailView: View {
     private func updateFromFile(_ result: SkillFilePickResult) {
         isUpdating = true
         updateError = nil
-        // .pendingPick: background copy in progress; keep the spinner and wait.
-        guard result != .pendingPick else { return }
         Task { @MainActor in
             do {
                 switch result {
@@ -814,8 +804,6 @@ private struct SkillDetailView: View {
                 case .archiveURL(let url):
                     _ = try await store.importFromArchive(at: url)
                     try? FileManager.default.removeItem(at: url)
-                case .pendingPick:
-                    break
                 }
                 updateError = nil
             } catch {
