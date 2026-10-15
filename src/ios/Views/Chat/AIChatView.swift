@@ -3162,12 +3162,46 @@ struct AIChatView: View {
         return img
     }
 
+    /// Normalize a `file://` URL or a bare `/var/minis/...` path link to its
+    /// `minis://` equivalent (`minis://<ns>/<path>` ↔ `/var/minis/<ns>/<path>`).
+    /// URLComponents percent-encodes the result, so unencoded CJK filenames
+    /// are handled too. Returns nil when the path isn't under /var/minis/.
+    private static func minisURL(fromFileLink url: URL) -> URL? {
+        var path = url.path
+        if path.isEmpty, url.scheme == nil {
+            path = url.absoluteString
+        }
+        let prefix = "/var/minis/"
+        guard path.hasPrefix(prefix) else { return nil }
+        let rest = String(path.dropFirst(prefix.count))
+        guard let slash = rest.firstIndex(of: "/") else { return nil }
+        let host = String(rest[..<slash])
+        let subPath = String(rest[rest.index(after: slash)...])
+        guard !host.isEmpty, !subPath.isEmpty else { return nil }
+        var comps = URLComponents()
+        comps.scheme = "minis"
+        comps.host = host
+        comps.path = "/" + subPath
+        return comps.url
+    }
+
     private func handleMinisURLTap(_ url: URL) -> OpenURLAction.Result {
         if let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" {
             withAnimation { safariURL = url }
             return .handled
         }
-        guard url.scheme == "minis" else { return .systemAction }
+        // [T-link-fallback-86] Models sometimes emit file:// URLs or bare
+        // /var/minis/... paths instead of minis:// links (e.g. third-party
+        // models that don't follow the minis:// convention). Normalize those
+        // to a minis:// URL so the tap opens the share/preview sheet instead
+        // of falling through to .systemAction, which silently ignores
+        // device-local file URLs.
+        let scheme = url.scheme?.lowercased()
+        if scheme == "file" || scheme == nil,
+           let normalized = Self.minisURL(fromFileLink: url) {
+            return handleMinisURLTap(normalized)
+        }
+        guard scheme == "minis" else { return .systemAction }
 
         // Terminal deep link: minis://open_terminal?init_command=...
         if url.host == "open_terminal" {
