@@ -373,11 +373,16 @@ private struct SkillFileDocumentPicker: UIViewControllerRepresentable {
     let onError: (String) -> Void
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        // [T-skill-pick-94] iOS 15.4: UTType(filenameExtension:conformingTo:)
-        // dynamic type breaks file selectability in the picker. Use only
-        // system types; .skill files are still accepted by extension in the delegate.
-        let types: [UTType] = [.plainText, .zip]
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: types)
+        // [T-skill-pick-95] iOS 15.4: UTType-based forOpeningContentTypes
+        // leaves files untappable. Fall back to the legacy
+        // documentTypes:in: initializer with string UTIs, which is the
+        // iOS 11-13 era API and works reliably on 15.4.
+        // public.zip-archive covers .zip; public.plain-text covers .md/.txt.
+        // .skill extension is accepted by the delegate's pathExtension check.
+        let picker = UIDocumentPickerViewController(
+            documentTypes: ["public.zip-archive", "public.plain-text"],
+            in: .open
+        )
         picker.delegate = context.coordinator
         return picker
     }
