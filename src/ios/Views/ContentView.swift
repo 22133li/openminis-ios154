@@ -7471,7 +7471,6 @@ struct SessionEditSheet: View {
                     guard !title.isEmpty else { return }
                     onSave(title, editCategory.isEmpty ? nil : editCategory)
                 }
-                .bold()
                 .disabled(editTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             )
             .onAppear {

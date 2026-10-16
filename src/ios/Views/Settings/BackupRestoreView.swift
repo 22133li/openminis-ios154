@@ -489,7 +489,6 @@ struct BackupRestoreView: View {
                     } else {
                         BackupActionIcon(systemName: "arrow.down.doc.fill", tint: .indigo)
                         Text(AppLocalized("Start Restore"))
-                            .fontWeight(.semibold)
                     }
                     Spacer(minLength: 0)
                 }
