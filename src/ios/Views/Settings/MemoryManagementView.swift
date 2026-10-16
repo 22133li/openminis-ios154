@@ -61,12 +61,6 @@ struct MemoryManagementView: View {
 
         .navigationTitle("Memory")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Image(systemName: "ellipsis.circle")
-                .opacity(0)
-            }
-        }
         .overlay(alignment: .top) {
             if let msg = forceSyncToast {
                 Text(msg)

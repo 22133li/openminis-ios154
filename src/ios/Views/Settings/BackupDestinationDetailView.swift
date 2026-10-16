@@ -176,7 +176,7 @@ struct BackupDestinationDetailView: View {
     private func loadFolderPackages(_ f: MountedFolderEntry) async {
         let id = f.id
         folderPackages = await Task.detached(priority: .userInitiated) {
-            await BackupDestinations.listPackages(folderId: id)
+            BackupDestinations.listPackages(folderId: id)
         }.value
     }
 

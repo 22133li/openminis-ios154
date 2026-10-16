@@ -7170,7 +7170,7 @@ struct MinisDocumentPicker: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedContentTypes, asCopy: true)
         picker.delegate = context.coordinator
-        picker.allowsMultipleSelection = false
+        picker.allowsMultipleSelection = true
         return picker
     }
 

@@ -70,8 +70,15 @@ struct Skill: Identifiable {
 final class SkillStore: ObservableObject {
     static let shared = SkillStore()
 
-    @Published private(set) var skills: [Skill] = []
+    @Published private(set) var skills: [Skill] = [] {
+        didSet {
+            // [fix-audit-7] 追踪主线程对 skills 的修改，用于 reload() 竞态检测
+            lastSkillsMutation = Date()
+        }
+    }
     @Published private(set) var isLoading = true
+    /// 主线程最后一次修改 skills 的时间（didSet 自动维护）
+    private var lastSkillsMutation = Date.distantPast
 
     private let fm = FileManager.default
     private var db: OpaquePointer?
@@ -1505,6 +1512,10 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
         // 修复：reload 也在后台做，避免 Skills 页 onAppear 阻塞主线程
         Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
+            // [fix-audit-7] 记录开始时间，用于检测后台加载期间主线程是否有修改
+            let startTime = await MainActor.run { [weak self] in
+                self?.lastSkillsMutation ?? .distantPast
+            }
             let ctx: (db: OpaquePointer?, skillsDir: URL, rootfsDir: URL)? = await MainActor.run { [weak self] in
                 guard let self, let db = self.db else { return nil }
                 return (db, self.skillsDir, self.rootfsSkillsDir)
@@ -1516,7 +1527,16 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
                 rootfsDir: ctx.rootfsDir
             )
             await MainActor.run { [weak self] in
-                self?.skills = loaded
+                guard let self else { return }
+                // [fix-audit-7] 如果后台加载期间主线程修改过 skills，
+                // 丢弃旧快照，避免覆盖用户的导入/删除操作
+                guard self.lastSkillsMutation <= startTime else { return }
+                self.skills = loaded
+                // [fix-audit-6] 后台加载跳过了 discoverNewSkillsOnDisk，
+                // 这里补上，保证 agent 建完技能后 reload 能发现磁盘新技能。
+                // reconcileOrphanSkill 会自行 append 到 self.skills。
+                let knownIds = Set(loaded.map { $0.id })
+                self.discoverNewSkillsOnDisk(knownIds: knownIds)
             }
         }
     }

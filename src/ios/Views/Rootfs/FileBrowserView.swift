@@ -1627,6 +1627,12 @@ private struct DirectoryPickerView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarItems(
+            leading: Button("Cancel") { dismiss() },
+            trailing: Button("Select") {
+                onSelect(currentDir)
+            }
+        )
         .onAppear { loadDirectories() }
     }
 

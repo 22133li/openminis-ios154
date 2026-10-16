@@ -4593,6 +4593,9 @@ struct ContentView: View {
             // (restore reloads ProviderConfigStore and the session list).
             NavigationView {
                 BackupAndRestoreView(initialTab: .restore)
+                    .navigationBarItems(
+                        leading: Button("Close") { showRestoreBackup = false }
+                    )
             }
         }
     }
@@ -7461,6 +7464,16 @@ struct SessionEditSheet: View {
             }
             .navigationTitle("Edit Session")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(
+                leading: Button("Cancel") { dismiss() },
+                trailing: Button("Save") {
+                    let title = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !title.isEmpty else { return }
+                    onSave(title, editCategory.isEmpty ? nil : editCategory)
+                }
+                .bold()
+                .disabled(editTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            )
             .onAppear {
                 editTitle = session.title ?? ""
                 editCategory = session.category ?? ""
