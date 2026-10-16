@@ -373,15 +373,15 @@ private struct SkillFileDocumentPicker: UIViewControllerRepresentable {
     let onError: (String) -> Void
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        // [T-skill-pick-95] iOS 15.4: UTType-based forOpeningContentTypes
-        // leaves files untappable. Fall back to the legacy
-        // documentTypes:in: initializer with string UTIs, which is the
-        // iOS 11-13 era API and works reliably on 15.4.
-        // public.zip-archive covers .zip; public.plain-text covers .md/.txt.
-        // .skill extension is accepted by the delegate's pathExtension check.
+        // [T-skill-pick-96] iOS 15.4: forOpeningContentTypes without asCopy
+        // never fires the delegate callback. Chat attachment picker uses
+        // asCopy: true and works. Use the same here.
+        // With asCopy: true the system copies the file to a temp location,
+        // so the delegate gets a regular (non-security-scoped) URL and no
+        // manual copy is needed.
         let picker = UIDocumentPickerViewController(
-            documentTypes: ["public.zip-archive", "public.plain-text"],
-            in: .open
+            forOpeningContentTypes: [.zip, .plainText],
+            asCopy: true
         )
         picker.delegate = context.coordinator
         return picker
@@ -403,36 +403,15 @@ private struct SkillFileDocumentPicker: UIViewControllerRepresentable {
             guard let url = urls.first else { return }
             let ext = url.pathExtension.lowercased()
 
-            // [T-skill-pick-bg-93] Start security-scoped access synchronously
-            // while the delegate scope is valid. Copy the file on a background
-            // task so the main thread (and the picker UI) never freezes.
-            // The picker stays open during the copy; onImport/onError dismiss
-            // it when the copy finishes.
-            let accessed = url.startAccessingSecurityScopedResource()
-
-            Task.detached { [onImport, onError] in
-                defer {
-                    if accessed {
-                        // Balance startAccessingSecurityScopedResource on the main thread.
-                        Task { @MainActor in url.stopAccessingSecurityScopedResource() }
-                    }
-                }
-
-                if ext == "zip" || ext == "skill" {
-                    // Copy to temp so we can access after security scope ends
-                    let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
-                    try? FileManager.default.removeItem(at: tmp)
-                    do {
-                        try FileManager.default.copyItem(at: url, to: tmp)
-                        await MainActor.run { onImport(.archiveURL(tmp)) }
-                    } catch {
-                        await MainActor.run { onError("Could not copy the selected file: \(error.localizedDescription)") }
-                    }
-                } else if let content = try? String(contentsOf: url, encoding: .utf8) {
-                    await MainActor.run { onImport(.text(content)) }
-                } else {
-                    await MainActor.run { onError("Could not read the selected file.") }
-                }
+            // [T-skill-pick-96] asCopy: true means the system already copied
+            // the file to a temp location; url is a regular file URL, not
+            // security-scoped. No manual copy needed, call back directly.
+            if ext == "zip" || ext == "skill" {
+                onImport(.archiveURL(url))
+            } else if let content = try? String(contentsOf: url, encoding: .utf8) {
+                onImport(.text(content))
+            } else {
+                onError("Could not read the selected file.")
             }
         }
     }
