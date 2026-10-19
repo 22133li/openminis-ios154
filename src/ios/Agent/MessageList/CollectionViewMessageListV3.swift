@@ -128,7 +128,7 @@ private struct MarkdownText: View {
         if segments.count == 1 {
             inlineText(content)
         } else {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 ForEach(segments.indices, id: \.self) { i in
                     if i % 2 == 1 {
                         CodeBlockView(code: segments[i])
@@ -255,7 +255,7 @@ private struct MessageRowView: View {
                 }
             }
         case .assistant:
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 // Render text blocks
                 ForEach(message.blocks.indices, id: \.self) { idx in
                     let block = message.blocks[idx]
@@ -427,12 +427,25 @@ private struct BlockView: View {
                 MarkdownText(content: block.content)
             }
         case .thinking:
-            DisclosureGroup("思考过程") {
+            // [iOS15-thinking-style] Match upstream ThinkingBlockView container:
+            // blue 0.06 background, 12pt rounded corners, blue 0.15 hairline.
+            DisclosureGroup {
                 Text(block.content)
                     .font(.caption)
                     .foregroundColor(.secondary)
+            } label: {
+                Text("思考过程")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.blue)
             }
             .font(.caption)
+            .padding(10)
+            .background(Color.blue.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.blue.opacity(0.15), lineWidth: 0.5)
+            )
         case .shellTool(let command):
             ToolBlockView(icon: "terminal.fill", title: "执行命令", detail: command, content: block.content)
         case .fileReadTool(let path):
@@ -480,7 +493,8 @@ private struct ToolBlockView: View {
                 Image(systemName: icon)
                     .foregroundColor(.blue)
                 Text(title)
-                    .font(.subheadline)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
                 if !detail.isEmpty {
                     Text(detail)
                         .font(.caption)
@@ -488,6 +502,14 @@ private struct ToolBlockView: View {
                         .lineLimit(1)
                 }
             }
+            // [iOS15-tool-capsule] Match upstream ToolCapsuleView: gray pill,
+            // fixed 36pt height, hairline border. Applied to the label only so
+            // the expanded detail content is not height-clipped.
+            .padding(.horizontal, 12)
+            .frame(height: 36)
+            .background(Color(UIColor.systemGray6))
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(ChatColors.toolBorder, lineWidth: 0.5))
         }
         .padding(.vertical, 2)
     }
