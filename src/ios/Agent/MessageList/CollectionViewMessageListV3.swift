@@ -43,7 +43,7 @@ struct CollectionViewMessageListV3: View {
                         onOpenAttachment: { onOpenAttachment?($0) }
                     )
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                     .listRowBackground(Color.clear)
                     .id(message.id)
                     // Track whether the first turn is visible: drives the
@@ -143,11 +143,13 @@ private struct MarkdownText: View {
     private func inlineText(_ s: String) -> some View {
         Group {
             if let attributed = try? AttributedString(markdown: s, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnly)) {
-                Text(attributed)
+                Text(styledInlineCode(attributed))
             } else {
                 Text(verbatim: s)
             }
         }
+        // [iOS15-font] Match upstream: message text follows FontSettings.
+        .font(.system(size: FontSettings.shared.scaledMessage(16.5)))
         .textSelection(.enabled)
         // [T-link-v3-handler-91] Route link taps through the app's minis://
         // handler. Without this, Text(AttributedString) links use the system
@@ -156,10 +158,29 @@ private struct MarkdownText: View {
         // of "file links do nothing" — handleMinisURLTap was never reached.
         .modifier(MinisOpenURLHandler())
     }
+
+    /// Match upstream inline code: systemOrange text on an adaptive light
+    /// background (systemGray6 / dark #3A3A3C). Per-run corner radius is not
+    /// expressible in AttributedString; color + background carry the look.
+    private func styledInlineCode(_ a: AttributedString) -> AttributedString {
+        var out = a
+        for run in out.runs {
+            if run.inlinePresentationIntent?.contains(.code) == true {
+                out[run.range].foregroundColor = .orange
+                out[run.range].backgroundColor = Color(UIColor { traits in
+                    traits.userInterfaceStyle == .dark
+                        ? UIColor(red: 0x3A / 255.0, green: 0x3A / 255.0, blue: 0x3C / 255.0, alpha: 1)
+                        : .systemGray6
+                })
+            }
+        }
+        return out
+    }
 }
 
 private struct CodeBlockView: View {
     let code: String
+    @State private var copied = false
 
     /// Drop a leading language tag line (```swift\n...) if present.
     private var bodyCode: String {
@@ -171,15 +192,59 @@ private struct CodeBlockView: View {
         return lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            Text(verbatim: bodyCode)
-                .font(.system(.caption, design: .monospaced))
-                .textSelection(.enabled)
-                .padding(8)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private var language: String? {
+        let lines = code.components(separatedBy: .newlines)
+        if lines.count >= 2, let first = lines.first,
+           !first.isEmpty, !first.contains(" "), !first.contains("\t") {
+            return first
         }
-        .background(Color.secondary.opacity(0.12))
+        return nil
+    }
+
+    // [iOS15-codeblock] Match upstream SelectableMarkdownTheme: black
+    // background (dark: dark gray), green terminal text, Menlo, 11pt
+    // language label + copy button.
+    private var codeBg: Color {
+        Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(white: 0.15, alpha: 1) : .black })
+    }
+    private var codeTextColor: Color {
+        Color(UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(red: 0.55, green: 0.95, blue: 0.55, alpha: 1) : .systemGreen })
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                if let lang = language {
+                    Text(lang.lowercased())
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.white.opacity(0.4))
+                }
+                Spacer()
+                Button {
+                    UIPasteboard.general.string = bodyCode
+                    copied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
+                } label: {
+                    Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 12))
+                        .foregroundColor(copied ? .green : .white.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+            ScrollView(.horizontal, showsIndicators: false) {
+                Text(verbatim: bodyCode)
+                    .font(.custom("Menlo", size: 13))
+                    .foregroundColor(codeTextColor)
+                    .textSelection(.enabled)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .background(codeBg)
         .cornerRadius(8)
     }
 }
@@ -216,10 +281,14 @@ private struct MessageRowView: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     if !displayContent.isEmpty {
                         Text(verbatim: displayContent)
+                            // [iOS15-bubble] Match upstream UserBubbleSurface:
+                            // tertiarySystemFill bubble + label-color text
+                            // (not iMessage blue), font follows FontSettings.
+                            .font(.system(size: FontSettings.shared.scaledMessage(16.5)))
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
+                            .background(ChatColors.userBubble)
+                            .foregroundColor(ChatColors.primaryText)
                             .cornerRadius(18)
                     }
                     if !message.attachments.isEmpty {
@@ -279,20 +348,9 @@ private struct MessageRowView: View {
                         .font(.caption)
                     }
                 }
-                // Streaming indicator
+                // Streaming indicator — matches upstream TypingIndicator.
                 if message.isAwaitingModelResponse {
-                    HStack {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                        Text("思考中…")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        if onStop != nil {
-                            Button("停止") { onStop?() }
-                                .font(.caption)
-                                .foregroundColor(.red)
-                        }
-                    }
+                    TypingIndicatorView()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -447,23 +505,23 @@ private struct BlockView: View {
                     .stroke(Color.blue.opacity(0.15), lineWidth: 0.5)
             )
         case .shellTool(let command):
-            ToolBlockView(icon: "terminal.fill", title: "执行命令", detail: command, content: block.content)
+            ToolBlockView(icon: "terminal", color: .green, title: "执行命令", detail: command, content: block.content)
         case .fileReadTool(let path):
-            ToolBlockView(icon: "doc.fill", title: "读取文件", detail: path, content: block.content)
+            ToolBlockView(icon: "doc.text", color: .cyan, title: "读取文件", detail: path, content: block.content)
         case .fileWriteTool(let path):
-            ToolBlockView(icon: "square.and.pencil", title: "写入文件", detail: path, content: block.content)
+            ToolBlockView(icon: "doc.text.fill", color: .blue, title: "写入文件", detail: path, content: block.content)
         case .fileEditTool(let path):
-            ToolBlockView(icon: "pencil", title: "编辑文件", detail: path, content: block.content)
+            ToolBlockView(icon: "square.and.pencil", color: .orange, title: "编辑文件", detail: path, content: block.content)
         case .browserTool(let action):
-            ToolBlockView(icon: "globe", title: "浏览 \(action)", detail: "", content: block.content)
+            ToolBlockView(icon: "globe", color: .blue, title: "浏览 \(action)", detail: "", content: block.content)
         case .readImageTool(let path):
-            ToolBlockView(icon: "photo.fill", title: "查看图片", detail: path, content: block.content)
+            ToolBlockView(icon: "photo", color: .purple, title: "查看图片", detail: path, content: block.content)
         case .memoryTool(let action):
-            ToolBlockView(icon: "brain.head.profile", title: "记忆 \(action)", detail: "", content: block.content)
+            ToolBlockView(icon: "brain.head.profile", color: .pink, title: "记忆 \(action)", detail: "", content: block.content)
         case .vaultTool(let action):
-            ToolBlockView(icon: "key.fill", title: "保险库 \(action)", detail: "", content: block.content)
+            ToolBlockView(icon: "key.fill", color: .blue, title: "保险库 \(action)", detail: "", content: block.content)
         case .delegateTool(let title):
-            ToolBlockView(icon: "person.2.fill", title: title, detail: "", content: block.content)
+            ToolBlockView(icon: "person.2.fill", color: .purple, title: title, detail: "", content: block.content)
         case .info:
             if !block.content.isEmpty {
                 Text(block.content)
@@ -476,6 +534,7 @@ private struct BlockView: View {
 
 private struct ToolBlockView: View {
     let icon: String
+    let color: Color
     let title: String
     let detail: String
     let content: String
@@ -491,7 +550,7 @@ private struct ToolBlockView: View {
         } label: {
             HStack {
                 Image(systemName: icon)
-                    .foregroundColor(.blue)
+                    .foregroundColor(color)
                 Text(title)
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
@@ -512,6 +571,39 @@ private struct ToolBlockView: View {
             .overlay(Capsule().stroke(ChatColors.toolBorder, lineWidth: 0.5))
         }
         .padding(.vertical, 2)
+    }
+}
+
+/// Matches upstream TypingIndicator: "<soul> is thinking" + 3 bouncing dots.
+private struct TypingIndicatorView: View {
+    @State private var dotOffsets = [false, false, false]
+
+    private var soulName: String {
+        let n = SoulStore.cachedMetadata.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return n.isEmpty ? "Minis" : n
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Text("\(soulName) is thinking")
+            ForEach(0..<3, id: \.self) { i in
+                Text(".")
+                    .offset(y: dotOffsets[i] ? -3 : 1)
+            }
+        }
+        .font(.system(size: 15, weight: .medium))
+        .foregroundStyle(ChatColors.tertiaryText)
+        .onAppear {
+            for i in 0..<3 {
+                withAnimation(
+                    .easeInOut(duration: 0.4)
+                        .repeatForever(autoreverses: true)
+                        .delay(Double(i) * 0.15)
+                ) {
+                    dotOffsets[i] = true
+                }
+            }
+        }
     }
 }
 
