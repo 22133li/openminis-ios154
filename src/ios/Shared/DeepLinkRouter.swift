@@ -201,14 +201,8 @@ enum DeepLinkRouter {
             }
             coord.pendingSettingsTarget = .environments
 
-        case "vault", "credential-vault", "credentialvault":
-            coord.pendingSettingsTarget = .credentialVault
-
         case "auto-compact", "autocompact", "auto_compact":
             coord.pendingSettingsTarget = .autoCompact
-
-        case "proxy":
-            coord.pendingSettingsTarget = .proxy
 
         case "rootfs", "rootfs-management", "rootfs_management",
              "mirrors":

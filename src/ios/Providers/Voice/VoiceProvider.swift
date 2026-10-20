@@ -23,7 +23,6 @@ class VoiceProvider: VoiceInputCapable, VoiceOutputCapable {
     /// generous request timeout instead of URLSession.shared's default.
     private static let session: URLSession = {
         let config = URLSessionConfiguration.default
-        config.applyProxySettings()
         config.timeoutIntervalForRequest = 120
         config.timeoutIntervalForResource = 120
         return URLSession(configuration: config)

@@ -376,14 +376,8 @@
 		E5OARC023 /* OAuthRefreshSingleFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5OARC031 /* OAuthRefreshSingleFlight.swift */; };
 		E5OARC024 /* OAuthRefreshSingleFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5OARC031 /* OAuthRefreshSingleFlight.swift */; };
 		E5P000001 /* EnvVarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000011 /* EnvVarStore.swift */; };
-		E5VAULT01 /* CredentialVaultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5VAULT11 /* CredentialVaultStore.swift */; };
-		E5VAULT02 /* CredentialVaultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5VAULT12 /* CredentialVaultView.swift */; };
-		E5VAULT03 /* VaultAccessDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5VAULT13 /* VaultAccessDialog.swift */; };
 		E5ACCB01 /* ContextBudgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5ACCB11 /* ContextBudgetStore.swift */; };
 		E5ACST01 /* AutoCompactSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5ACST11 /* AutoCompactSettingsView.swift */; };
-		E5SMTP01 /* MiniSMTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5SMTP11 /* MiniSMTPClient.swift */; };
-		E5PRX001 /* ProxyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5PRX011 /* ProxyStore.swift */; };
-		E5PRX002 /* ProxySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5PRX012 /* ProxySettingsView.swift */; };
 		E5P000002 /* EnvironmentVariablesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000012 /* EnvironmentVariablesView.swift */; };
 		E5P000003 /* DeepLinkCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000013 /* DeepLinkCoordinator.swift */; };
 		E5P000004 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000014 /* DeepLinkRouter.swift */; };
@@ -1113,14 +1107,8 @@
 		E5OARC030 /* OAuthRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthRefreshCoordinator.swift; sourceTree = "<group>"; };
 		E5OARC031 /* OAuthRefreshSingleFlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthRefreshSingleFlight.swift; sourceTree = "<group>"; };
 		E5P000011 /* EnvVarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvVarStore.swift; sourceTree = "<group>"; };
-		E5VAULT11 /* CredentialVaultStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialVaultStore.swift; sourceTree = "<group>"; };
-		E5VAULT12 /* CredentialVaultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialVaultView.swift; sourceTree = "<group>"; };
-		E5VAULT13 /* VaultAccessDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultAccessDialog.swift; sourceTree = "<group>"; };
 		E5ACCB11 /* ContextBudgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextBudgetStore.swift; sourceTree = "<group>"; };
 		E5ACST11 /* AutoCompactSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoCompactSettingsView.swift; sourceTree = "<group>"; };
-		E5SMTP11 /* MiniSMTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniSMTPClient.swift; sourceTree = "<group>"; };
-		E5PRX011 /* ProxyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyStore.swift; sourceTree = "<group>"; };
-		E5PRX012 /* ProxySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxySettingsView.swift; sourceTree = "<group>"; };
 		E5P000012 /* EnvironmentVariablesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentVariablesView.swift; sourceTree = "<group>"; };
 		E5P000013 /* DeepLinkCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkCoordinator.swift; sourceTree = "<group>"; };
 		E5P000014 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
@@ -1663,7 +1651,6 @@
 		E5EML00030 /* Email */ = {
 			isa = PBXGroup;
 			children = (
-				E5SMTP11 /* MiniSMTPClient.swift */,
 			);
 			path = Email;
 			sourceTree = "<group>";
@@ -1915,8 +1902,6 @@
 				E5P000011 /* EnvVarStore.swift */,
 				E5PRIV11 /* EnvVarPrivacyStore.swift */,
 				E5PRIV12 /* EnvVarRedactor.swift */,
-				E5VAULT11 /* CredentialVaultStore.swift */,
-				E5PRX011 /* ProxyStore.swift */,
 				E5Q000014 /* FontSettings.swift */,
 				E5J000022 /* FileHandleSafeWrite.h */,
 				E5J000021 /* FileHandleSafeWrite.m */,
@@ -2328,7 +2313,6 @@
 				F1W00100 /* PrintHelper.swift */,
 				F1W00060 /* PaginatedMarkdownView.swift */,
 				E8A000012 /* OffloadPermissionDialog.swift */,
-				E5VAULT13 /* VaultAccessDialog.swift */,
 				E5K000011 /* SelectableMarkdownView.swift */,
 				E5K000012 /* ChatTurnScreenshot.swift */,
 				E5N0000152F3B941A00049557 /* SessionMemoryView.swift */,
@@ -2353,9 +2337,7 @@
 				E5S000014 /* CloudSyncSettingsView.swift */,
 				E5G000013 /* EnhancedBackgroundSettingsView.swift */,
 				E5P000012 /* EnvironmentVariablesView.swift */,
-				E5VAULT12 /* CredentialVaultView.swift */,
 				E5ACST11 /* AutoCompactSettingsView.swift */,
-				E5PRX012 /* ProxySettingsView.swift */,
 				E5J000012 /* LogManagementView.swift */,
 				E5J000013 /* ConfigAuditView.swift */,
 				E5N0000142F3B941A00049557 /* MemoryManagementView.swift */,
@@ -3157,16 +3139,11 @@
 				E5N0000052F3B941A00049557 /* SessionMemoryView.swift in Sources */,
 				E5N0000062F3B941A00049557 /* AlarmListView.swift in Sources */,
 				E5P000001 /* EnvVarStore.swift in Sources */,
-				E5VAULT01 /* CredentialVaultStore.swift in Sources */,
 				E5PRIV01 /* EnvVarPrivacyStore.swift in Sources */,
 				E5PRIV02 /* EnvVarRedactor.swift in Sources */,
 				E5P000002 /* EnvironmentVariablesView.swift in Sources */,
-				E5VAULT02 /* CredentialVaultView.swift in Sources */,
 				E5ACCB01 /* ContextBudgetStore.swift in Sources */,
 				E5ACST01 /* AutoCompactSettingsView.swift in Sources */,
-				E5SMTP01 /* MiniSMTPClient.swift in Sources */,
-				E5PRX001 /* ProxyStore.swift in Sources */,
-				E5PRX002 /* ProxySettingsView.swift in Sources */,
 				E5P000003 /* DeepLinkCoordinator.swift in Sources */,
 				E5P000004 /* DeepLinkRouter.swift in Sources */,
 				E5CFG0001 /* ConfigAuditEntry.swift in Sources */,
@@ -3258,7 +3235,6 @@
 				E5W00003A /* SessionFileChangeTracker.swift in Sources */,
 				E8A000001 /* OffloadPermissionManager.swift in Sources */,
 				E8A000002 /* OffloadPermissionDialog.swift in Sources */,
-				E5VAULT03 /* VaultAccessDialog.swift in Sources */,
 				E8A000003 /* OffloadPermissionSettingsView.swift in Sources */,
 				52535805A60BA4B26902EAFA /* VoiceInputModels.swift in Sources */,
 				33643CC21B9402F949D76C3C /* VoiceProvider.swift in Sources */,
@@ -3663,7 +3639,7 @@
 					"@executable_path/Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/../../deps/libs";
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.18;
 				OTHER_LDFLAGS = (
 					"-lish_emu",
 					"-lish",
@@ -3717,7 +3693,7 @@
 					"@executable_path/Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/../../deps/libs";
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.18;
 				OTHER_LDFLAGS = (
 					"-lish_emu",
 					"-lish",
@@ -3750,7 +3726,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.18;
 				PRODUCT_BUNDLE_IDENTIFIER = com.openminis.app.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3777,7 +3753,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.18;
 				PRODUCT_BUNDLE_IDENTIFIER = com.openminis.app.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3804,7 +3780,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.18;
 				PRODUCT_BUNDLE_IDENTIFIER = com.openminis.app.FileProvider;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3831,7 +3807,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.18;
 				PRODUCT_BUNDLE_IDENTIFIER = com.openminis.app.FileProvider;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3858,7 +3834,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.18;
 				PRODUCT_BUNDLE_IDENTIFIER = com.openminis.app.AgentWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3885,7 +3861,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.18;
 				PRODUCT_BUNDLE_IDENTIFIER = com.openminis.app.AgentWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

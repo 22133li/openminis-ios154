@@ -27,6 +27,16 @@ struct CollectionViewMessageListV3: View {
     var maxContentWidth: CGFloat
     var floatingBarHeight: CGFloat
     var inputBarHeight: CGFloat
+    /// True from view creation (the list is rebuilt per session) until the
+    /// bottom spacer has actually appeared, proving we're at the latest
+    /// message. While true, content changes force-scroll to the bottom —
+    /// session messages load asynchronously after the view appears, so the
+    /// single onAppear scroll races the load and lands nowhere, which left
+    /// users at the top of the transcript having to pull down manually.
+    /// Upstream's UIKit list opens at the latest message; this restores
+    /// that. Bounded by a short timeout so a user who immediately scrolls
+    /// up during load is not fought for long.
+    @State private var awaitingInitialScroll = true
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -66,18 +76,26 @@ struct CollectionViewMessageListV3: View {
                     // delegate; the simplified List had left isNearBottom
                     // stuck at true, which also kept the floating scroll
                     // buttons permanently hidden.)
-                    .onAppear { vm.isNearBottom = true }
+                    .onAppear { vm.isNearBottom = true; awaitingInitialScroll = false }
                     .onDisappear { vm.isNearBottom = false }
             }
             .listStyle(.plain)
             .onChange(of: vm.messages.count) { _ in
-                scrollToBottomIfNear(proxy: proxy)
+                if awaitingInitialScroll {
+                    scrollToBottom(proxy: proxy, animated: false)
+                } else {
+                    scrollToBottomIfNear(proxy: proxy)
+                }
             }
             // 流式输出时：直接观察最后一条消息的 content 变化
             //（ChatMessage 是 ObservableObject，content 是 @Published）
             .background(
                 LastMessageScrollTrigger(message: vm.messages.last) {
-                    scrollToBottomIfNear(proxy: proxy)
+                    if awaitingInitialScroll {
+                        scrollToBottom(proxy: proxy, animated: false)
+                    } else {
+                        scrollToBottomIfNear(proxy: proxy)
+                    }
                 }
             )
             .onReceive(vm.forceScrollToBottom) { _ in
@@ -87,14 +105,25 @@ struct CollectionViewMessageListV3: View {
                 scrollToTop(proxy: proxy)
             }
             .onAppear {
-                scrollToBottom(proxy: proxy)
+                scrollToBottom(proxy: proxy, animated: false)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    awaitingInitialScroll = false
+                }
             }
         }
     }
 
-    private func scrollToBottom(proxy: ScrollViewProxy) {
+    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
         guard let last = vm.messages.last else { return }
-        withAnimation(.easeOut(duration: 0.2)) {
+        if animated {
+            withAnimation(.easeOut(duration: 0.2)) {
+                proxy.scrollTo(last.id, anchor: .bottom)
+            }
+        } else {
+            // Unanimated for initial positioning (upstream loads with
+            // animated: false): row heights are still estimates while the
+            // transcript loads, and an animated scroll lands short.
             proxy.scrollTo(last.id, anchor: .bottom)
         }
     }

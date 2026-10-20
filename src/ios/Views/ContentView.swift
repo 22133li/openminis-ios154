@@ -8022,9 +8022,7 @@ private enum SettingsDestination: Hashable {
     case about
     case permissions
     case environments
-    case credentialVault
     case autoCompact
-    case proxy
     // [T-mcp-oauth-deeplink]
     case mcpIntegrations
     case mcpServerDetail(serverId: String)
@@ -8112,12 +8110,8 @@ private struct SettingsSheet: View {
                 AboutView()
             case .environments:
                 EnvironmentVariablesView()
-            case .credentialVault:
-                CredentialVaultView()
             case .autoCompact:
                 AutoCompactSettingsView()
-            case .proxy:
-                ProxySettingsView()
             case .permissions:
                 OffloadPermissionSettingsView()
                 // [T-mcp-oauth-deeplink] Detail = the list view told to open
@@ -8282,19 +8276,6 @@ private struct SettingsSheet: View {
                         }
                     }
                     NavigationLink {
-                        CredentialVaultView()
-                    } label: {
-                        Label {
-                            Text("Credential Vault")
-                        } icon: {
-                            Image(systemName: "key.fill")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.white)
-                                .frame(width: 21, height: 21)
-                                .background(.blue, in: Circle())
-                        }
-                    }
-                    NavigationLink {
                         AutoCompactSettingsView()
                     } label: {
                         Label {
@@ -8305,19 +8286,6 @@ private struct SettingsSheet: View {
                                 .foregroundStyle(.white)
                                 .frame(width: 21, height: 21)
                                 .background(.orange, in: Circle())
-                        }
-                    }
-                    NavigationLink {
-                        ProxySettingsView()
-                    } label: {
-                        Label {
-                            Text("Proxy")
-                        } icon: {
-                            Image(systemName: "network")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.white)
-                                .frame(width: 21, height: 21)
-                                .background(.teal, in: Circle())
                         }
                     }
                 }
@@ -8606,12 +8574,8 @@ private struct SettingsSheet: View {
             navPath.append(SettingsDestination.permissions)
         case .environments:
             navPath.append(SettingsDestination.environments)
-        case .credentialVault:
-            navPath.append(SettingsDestination.credentialVault)
         case .autoCompact:
             navPath.append(SettingsDestination.autoCompact)
-        case .proxy:
-            navPath.append(SettingsDestination.proxy)
         case .mcpIntegrations:
             navPath.append(SettingsDestination.mcpIntegrations)
         case .mcpServerDetail(let id):

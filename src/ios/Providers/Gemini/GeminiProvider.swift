@@ -13,7 +13,6 @@ private let thinkingLogger = AppLogger(category: "Thinking")
 /// the server 10 minutes of idle time before timing out.
 private let geminiStreamingSession: URLSession = {
     let config = URLSessionConfiguration.default
-    config.applyProxySettings()
     config.timeoutIntervalForRequest = 600  // 10 minutes
     let session = URLSession(configuration: config)
     // Evict this session's pooled (possibly stale) connections on network

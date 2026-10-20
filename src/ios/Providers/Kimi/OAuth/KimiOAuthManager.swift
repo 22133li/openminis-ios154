@@ -116,7 +116,7 @@ final class KimiOAuthManager: ObservableObject {
         // live endpoint 2026-07-23.)
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = Self.formEncode(["client_id": clientID])
-        let (data, response) = try await AppNetwork.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? -1
             let bodyErr = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["error_description"] as? String
@@ -246,7 +246,7 @@ final class KimiOAuthManager: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = Self.formEncode(params)
-        let (data, response) = try await AppNetwork.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         let httpOK = (200..<300).contains((response as? HTTPURLResponse)?.statusCode ?? -1)
         let json = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
         return (json, httpOK)

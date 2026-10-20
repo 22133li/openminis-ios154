@@ -90,7 +90,7 @@ enum CopilotModelsAPI {
         for (k, v) in CopilotConstants.baseHeaders { req.setValue(v, forHTTPHeaderField: k) }
         req.timeoutInterval = 30
 
-        let (data, response) = try await AppNetwork.shared.data(for: req)
+        let (data, response) = try await URLSession.shared.data(for: req)
         let code = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200...299).contains(code) else {
             throw LLMError.providerError(message: "Copilot /models returned HTTP \(code)")

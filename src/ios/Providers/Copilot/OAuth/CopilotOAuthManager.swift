@@ -78,7 +78,7 @@ final class CopilotOAuthManager: ObservableObject {
             "client_id": CopilotConstants.clientId,
             "scope": CopilotConstants.scope,
         ])
-        let (data, response) = try await AppNetwork.shared.data(for: req)
+        let (data, response) = try await URLSession.shared.data(for: req)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw CopilotError.deviceFlow(AppLocalized("GitHub did not return a device code."))
@@ -116,7 +116,7 @@ final class CopilotOAuthManager: ObservableObject {
                 "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
             ])
 
-            let (data, response) = try await AppNetwork.shared.data(for: req)
+            let (data, response) = try await URLSession.shared.data(for: req)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             let httpOK = (200...299).contains(status)
             let json = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
@@ -224,7 +224,7 @@ final class CopilotOAuthManager: ObservableObject {
         req.setValue(CopilotConstants.editorPluginVersion, forHTTPHeaderField: "Editor-Plugin-Version")
         req.setValue(CopilotConstants.apiVersion, forHTTPHeaderField: "X-GitHub-Api-Version")
 
-        let (data, response) = try await AppNetwork.shared.data(for: req)
+        let (data, response) = try await URLSession.shared.data(for: req)
         let code = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200...299).contains(code),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],

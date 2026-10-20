@@ -323,7 +323,6 @@ final class XunfeiVoiceProvider: VoiceProvider {
             throw VoiceProviderError.parseError("Failed to build Xunfei TTS URL")
         }
         let config = URLSessionConfiguration.default
-        config.applyProxySettings()
         let session = URLSession(configuration: config)
         let ws = session.webSocketTask(with: url)
         ws.resume()
@@ -1100,7 +1099,7 @@ final class OpenRouterVoiceProvider: VoiceProvider {
         ]
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (bytes, response) = try await AppNetwork.shared.bytes(for: urlRequest)
+        let (bytes, response) = try await URLSession.shared.bytes(for: urlRequest)
         guard let http = response as? HTTPURLResponse else {
             throw VoiceProviderError.parseError("Non-HTTP response")
         }

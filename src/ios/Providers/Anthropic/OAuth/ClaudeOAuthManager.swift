@@ -376,7 +376,7 @@ final class ClaudeOAuthManager: NSObject, ObservableObject {
         }
         #endif
 
-        let (data, response) = try await AppNetwork.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         let http = response as? HTTPURLResponse
         let statusCode = http?.statusCode ?? -1
         let responseBody = String(data: data, encoding: .utf8) ?? "<binary>"

@@ -288,7 +288,7 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
 
         logger.info("\(context) POST \(self.tokenURL)")
 
-        let (data, response) = try await AppNetwork.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         let http = response as? HTTPURLResponse
         let statusCode = http?.statusCode ?? -1
         let responseBody = String(data: data, encoding: .utf8) ?? "<binary>"
@@ -334,7 +334,7 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
         var request = URLRequest(url: URL(string: userInfoURL)!)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-        let (data, _) = try await AppNetwork.shared.data(for: request)
+        let (data, _) = try await URLSession.shared.data(for: request)
         let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         return json?["email"] as? String
     }
@@ -379,7 +379,7 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
         let body: [String: Any] = ["metadata": setupClientMetadata]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await AppNetwork.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         let http = response as? HTTPURLResponse
         let statusCode = http?.statusCode ?? -1
         let responseBody = String(data: data, encoding: .utf8) ?? ""
@@ -413,7 +413,7 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: onboardBody)
 
-        let (data, response) = try await AppNetwork.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         let http = response as? HTTPURLResponse
         let statusCode = http?.statusCode ?? -1
 
@@ -448,7 +448,7 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
             var request = URLRequest(url: URL(string: urlString)!)
             applySetupHeaders(&request, token: token)
 
-            let (data, response) = try await AppNetwork.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
             let http = response as? HTTPURLResponse
             guard (200..<300).contains(http?.statusCode ?? -1) else { continue }
 
