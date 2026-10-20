@@ -35,6 +35,7 @@ struct CollectionViewMessageListV3: View {
                     MessageRowView(
                         message: message,
                         onRetry: { onRetryMessage?(message.id) },
+                        onRetryLast: onRetryLast,
                         onEdit: { onEdit?(message.id) },
                         onDeleteFrom: { onDeleteFrom?(message.id) },
                         onWithdraw: { onWithdraw?(message.id) },
@@ -254,6 +255,7 @@ private struct CodeBlockView: View {
 private struct MessageRowView: View {
     @ObservedObject var message: ChatMessage
     var onRetry: (() -> Void)?
+    var onRetryLast: (() -> Void)?
     var onEdit: (() -> Void)?
     var onDeleteFrom: (() -> Void)?
     var onWithdraw: (() -> Void)?
@@ -343,7 +345,7 @@ private struct MessageRowView: View {
                             .font(.caption)
                             .foregroundColor(.red)
                         Button("重试") {
-                            onRetry?()
+                            onRetryLast?()
                         }
                         .font(.caption)
                     }
