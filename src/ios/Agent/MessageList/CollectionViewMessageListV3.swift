@@ -61,8 +61,8 @@ struct CollectionViewMessageListV3: View {
                     // floating scroll-up button in AIChatView. (The UIKit
                     // list reported this via its scroll delegate; the
                     // simplified List had left isAtFirstTurn stuck at false.)
-                    .onAppear { if message.id == vm.messages.first?.id { vm.isAtFirstTurn = true } }
-                    .onDisappear { if message.id == vm.messages.first?.id { vm.isAtFirstTurn = false } }
+                    .onAppear { if message.id == vm.messages.first?.id, !vm.isAtFirstTurn { vm.isAtFirstTurn = true } }
+                    .onDisappear { if message.id == vm.messages.first?.id, vm.isAtFirstTurn { vm.isAtFirstTurn = false } }
                 }
                 // 底部 spacer：确保 scrollTo(.bottom) 时最后一条消息不会被输入栏遮住
                 Color.clear
@@ -76,8 +76,8 @@ struct CollectionViewMessageListV3: View {
                     // delegate; the simplified List had left isNearBottom
                     // stuck at true, which also kept the floating scroll
                     // buttons permanently hidden.)
-                    .onAppear { vm.isNearBottom = true; awaitingInitialScroll = false }
-                    .onDisappear { vm.isNearBottom = false }
+                    .onAppear { if !vm.isNearBottom { vm.isNearBottom = true }; awaitingInitialScroll = false }
+                    .onDisappear { if vm.isNearBottom { vm.isNearBottom = false } }
             }
             .listStyle(.plain)
             .onChange(of: vm.messages.count) { _ in
@@ -128,12 +128,34 @@ struct CollectionViewMessageListV3: View {
         }
     }
 
+    @State private var lastFollowScrollAt = Date.distantPast
+    @State private var followScrollScheduled = false
+
     /// Auto-scroll for streaming / count changes: suppressed while the user
     /// is reading history (bottom spacer off-screen). Explicit
     /// forceScrollToBottom (floating button, new turn) still goes through.
+    /// Throttled + unanimated while following: token chunks arrive far
+    /// faster than the eye reads, and an animated scrollTo per chunk kept
+    /// the List in permanent layout (visible jank). At most one follow per
+    /// 100ms, with a trailing one scheduled so the view still lands at the
+    /// very end when a burst stops.
     private func scrollToBottomIfNear(proxy: ScrollViewProxy) {
         guard vm.isNearBottom else { return }
-        scrollToBottom(proxy: proxy)
+        let now = Date()
+        if now.timeIntervalSince(lastFollowScrollAt) >= 0.1 {
+            lastFollowScrollAt = now
+            scrollToBottom(proxy: proxy, animated: false)
+        } else if !followScrollScheduled {
+            followScrollScheduled = true
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 110_000_000)
+                followScrollScheduled = false
+                if vm.isNearBottom {
+                    lastFollowScrollAt = Date()
+                    scrollToBottom(proxy: proxy, animated: false)
+                }
+            }
+        }
     }
 
     private func scrollToTop(proxy: ScrollViewProxy) {
@@ -146,34 +168,82 @@ struct CollectionViewMessageListV3: View {
 
 // MARK: - Markdown Text (iOS 15 backport: AttributedString markdown parsing)
 
+/// Cache of parsed + styled inline markdown, keyed by the raw segment
+/// text. Without it, every List row re-ran the full AttributedString
+/// markdown parse on each body evaluation: scrolling history re-parsed
+/// every message, and the streaming message re-parsed its entire
+/// (growing) content per token chunk — quadratic over a long reply.
+private enum MarkdownParseCache {
+    private static let lock = NSLock()
+    private static var cache: [String: AttributedString] = [:]
+
+    static func attributed(for s: String) -> AttributedString? {
+        lock.lock()
+        if let hit = cache[s] { lock.unlock(); return hit }
+        lock.unlock()
+        guard let parsed = try? AttributedString(
+            markdown: s,
+            options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnly)
+        ) else { return nil }
+        let styled = MarkdownText.styledInlineCode(parsed)
+        lock.lock()
+        if cache.count >= 256 { cache.removeAll() }
+        cache[s] = styled
+        lock.unlock()
+        return styled
+    }
+}
+
 private struct MarkdownText: View {
     let content: String
+
+    /// What is actually rendered. During streaming, `content` changes per
+    /// token chunk; re-parsing on every chunk was the main source of chat
+    /// jank, so updates are coalesced to ~120ms and the final state lands
+    /// when the stream pauses/ends. Static (history) content never changes
+    /// after init, so it renders immediately from the parse cache.
+    @State private var displayedContent: String
+    @State private var refreshTask: Task<Void, Never>?
+
+    init(content: String) {
+        self.content = content
+        _displayedContent = State(initialValue: content)
+    }
 
     var body: some View {
         // iOS 15's AttributedString markdown parser only handles inline
         // syntax, so fenced code blocks (```) are split out and rendered
         // as monospaced blocks. (Tables remain plain text: iOS 15 has no
         // table support in AttributedString.)
-        let segments = content.components(separatedBy: "```")
-        if segments.count == 1 {
-            inlineText(content)
-        } else {
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(segments.indices, id: \.self) { i in
-                    if i % 2 == 1 {
-                        CodeBlockView(code: segments[i])
-                    } else if !segments[i].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        inlineText(segments[i])
+        let segments = displayedContent.components(separatedBy: "```")
+        return Group {
+            if segments.count == 1 {
+                inlineText(displayedContent)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(segments.indices, id: \.self) { i in
+                        if i % 2 == 1 {
+                            CodeBlockView(code: segments[i])
+                        } else if !segments[i].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            inlineText(segments[i])
+                        }
                     }
                 }
+            }
+        }
+        .onChange(of: content) { newValue in
+            refreshTask?.cancel()
+            refreshTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 120_000_000)
+                if !Task.isCancelled { displayedContent = newValue }
             }
         }
     }
 
     private func inlineText(_ s: String) -> some View {
         Group {
-            if let attributed = try? AttributedString(markdown: s, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnly)) {
-                Text(styledInlineCode(attributed))
+            if let attributed = MarkdownParseCache.attributed(for: s) {
+                Text(attributed)
             } else {
                 Text(verbatim: s)
             }
@@ -192,7 +262,7 @@ private struct MarkdownText: View {
     /// Match upstream inline code: systemOrange text on an adaptive light
     /// background (systemGray6 / dark #3A3A3C). Per-run corner radius is not
     /// expressible in AttributedString; color + background carry the look.
-    private func styledInlineCode(_ a: AttributedString) -> AttributedString {
+    static func styledInlineCode(_ a: AttributedString) -> AttributedString {
         var out = a
         for run in out.runs {
             if run.inlinePresentationIntent?.contains(.code) == true {
