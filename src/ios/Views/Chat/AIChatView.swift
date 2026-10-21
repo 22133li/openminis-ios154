@@ -528,10 +528,34 @@ struct AIChatView: View {
     }
 
     /// 从 NSItemProvider 加载视频文件 URL
+    /// iOS 15.4 修复（build104）：① 必须用 provider 注册的具体类型标识
+    /// （如 com.apple.quicktime-movie / public.mpeg-4），泛类型 public.movie
+    /// 取不到文件、url 恒为 nil；② loadFileRepresentation 给的是临时文件，
+    /// 回调返回后系统即可删除，必须在回调内先拷贝到自有临时目录再返回
+    /// —— 与上游 VideoFileTransferable 在 importing 闭包内拷贝的做法一致。
     private func loadVideoFileURL(from provider: NSItemProvider) async -> URL? {
-        await withCheckedContinuation { continuation in
-            provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
-                continuation.resume(returning: url)
+        let typeId = provider.registeredTypeIdentifiers.first(where: { id in
+            UTType(id)?.conforms(to: .movie) == true
+        }) ?? UTType.movie.identifier
+        return await withCheckedContinuation { continuation in
+            provider.loadFileRepresentation(forTypeIdentifier: typeId) { url, error in
+                if let error = error {
+                    minisLogger.error("[PhotoPicker] loadFileRepresentation(\(typeId)) error: \(error.localizedDescription)")
+                }
+                guard let url = url else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let ext = url.pathExtension.isEmpty ? "mov" : url.pathExtension
+                let dest = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("picked_video_\(UUID().uuidString.prefix(8)).\(ext)")
+                do {
+                    try FileManager.default.copyItem(at: url, to: dest)
+                    continuation.resume(returning: dest)
+                } catch {
+                    minisLogger.error("[PhotoPicker] copy picked video failed: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                }
             }
         }
     }
