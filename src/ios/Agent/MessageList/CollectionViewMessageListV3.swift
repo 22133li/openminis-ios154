@@ -37,6 +37,7 @@ struct CollectionViewMessageListV3: View {
     /// that. Bounded by a short timeout so a user who immediately scrolls
     /// up during load is not fought for long.
     @State private var awaitingInitialScroll = true
+    private static let bottomSpacerID = "minis-bottom-spacer"
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -76,6 +77,7 @@ struct CollectionViewMessageListV3: View {
                     // delegate; the simplified List had left isNearBottom
                     // stuck at true, which also kept the floating scroll
                     // buttons permanently hidden.)
+                    .id(Self.bottomSpacerID)
                     .onAppear { if !vm.isNearBottom { vm.isNearBottom = true }; awaitingInitialScroll = false }
                     .onDisappear { if vm.isNearBottom { vm.isNearBottom = false } }
             }
@@ -115,16 +117,25 @@ struct CollectionViewMessageListV3: View {
     }
 
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
-        guard let last = vm.messages.last else { return }
+        // Target the trailing spacer, not the last message. The spacer is
+        // the true end of the content — upstream pins the offset to
+        // contentSize.height - bounds.height + inset.bottom. Scrolling to
+        // the last message stopped one spacer-height short, leaving the
+        // tail of the last message behind the floating input/task bars,
+        // so the scroll-down button never reached the very bottom.
         if animated {
             withAnimation(.easeOut(duration: 0.2)) {
-                proxy.scrollTo(last.id, anchor: .bottom)
+                proxy.scrollTo(Self.bottomSpacerID, anchor: .bottom)
+            }
+            // Off-screen row heights are estimates in the iOS 15 List; one
+            // animated pass from far up can land short as rows materialize.
+            // Re-pin once the animation has finished.
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                proxy.scrollTo(Self.bottomSpacerID, anchor: .bottom)
             }
         } else {
-            // Unanimated for initial positioning (upstream loads with
-            // animated: false): row heights are still estimates while the
-            // transcript loads, and an animated scroll lands short.
-            proxy.scrollTo(last.id, anchor: .bottom)
+            proxy.scrollTo(Self.bottomSpacerID, anchor: .bottom)
         }
     }
 
