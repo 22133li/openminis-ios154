@@ -84,9 +84,9 @@ struct CollectionViewMessageListV3: View {
             .listStyle(.plain)
             .onChange(of: vm.messages.count) { _ in
                 if awaitingInitialScroll {
-                    scrollToBottom(proxy: proxy, animated: false)
+                    requestScrollToBottom(proxy: proxy, animated: false)
                 } else {
-                    scrollToBottomIfNear(proxy: proxy)
+                    requestScrollToBottomIfNear(proxy: proxy)
                 }
             }
             // 流式输出时：直接观察最后一条消息的 content 变化
@@ -94,20 +94,20 @@ struct CollectionViewMessageListV3: View {
             .background(
                 LastMessageScrollTrigger(message: vm.messages.last) {
                     if awaitingInitialScroll {
-                        scrollToBottom(proxy: proxy, animated: false)
+                        requestScrollToBottom(proxy: proxy, animated: false)
                     } else {
-                        scrollToBottomIfNear(proxy: proxy)
+                        requestScrollToBottomIfNear(proxy: proxy)
                     }
                 }
             )
             .onReceive(vm.forceScrollToBottom) { _ in
-                scrollToBottom(proxy: proxy)
+                requestScrollToBottom(proxy: proxy)
             }
             .onReceive(vm.forceScrollToTop) { _ in
-                scrollToTop(proxy: proxy)
+                requestScrollToTop(proxy: proxy)
             }
             .onAppear {
-                scrollToBottom(proxy: proxy, animated: false)
+                requestScrollToBottom(proxy: proxy, animated: false)
                 Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 1_500_000_000)
                     awaitingInitialScroll = false
@@ -116,26 +116,98 @@ struct CollectionViewMessageListV3: View {
         }
     }
 
-    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
-        // Target the trailing spacer, not the last message. The spacer is
-        // the true end of the content — upstream pins the offset to
-        // contentSize.height - bounds.height + inset.bottom. Scrolling to
-        // the last message stopped one spacer-height short, leaving the
-        // tail of the last message behind the floating input/task bars,
-        // so the scroll-down button never reached the very bottom.
-        if animated {
+    // MARK: - Deferred scroll dispatch
+
+    /// build106 crash fix: the 2026-10-25 .ips (1.21) was an
+    /// NSException inside SwiftUI's List —
+    /// UpdateCoalescingTableView.updateContent() called
+    /// UITableView.scrollToRow for the bottom spacer in the same
+    /// SwiftUI transaction whose message insertion had not been
+    /// applied to the table yet, so the spacer's index path did not
+    /// exist and UIKit threw. The triggers raced the insertion:
+    /// the send path sends forceScrollToBottom BEFORE appending
+    /// the new message, and onChange(count) / the last-message
+    /// trigger fire synchronously inside the update. So every
+    /// scroll now funnels through requestScroll: the request is
+    /// deferred to the next runloop turn (by then the List has
+    /// applied its row updates) and same-turn repeats coalesce
+    /// into a single scroll.
+    private enum PendingScroll {
+        case bottom(animated: Bool, repin: Bool)
+        case bottomIfNear
+        case top
+    }
+
+    @State private var pendingScroll: PendingScroll?
+    @State private var scrollDispatchScheduled = false
+
+    private func requestScroll(_ scroll: PendingScroll, proxy: ScrollViewProxy) {
+        // A follow-scroll must not override an explicit pending
+        // scroll (force-bottom / top); an explicit scroll replaces
+        // a pending follow-scroll.
+        if case .bottomIfNear = scroll, let existing = pendingScroll {
+            if case .bottomIfNear = existing {
+                // Same kind already pending; fall through to re-arm.
+            } else {
+                return
+            }
+        }
+        pendingScroll = scroll
+        guard !scrollDispatchScheduled else { return }
+        scrollDispatchScheduled = true
+        DispatchQueue.main.async {
+            scrollDispatchScheduled = false
+            guard let action = pendingScroll else { return }
+            pendingScroll = nil
+            performScroll(action, proxy: proxy)
+        }
+    }
+
+    private func requestScrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
+        requestScroll(.bottom(animated: animated, repin: animated), proxy: proxy)
+    }
+
+    private func requestScrollToBottomIfNear(proxy: ScrollViewProxy) {
+        requestScroll(.bottomIfNear, proxy: proxy)
+    }
+
+    private func requestScrollToTop(proxy: ScrollViewProxy) {
+        requestScroll(.top, proxy: proxy)
+    }
+
+    private func performScroll(_ scroll: PendingScroll, proxy: ScrollViewProxy) {
+        switch scroll {
+        case .bottom(let animated, let repin):
+            // Target the trailing spacer, not the last message. The spacer is
+            // the true end of the content — upstream pins the offset to
+            // contentSize.height - bounds.height + inset.bottom. Scrolling to
+            // the last message stopped one spacer-height short, leaving the
+            // tail of the last message behind the floating input/task bars,
+            // so the scroll-down button never reached the very bottom.
+            if animated {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    proxy.scrollTo(Self.bottomSpacerID, anchor: .bottom)
+                }
+                if repin {
+                    // Off-screen row heights are estimates in the iOS 15 List; one
+                    // animated pass from far up can land short as rows materialize.
+                    // Re-pin once the animation has finished (through the same
+                    // deferred dispatch, so it can never race a row update).
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 250_000_000)
+                        requestScroll(.bottom(animated: false, repin: false), proxy: proxy)
+                    }
+                }
+            } else {
+                proxy.scrollTo(Self.bottomSpacerID, anchor: .bottom)
+            }
+        case .bottomIfNear:
+            performFollowScroll(proxy: proxy)
+        case .top:
+            guard let first = vm.messages.first else { return }
             withAnimation(.easeOut(duration: 0.2)) {
-                proxy.scrollTo(Self.bottomSpacerID, anchor: .bottom)
+                proxy.scrollTo(first.id, anchor: .top)
             }
-            // Off-screen row heights are estimates in the iOS 15 List; one
-            // animated pass from far up can land short as rows materialize.
-            // Re-pin once the animation has finished.
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 250_000_000)
-                proxy.scrollTo(Self.bottomSpacerID, anchor: .bottom)
-            }
-        } else {
-            proxy.scrollTo(Self.bottomSpacerID, anchor: .bottom)
         }
     }
 
@@ -150,12 +222,12 @@ struct CollectionViewMessageListV3: View {
     /// the List in permanent layout (visible jank). At most one follow per
     /// 100ms, with a trailing one scheduled so the view still lands at the
     /// very end when a burst stops.
-    private func scrollToBottomIfNear(proxy: ScrollViewProxy) {
+    private func performFollowScroll(proxy: ScrollViewProxy) {
         guard vm.isNearBottom else { return }
         let now = Date()
         if now.timeIntervalSince(lastFollowScrollAt) >= 0.1 {
             lastFollowScrollAt = now
-            scrollToBottom(proxy: proxy, animated: false)
+            performScroll(.bottom(animated: false, repin: false), proxy: proxy)
         } else if !followScrollScheduled {
             followScrollScheduled = true
             Task { @MainActor in
@@ -163,16 +235,9 @@ struct CollectionViewMessageListV3: View {
                 followScrollScheduled = false
                 if vm.isNearBottom {
                     lastFollowScrollAt = Date()
-                    scrollToBottom(proxy: proxy, animated: false)
+                    performScroll(.bottom(animated: false, repin: false), proxy: proxy)
                 }
             }
-        }
-    }
-
-    private func scrollToTop(proxy: ScrollViewProxy) {
-        guard let first = vm.messages.first else { return }
-        withAnimation(.easeOut(duration: 0.2)) {
-            proxy.scrollTo(first.id, anchor: .top)
         }
     }
 }
