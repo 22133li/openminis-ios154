@@ -45,6 +45,26 @@ jobs:
           xcodebuild -project Minis.xcodeproj -scheme Minis -configuration Release \
             -sdk iphoneos -derivedDataPath ../../build/derived \
             CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM=""
+      - name: Ad-hoc sign app and extensions with project entitlements
+        run: |
+          APP_PATH=$(find build/derived/Build/Products/Release-iphoneos -name "Minis.app" -maxdepth 1)
+          echo "Ad-hoc signing $APP_PATH"
+          # Inside-out: embedded frameworks/dylibs first (no entitlements).
+          find "$APP_PATH" \( -name "*.framework" -o -name "*.dylib" \) -print0 | while IFS= read -r -d '' item; do
+            codesign -f -s - "$item"
+          done
+          # Extensions, each with its own entitlements file.
+          codesign -f -s - --entitlements src/ios/ShareExtension/ShareExtension.entitlements "$APP_PATH/PlugIns/MinisShare.appex"
+          codesign -f -s - --entitlements src/ios/FileProvider/FileProvider.entitlements "$APP_PATH/PlugIns/MinisFileProvider.appex"
+          codesign -f -s - --entitlements src/ios/AgentWidget/AgentWidget.entitlements "$APP_PATH/PlugIns/AgentWidgetExtension.appex"
+          # Main app last, with the full entitlement set (application-groups
+          # group.com.openminis.app). Builds were previously shipped
+          # completely unsigned (CODE_SIGNING_ALLOWED=NO); without the
+          # application-groups entitlement the App Group container is
+          # unavailable on device, so the Files "Open in Minis" and
+          # Share Extension pipelines silently dropped every file.
+          codesign -f -s - --entitlements src/ios/Minis.entitlements "$APP_PATH"
+          codesign -d --entitlements - "$APP_PATH" 2>/dev/null | grep -A1 application-groups || true
       - run: |
           APP_PATH=$(find build/derived/Build/Products/Release-iphoneos -name "Minis.app" -maxdepth 1)
           mkdir -p build/ipa/Payload

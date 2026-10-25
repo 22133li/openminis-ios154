@@ -505,30 +505,69 @@ private struct MessageRowView: View {
             }
         case .assistant:
             VStack(alignment: .leading, spacing: 8) {
-                // Render text blocks
-                ForEach(message.blocks.indices, id: \.self) { idx in
-                    let block = message.blocks[idx]
-                    BlockView(block: block)
+                // Message content stack. The row's contextMenu lives on
+                // THIS stack only (applied below) — upstream never puts
+                // a contextMenu over the footer that carries the Retry
+                // button (its menus sit on a zero-size overlay), and in
+                // the iOS 15 List the whole-VStack menu coincided with
+                // the error button being untappable on device.
+                VStack(alignment: .leading, spacing: 8) {
+                    // Render text blocks
+                    ForEach(message.blocks.indices, id: \.self) { idx in
+                        let block = message.blocks[idx]
+                        BlockView(block: block)
+                    }
+                    // Fallback to content if no blocks
+                    if message.blocks.isEmpty && !message.content.isEmpty {
+                        MarkdownText(content: message.content)
+                    }
                 }
-                // Fallback to content if no blocks
-                if message.blocks.isEmpty && !message.content.isEmpty {
-                    MarkdownText(content: message.content)
+                .contextMenu {
+                    Button {
+                        UIPasteboard.general.string = message.content
+                    } label: {
+                        Label("复制", systemImage: "doc.on.doc")
+                    }
+                    if onCompact != nil {
+                        Button { onCompact?() } label: {
+                            Label("压缩到此处", systemImage: "arrow.down.right.and.arrow.up.left")
+                        }
+                    }
                 }
-                // Error state with retry. [ios15-backport] The plain
-                // button gave zero feedback on tap, and a retry that
-                // fails again with the same error (provider still
-                // down / model still unresolvable) changed nothing on
-                // screen — the button read as dead (2026-10-25
-                // report). Show an in-progress label and lock the
-                // button until the error changes or a timeout re-arms
-                // it.
+                // Error card, adapted from upstream's inlineError
+                // (AssistantFooterCellV3): red-tinted rounded card,
+                // error text with its OWN copy contextMenu, and a
+                // padded capsule Retry button. Two upstream properties
+                // our earlier row lacked: the button's ancestors carry
+                // no contextMenu (upstream hosts menus on a zero-size
+                // overlay), and the button has a real padded hit area.
+                // In the List it also needs .buttonStyle(.borderless)
+                // so the row doesn't arbitrate its taps. Keeps
+                // build107's tap feedback (label flips to retrying,
+                // button locks until the error changes or 15s pass).
+                // One deliberate deviation from upstream: no
+                // lineLimit(2) on the error text — provider errors
+                // here are long (full HTTP error pages) and the user
+                // reads them in place.
                 if let error = message.error {
-                    HStack {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.red)
-                        Text(error)
-                            .font(.caption)
-                            .foregroundColor(.red)
+                    HStack(alignment: .center, spacing: 8) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                        .contentShape(Rectangle())
+                        .contextMenu {
+                            Button {
+                                UIPasteboard.general.string = error
+                            } label: {
+                                Label("复制错误", systemImage: "doc.on.doc")
+                            }
+                        }
+                        Spacer()
                         Button {
                             guard !retryTapped else { return }
                             retryTapped = true
@@ -538,11 +577,25 @@ private struct MessageRowView: View {
                                 retryTapped = false
                             }
                         } label: {
-                            Text(retryTapped ? "重试中…" : "重试")
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.caption.weight(.semibold))
+                                Text(retryTapped ? "重试中…" : "重试")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .foregroundColor(ChatColors.primaryText)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(ChatColors.primaryText.opacity(0.15))
+                            .clipShape(Capsule())
                         }
-                        .font(.caption)
+                        .buttonStyle(.borderless)
                         .disabled(retryTapped)
                     }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.red.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                     .onChange(of: error) { _ in retryTapped = false }
                 }
                 // Streaming indicator — matches upstream TypingIndicator.
@@ -551,18 +604,6 @@ private struct MessageRowView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .contextMenu {
-                Button {
-                    UIPasteboard.general.string = message.content
-                } label: {
-                    Label("复制", systemImage: "doc.on.doc")
-                }
-                if onCompact != nil {
-                    Button { onCompact?() } label: {
-                        Label("压缩到此处", systemImage: "arrow.down.right.and.arrow.up.left")
-                    }
-                }
-            }
         case .compactDivider:
             HStack {
                 Rectangle().frame(height: 1).foregroundColor(.secondary.opacity(0.3))
