@@ -388,6 +388,28 @@ extension AIChatViewModel {
         return resolved
     }
 
+    /// [ios15-backport] Why resolveCurrentEntry() came back nil, in
+    /// user terms for the top banner. Mirrors the resolution walk:
+    /// session binding first (deleted entry / group with no usable
+    /// member), then the session's persisted model id.
+    func noModelResolutionHint() -> String {
+        let store = ProviderConfigStore.shared
+        if let sid = sessionId, let binding = store.binding(for: sid) {
+            switch binding.primarySource {
+            case .directEntry(let entryId, _):
+                if store.entry(for: entryId) == nil {
+                    return AppLocalized("The model this session was using has been deleted. Pick another model for this session, or add a provider in Settings.")
+                }
+            case .group(_, _):
+                return AppLocalized("No model in this session's model group is currently available — a provider may be disabled or missing its credential. Check the provider in Settings.")
+            }
+        }
+        if !cachedSessionModelId.isEmpty {
+            return AppLocalized("The model this session was using is no longer available. Pick another model for this session, or add a provider in Settings.")
+        }
+        return AppLocalized("No model configured. Add a provider in Settings.")
+    }
+
     private func resolveCurrentEntryUncached() -> ModelEntry? {
         let store = ProviderConfigStore.shared
 

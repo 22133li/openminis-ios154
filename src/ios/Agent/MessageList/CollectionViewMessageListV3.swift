@@ -437,6 +437,9 @@ private struct MessageRowView: View {
     var onStop: (() -> Void)?
     var onCompact: (() -> Void)?
     var onOpenAttachment: ((AttachmentMeta) -> Void)?
+    /// [ios15-backport] Error-row Retry feedback state (see the error
+    /// row below): true from tap until the error changes or 15s pass.
+    @State private var retryTapped = false
 
     /// Display text with the <user-attached-files> model XML stripped, in
     /// case a stored message carries it.
@@ -511,7 +514,14 @@ private struct MessageRowView: View {
                 if message.blocks.isEmpty && !message.content.isEmpty {
                     MarkdownText(content: message.content)
                 }
-                // Error state with retry
+                // Error state with retry. [ios15-backport] The plain
+                // button gave zero feedback on tap, and a retry that
+                // fails again with the same error (provider still
+                // down / model still unresolvable) changed nothing on
+                // screen — the button read as dead (2026-10-25
+                // report). Show an in-progress label and lock the
+                // button until the error changes or a timeout re-arms
+                // it.
                 if let error = message.error {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -519,11 +529,21 @@ private struct MessageRowView: View {
                         Text(error)
                             .font(.caption)
                             .foregroundColor(.red)
-                        Button("重试") {
+                        Button {
+                            guard !retryTapped else { return }
+                            retryTapped = true
                             onRetryLast?()
+                            Task { @MainActor in
+                                try? await Task.sleep(nanoseconds: 15_000_000_000)
+                                retryTapped = false
+                            }
+                        } label: {
+                            Text(retryTapped ? "重试中…" : "重试")
                         }
                         .font(.caption)
+                        .disabled(retryTapped)
                     }
+                    .onChange(of: error) { _ in retryTapped = false }
                 }
                 // Streaming indicator — matches upstream TypingIndicator.
                 if message.isAwaitingModelResponse {

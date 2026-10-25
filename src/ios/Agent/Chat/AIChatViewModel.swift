@@ -3441,8 +3441,18 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     /// Retry the next agent loop iteration (continue from where the error occurred,
     /// keeping all previously completed tool blocks and conversation history).
     func retry() {
-        guard !isProcessing else { return }
-        guard let lastMsg = messages.last, lastMsg.role == .assistant else { return }
+        // [ios15-backport] Upstream's guards return silently; in the
+        // iOS 15 List backport that made the error-row Retry button
+        // look completely dead when a tap was rejected (2026-10-25
+        // report). Surface the reason in the top banner instead.
+        guard !isProcessing else {
+            errorMessage = AppLocalized("Still processing — wait for the current turn to finish, then retry.")
+            return
+        }
+        guard let lastMsg = messages.last, lastMsg.role == .assistant else {
+            errorMessage = AppLocalized("Nothing to retry — the last message is not an assistant reply.")
+            return
+        }
 
         // [T-ios-retry-keyboard] This turn exists because the user re-sent an
         // old failure, so its completion must not be treated as "a reply
@@ -5881,6 +5891,12 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
             let errMsg = ChatMessage(role: .assistant, content: "", blocks: [])
             errMsg.error = AppLocalized("No model configured. Add a provider in Settings.")
             messages.append(errMsg)
+            // [ios15-backport] Also put the specific reason in the top
+            // banner: the identical row alone made Retry look dead,
+            // because retrying just re-runs the same failing
+            // resolution and appends an identical row (2026-10-25
+            // report).
+            errorMessage = noModelResolutionHint()
             return
         }
         var provider = await makeAgentProvider(for: entry)
