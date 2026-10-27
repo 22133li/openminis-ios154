@@ -595,8 +595,6 @@ extension AIChatViewModel {
             if redactHits > 0 {
                 ctLogger.info("[EnvVarRedact] shell_execute: masked \(redactHits) env-var value(s) in tool result")
             }
-            // Vault secrets are masked unconditionally (not gated by Privacy
-            // Mode) — a vault value must never reach the model or transcript.
             toolOutput = redactedOut
 
         case "file_read":
@@ -921,63 +919,6 @@ extension AIChatViewModel {
             toolOutput = memResult.output
             toolSuccess = memResult.success
 
-        case "request_browser_takeover":
-            // Agent-initiated "hand the user the mouse". Suspends up to 10
-            // minutes while the user operates the live browser; the browser
-            // sheet opens automatically with a banner explaining the need.
-            let tReason = ((toolArgs["reason"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let tWhatToDo = ((toolArgs["what_to_do"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            func finishTakeover(_ output: String, _ success: Bool) {
-                toolOutput = output
-                toolSuccess = success
-                if msgIdx < messages.count, blockIdx < messages[msgIdx].blocks.count {
-                    messages[msgIdx].blocks[blockIdx].content = output
-                }
-            }
-            guard !tReason.isEmpty, !tWhatToDo.isEmpty else {
-                finishTakeover("Error: 'reason' and 'what_to_do' are required — both are shown to the user.", false)
-                break
-            }
-            let tOutcome: TakeoverOutcome = await withCheckedContinuation { (cont: CheckedContinuation<TakeoverOutcome, Never>) in
-                let req = AgentTakeoverRequest(reason: tReason, whatToDo: tWhatToDo, continuation: cont)
-                self.agentTakeoverRequest = req
-                // 10-minute timeout: exactly-once resume is guarded by the
-                // id check — a dismiss/cancel that already resolved the
-                // request nils it first.
-                self.agentTakeoverTimeoutTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 600_000_000_000)
-                    if let pending = self.agentTakeoverRequest, pending.id == req.id {
-                        self.agentTakeoverRequest = nil
-                        self.agentTakeoverTimeoutTask = nil
-                        cont.resume(returning: .timedOut)
-                    }
-                }
-            }
-            self.agentTakeoverTimeoutTask?.cancel()
-            self.agentTakeoverTimeoutTask = nil
-            self.agentTakeoverRequest = nil
-            switch tOutcome {
-            case .handedBack:
-                // Fresh screenshot so the agent verifies what the user did.
-                let shotInput = BrowserActionInput(
-                    action: .screenshot, url: nil, selector: nil, text: nil,
-                    coordinateX: nil, coordinateY: nil, direction: nil, amount: nil,
-                    script: nil, userAgent: nil, maxDepth: nil, tabId: nil
-                )
-                var pageInfo = ""
-                if let r = try? await browserTabPool.execute(action: shotInput, owner: sessionId) {
-                    if let url = r.pageURL { pageInfo = " Current page: \(url)." }
-                    if msgIdx < messages.count, blockIdx < messages[msgIdx].blocks.count {
-                        messages[msgIdx].blocks[blockIdx].imageFilePath = r.imageFilePath
-                    }
-                }
-                finishTakeover("The user took over the browser and handed back.\(pageInfo) Screenshot updated — verify the expected state before continuing.", true)
-            case .declined:
-                finishTakeover("The user declined the takeover request (closed the browser without taking over). Ask in chat how they would like to proceed, or try another approach — do not call this again silently.", false)
-            case .timedOut:
-                finishTakeover("The takeover request timed out after 10 minutes with no response. Ask in chat how they would like to proceed, or try another approach — do not call this again silently.", false)
-            }
-
         case SubAgentDefinition.toolName:
             // [T-agents-debug-only] A refusal in the sub-agent result dialect,
             // so HelperBlockInfo renders the block as "Rejected" (a plain
@@ -1279,11 +1220,4 @@ extension AIChatViewModel {
         )
     }
 
-    /// Minimal RFC 5322-ish check for send_email addresses.
-    static func isValidEmail(_ s: String) -> Bool {
-        guard !s.isEmpty, !s.contains(" ") else { return false }
-        let parts = s.split(separator: "@")
-        guard parts.count == 2, !parts[0].isEmpty, !parts[1].isEmpty else { return false }
-        return parts[1].contains(".")
-    }
 }
