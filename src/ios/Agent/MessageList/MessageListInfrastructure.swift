@@ -735,6 +735,28 @@ final class HostingCellContentView: UIView, UIContentView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// [ios15-backport] The message list measures every cell through
+    /// `contentView.systemLayoutSizeFitting`. A plain UIView answers that
+    /// with Auto Layout against the hosting view's intrinsic size, which is
+    /// the SwiftUI content's *ideal* (unwrapped) size: text measured as if
+    /// on one line, so cells come out far too short at the real width and
+    /// render clipped or blank on device. UIHostingContentView (behind
+    /// UIHostingConfiguration, iOS 16+) instead measures through the
+    /// hosting controller at the proposed width; mirror that here.
+    override func systemLayoutSizeFitting(_ targetSize: CGSize,
+                                          withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
+                                          verticalFittingPriority: UILayoutPriority) -> CGSize {
+        guard targetSize.width > 0 else {
+            return super.systemLayoutSizeFitting(targetSize,
+                                                 withHorizontalFittingPriority: horizontalFittingPriority,
+                                                 verticalFittingPriority: verticalFittingPriority)
+        }
+        let height = hostingController.sizeThatFits(
+            in: CGSize(width: targetSize.width, height: .greatestFiniteMagnitude)
+        ).height
+        return CGSize(width: targetSize.width, height: height)
+    }
+
     private func attachIfNeeded(parent: UIViewController?) {
         guard let parent, hostingController.parent !== parent else { return }
         if hostingController.parent != nil {
