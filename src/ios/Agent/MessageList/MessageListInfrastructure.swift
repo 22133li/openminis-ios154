@@ -736,25 +736,41 @@ final class HostingCellContentView: UIView, UIContentView {
     }
 
     /// [ios15-backport] The message list measures every cell through
-    /// `contentView.systemLayoutSizeFitting`. A plain UIView answers that
-    /// with Auto Layout against the hosting view's intrinsic size, which is
-    /// the SwiftUI content's *ideal* (unwrapped) size: text measured as if
-    /// on one line, so cells come out far too short at the real width and
-    /// render clipped or blank on device. UIHostingContentView (behind
-    /// UIHostingConfiguration, iOS 16+) instead measures through the
-    /// hosting controller at the proposed width; mirror that here.
+    /// `contentView.systemLayoutSizeFitting`. Two failure modes, both seen
+    /// in the on-device log (minis-2026-10-27.log, 366 occurrences):
+    /// UIKit's self-sizing probe passes `layoutFittingExpandedSize`
+    /// (width = greatestFiniteMagnitude) as the target, and any answer
+    /// carrying that sentinel width back is rejected with
+    /// NSInternalInconsistencyException ("Content view returned an invalid
+    /// size"). Upstream's measure wrapper swallows the exception, so the
+    /// cell keeps its estimated height and most cells never get a true
+    /// height — the list renders clipped/blank. A plain UIView's Auto
+    /// Layout answer is ambiguous in width and returns the sentinel; a
+    /// verbatim pass-through of the target does the same.
+    ///
+    /// So: measure through the hosting controller (as UIHostingContentView
+    /// does on iOS 16+) at a finite width — the target width when it is a
+    /// real one, otherwise the width the cell already has — and never
+    /// return a non-finite component.
     override func systemLayoutSizeFitting(_ targetSize: CGSize,
                                           withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
                                           verticalFittingPriority: UILayoutPriority) -> CGSize {
-        guard targetSize.width > 0 else {
-            return super.systemLayoutSizeFitting(targetSize,
-                                                 withHorizontalFittingPriority: horizontalFittingPriority,
-                                                 verticalFittingPriority: verticalFittingPriority)
+        let expandedWidth = UIView.layoutFittingExpandedSize.width
+        var measureWidth = targetSize.width
+        if !(measureWidth > 0) || measureWidth >= expandedWidth {
+            measureWidth = bounds.width
         }
-        let height = hostingController.sizeThatFits(
-            in: CGSize(width: targetSize.width, height: .greatestFiniteMagnitude)
+        guard measureWidth > 0, measureWidth < expandedWidth else {
+            // No real width yet (cell not laid out): return a finite size
+            // rather than the sentinel — UIKit raises on the sentinel.
+            return .zero
+        }
+        let measured = hostingController.sizeThatFits(
+            in: CGSize(width: measureWidth, height: .greatestFiniteMagnitude)
         ).height
-        return CGSize(width: targetSize.width, height: height)
+        let height = (measured.isFinite && measured > 0) ? measured
+            : (bounds.height.isFinite ? bounds.height : 0)
+        return CGSize(width: measureWidth, height: height)
     }
 
     private func attachIfNeeded(parent: UIViewController?) {
