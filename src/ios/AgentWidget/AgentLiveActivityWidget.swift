@@ -197,8 +197,7 @@ struct AudioTogglePill: View {
 
     var body: some View {
         if #available(iOSApplicationExtension 17.0, *) {
-            // iOS 15 backport: AudioTogglePlaybackIntent removed
-            Button(action: {}) {
+            Button(intent: AudioTogglePlaybackIntent()) {
                 glyph
             }
             .buttonStyle(.plain)

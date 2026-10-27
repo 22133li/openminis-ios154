@@ -23,7 +23,6 @@ struct OpenSessionIntent: AppIntent {
     }
 }
 
-@available(iOS 16, *)
 extension Notification.Name {
     static let openSessionFromIntent = Notification.Name("openSessionFromIntent")
 }
