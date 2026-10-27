@@ -2915,9 +2915,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
             case .ok:
                 break
             case .needsCompact:
-                // Live read: Settings → Auto-Compact can flip the switch
-                // while this session's view model is alive.
-                if sessionSource == "shortcut" || ContextBudgetStore.autoCompactEnabled {
+                if sessionSource == "shortcut" || autoCompactEnabled {
                     // Shortcut sessions can't show UI prompts; auto-compact
                     // opt-in [T-chat-auto-compact-opt-in] rides the same
                     // no-prompt path — compact and send without asking.

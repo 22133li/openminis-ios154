@@ -376,8 +376,6 @@
 		E5OARC023 /* OAuthRefreshSingleFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5OARC031 /* OAuthRefreshSingleFlight.swift */; };
 		E5OARC024 /* OAuthRefreshSingleFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5OARC031 /* OAuthRefreshSingleFlight.swift */; };
 		E5P000001 /* EnvVarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000011 /* EnvVarStore.swift */; };
-		E5ACCB01 /* ContextBudgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5ACCB11 /* ContextBudgetStore.swift */; };
-		E5ACST01 /* AutoCompactSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5ACST11 /* AutoCompactSettingsView.swift */; };
 		E5P000002 /* EnvironmentVariablesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000012 /* EnvironmentVariablesView.swift */; };
 		E5P000003 /* DeepLinkCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000013 /* DeepLinkCoordinator.swift */; };
 		E5P000004 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5P000014 /* DeepLinkRouter.swift */; };
@@ -1107,8 +1105,6 @@
 		E5OARC030 /* OAuthRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthRefreshCoordinator.swift; sourceTree = "<group>"; };
 		E5OARC031 /* OAuthRefreshSingleFlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthRefreshSingleFlight.swift; sourceTree = "<group>"; };
 		E5P000011 /* EnvVarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvVarStore.swift; sourceTree = "<group>"; };
-		E5ACCB11 /* ContextBudgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextBudgetStore.swift; sourceTree = "<group>"; };
-		E5ACST11 /* AutoCompactSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoCompactSettingsView.swift; sourceTree = "<group>"; };
 		E5P000012 /* EnvironmentVariablesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentVariablesView.swift; sourceTree = "<group>"; };
 		E5P000013 /* DeepLinkCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkCoordinator.swift; sourceTree = "<group>"; };
 		E5P000014 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
@@ -2135,7 +2131,6 @@
 				E5PPR0011 /* AIChatViewModel+ProgrammaticPrompt.swift */,
 				E5VMB0012 /* AIChatViewModel+Fallback.swift */,
 				E5VMB0013 /* AIChatViewModel+Misc.swift */,
-				E5ACCB11 /* ContextBudgetStore.swift */,
 				E5VMB0014 /* AIChatViewModel+RequestBudget.swift */,
 				E5VMB0015 /* ChatModels.swift */,
 				E5VMB0016 /* ChatLifecycleSupport.swift */,
@@ -2337,7 +2332,6 @@
 				E5S000014 /* CloudSyncSettingsView.swift */,
 				E5G000013 /* EnhancedBackgroundSettingsView.swift */,
 				E5P000012 /* EnvironmentVariablesView.swift */,
-				E5ACST11 /* AutoCompactSettingsView.swift */,
 				E5J000012 /* LogManagementView.swift */,
 				E5J000013 /* ConfigAuditView.swift */,
 				E5N0000142F3B941A00049557 /* MemoryManagementView.swift */,
@@ -3142,8 +3136,6 @@
 				E5PRIV01 /* EnvVarPrivacyStore.swift in Sources */,
 				E5PRIV02 /* EnvVarRedactor.swift in Sources */,
 				E5P000002 /* EnvironmentVariablesView.swift in Sources */,
-				E5ACCB01 /* ContextBudgetStore.swift in Sources */,
-				E5ACST01 /* AutoCompactSettingsView.swift in Sources */,
 				E5P000003 /* DeepLinkCoordinator.swift in Sources */,
 				E5P000004 /* DeepLinkRouter.swift in Sources */,
 				E5CFG0001 /* ConfigAuditEntry.swift in Sources */,
