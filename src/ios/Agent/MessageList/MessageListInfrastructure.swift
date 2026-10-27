@@ -765,36 +765,45 @@ final class HostingCellContentView: UIView, UIContentView {
             // rather than the sentinel — UIKit raises on the sentinel.
             return .zero
         }
-        // [T-ios15-hostfit-prime] On-device logs (build111) show the first
-        // sizeThatFits on a fresh hosting controller deterministically
-        // returns a collapsed height (32pt for tool blocks whose true height
-        // is 151-199pt): the SwiftUI graph has not completed its first
-        // layout, so the measure reads a placeholder state. The same cell
-        // re-measured moments later returns the true height. Prime the
-        // graph with a real layout pass, then measure until two consecutive
-        // heights agree (max 3 passes) and return the settled value.
-        // [HostFit] lines are TEMPORARY diagnostics for this investigation
-        // (capped, first 300 calls) and come out once the cause is proven.
+        // [T-ios15-hostfit-al] Build112 on-device evidence (minis-2026-10-27,
+        // process 10257): the prime did NOT help. Repeated sizeThatFits calls
+        // on a fresh UIHostingController agree with each other yet stay
+        // collapsed - of the first 300 measures none exceeded 78pt, text
+        // blocks whose layout-held height is 151-199pt measure 32pt, and a
+        // cell only reaches its true height (idx=1600: 32 -> 151) after it
+        // has been displayed and re-measured on a later settle pass. So the
+        // failure is the MEASUREMENT MECHANISM, not the timing:
+        // UIHostingController.sizeThatFits reads the representable-driven
+        // content (markdown text views) before their internal layout exists.
+        // Upstream's UIHostingConfiguration does not measure this way - its
+        // UIHostingContentView answers systemLayoutSizeFitting through the
+        // hosting view's own Auto Layout fitting (systemLayoutSizeFitting on
+        // the _UIHostingView), which performs a real layout of the SwiftUI
+        // graph at the target width. Measure that way here (build109's path,
+        // now with the sentinel guard above), keep sizeThatFits as a logged
+        // fallback, and keep the [HostFit] A/B log (al vs ctrl) until the
+        // device data proves which mechanism is true.
         hostingController.view.setNeedsLayout()
         hostingController.view.layoutIfNeeded()
-        let proposal = CGSize(width: measureWidth, height: .greatestFiniteMagnitude)
-        var passes: [CGFloat] = []
-        var height = hostingController.sizeThatFits(in: proposal).height
-        passes.append(height)
-        for _ in 0..<2 {
-            let next = hostingController.sizeThatFits(in: proposal).height
-            passes.append(next)
-            if abs(next - height) < 1 { height = next; break }
-            height = next
+        let alTarget = CGSize(width: measureWidth,
+                              height: UIView.layoutFittingCompressedSize.height)
+        let alSize = hostingController.view.systemLayoutSizeFitting(
+            alTarget,
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel)
+        let ctrlHeight = hostingController.sizeThatFits(
+            in: CGSize(width: measureWidth, height: .greatestFiniteMagnitude)).height
+        var height = alSize.height
+        if !(height.isFinite && height > 0 && height < expandedWidth) {
+            height = ctrlHeight
         }
-        if !(height.isFinite && height > 0) {
+        if !(height.isFinite && height > 0 && height < expandedWidth) {
             height = bounds.height.isFinite ? bounds.height : 0
         }
         if Self.hostFitLogCount < 300 {
             Self.hostFitLogCount += 1
-            let passStr = passes.map { String(format: "%.0f", $0) }.joined(separator: "/")
             AppLogger(category: "HostFit").info(
-                "[HostFit] tw=\(String(format: "%.0f", targetSize.width)) mw=\(String(format: "%.0f", measureWidth)) bw=\(String(format: "%.0f", bounds.width)) passes=\(passStr) out=\(String(format: "%.0f", height))")
+                "[HostFit] tw=\(String(format: "%.0f", targetSize.width)) mw=\(String(format: "%.0f", measureWidth)) bw=\(String(format: "%.0f", bounds.width)) th=\(String(format: "%.0f", targetSize.height)) bh=\(String(format: "%.0f", bounds.height)) al=\(String(format: "%.0f", alSize.height)) ctrl=\(String(format: "%.0f", ctrlHeight)) out=\(String(format: "%.0f", height))")
         }
         return CGSize(width: measureWidth, height: height)
     }
