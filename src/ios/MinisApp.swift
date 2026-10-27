@@ -430,15 +430,11 @@ struct MinisApp: App {
                         Self.registerFileProviderDomain()
                     }
                     // Migrate legacy shared dir to App Group container
-                    if #available(iOS 16.0, *) {
-                        Self.migrateSharedDirToAppGroup()
-                    }
+                    Self.migrateSharedDirToAppGroup()
                     // Trace the resolved AppGroup paths so we can confirm the
                     // main app, FileProvider extension, and iSH bind mount all
                     // agree on which directory holds the user's shared files.
-                    if #available(iOS 16.0, *) {
-                        Self.logFPSyncTracePaths()
-                    }
+                    Self.logFPSyncTracePaths()
                     // Start watching shared/skills/memory subtrees so iSH writes
                     // and FileBrowserView mutations propagate to the Files app.
                     AppGroupChangeWatcher.shared.start()
