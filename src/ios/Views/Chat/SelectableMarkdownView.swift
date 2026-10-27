@@ -7461,16 +7461,22 @@ final class SelectableMarkdownTextView: UITextView, UIGestureRecognizerDelegate 
     // width and report the used rect, mirroring the real-measure path of
     // the iOS 16 hook. A bogus probe width (non-finite / sentinel / zero -
     // SwiftUI's fitting passes probe with those) falls back to the view's
-    // own laid-out width, then the screen width. On iOS 16+ the
+    // own laid-out width, then the screen width. A probe width WIDER than
+    // the screen is bogus too (build114 evidence: the unwrapped text's own
+    // width, 1491-2234pt, came back as a probe and SwiftUI framed the view
+    // at that width, so text overflowed the screen and heights halved);
+    // it takes the same fallback. On iOS 16+ the
     // representable hook stays the primary path; these answers are computed
     // by the same formula it uses, so behavior does not diverge.
     override func sizeThatFits(_ size: CGSize) -> CGSize {
         guard textStorage.length > 0 else {
             return super.sizeThatFits(size)
         }
+        let screenWidth = UIScreen.main.bounds.width
         var targetWidth = size.width
-        if !(targetWidth.isFinite && targetWidth > 1 && targetWidth < 4096) {
-            targetWidth = bounds.width > 1 ? bounds.width : UIScreen.main.bounds.width
+        if !(targetWidth.isFinite && targetWidth > 1 && targetWidth <= screenWidth) {
+            targetWidth = (bounds.width > 1 && bounds.width <= screenWidth)
+                ? bounds.width : screenWidth
         }
         let containerWidth = max(0, targetWidth - textContainerInset.left - textContainerInset.right)
         let oldContainerSize = textContainer.size
@@ -7489,11 +7495,16 @@ final class SelectableMarkdownTextView: UITextView, UIGestureRecognizerDelegate 
     }
 
     override var intrinsicContentSize: CGSize {
-        if bounds.width > 1 {
-            return sizeThatFits(CGSize(width: bounds.width,
-                                       height: CGFloat.greatestFiniteMagnitude))
-        }
-        return super.intrinsicContentSize
+        // Never report a width wider than the screen: an over-wide
+        // intrinsic width is what framed build114's text views at the
+        // unwrapped text width. sizeThatFits clamps its width argument
+        // the same way, so route every case through it (empty storage
+        // still falls through to super inside sizeThatFits).
+        let screenWidth = UIScreen.main.bounds.width
+        let width = (bounds.width > 1 && bounds.width <= screenWidth)
+            ? bounds.width : screenWidth
+        return sizeThatFits(CGSize(width: width,
+                                   height: CGFloat.greatestFiniteMagnitude))
     }
 
     func invalidateCellSizeIfNeeded() {
