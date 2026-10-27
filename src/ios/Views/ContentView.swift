@@ -3144,6 +3144,7 @@ struct ContentView: View {
         // there is no sink to release mid-transaction. The loop also parks while the
         // app is backgrounded (the crash reproduced with the app in the background).
         // refreshMigrationSubtitle is idempotent (Task{@MainActor} + diff-before-assign).
+        .task { await migrationSubtitleLoop() }
         // [T-ios-soul-name-sidebar-stale] Refresh the sidebar title from SOUL.md.
         // Moved here off the churny toolbar `titleLabel` Text (which rebuilds on
         // every canOpenSync/soulName/migrationSubtitle/isSelecting change) for the
@@ -3575,7 +3576,29 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sidebarToolbarContent }
-            /* Orphaned async block disabled for iOS 15.4
+        }
+    }
+
+    // MARK: - Sidebar Toolbar
+
+    /// Refresh cadence for the sidebar migration subtitle, in seconds.
+    private static let migrationSubtitleRefreshInterval: UInt64 = 5
+
+    /// [T-ios-migration-timer-sessionlist-uaf-crash] Self-cancelling refresh loop
+    /// for `migrationSubtitle`, driven by `.task` on the identity-stable sidebar
+    /// Group. Replaces the process-lived `Timer.publish().autoconnect()` +
+    /// `.onReceive` that AttributeGraph could tear down mid-transaction (UAF).
+    ///
+    /// SwiftUI cancels this Task when the Group's identity ends, so the loop stops
+    /// cleanly with no dangling subscription. It parks (no refresh, cheap poll)
+    /// while the app is backgrounded — the crash reproduced with the app in the
+    /// background, and a hidden sidebar has nothing to display anyway.
+    @MainActor
+    private func migrationSubtitleLoop() async {
+        // Mirror the old `.onAppear { refreshMigrationSubtitle() }`: refresh once
+        // immediately so the subtitle is correct as soon as the sidebar appears.
+        refreshMigrationSubtitle()
+        while !Task.isCancelled {
             do {
                 try await Task.sleep(nanoseconds: Self.migrationSubtitleRefreshInterval * 1_000_000_000)
             } catch {
@@ -3595,7 +3618,6 @@ struct ContentView: View {
             if !backgrounded {
                 refreshMigrationSubtitle()
             }
-            */
         }
     }
 
