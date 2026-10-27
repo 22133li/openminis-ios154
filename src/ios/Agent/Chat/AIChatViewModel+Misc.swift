@@ -279,11 +279,18 @@ extension AIChatViewModel {
     /// therefore true only when the cap actually binds.
     func resolvedContextWindow(for model: LLMModel) -> (window: Int, isUserCap: Bool) {
         let native = model.contextWindowTokens
-        guard let override = activeGroupContextLimit(), override > 0, override < Int.max else {
-            return (native, false)
+        // Collect every applicable cap; the smallest wins. A user budget or
+        // group limit never raises the model's native window — it only
+        // lowers the ceiling auto-compact and safety checks use.
+        var caps: [Int] = []
+        let budget = ContextBudgetStore.globalBudgetTokens
+        if budget > 0 && budget < Int.max { caps.append(budget) }
+        if let group = activeGroupContextLimit(), group > 0 && group < Int.max {
+            caps.append(group)
         }
-        guard native > 0 else { return (override, true) }
-        return override < native ? (override, true) : (native, false)
+        guard let cap = caps.min() else { return (native, false) }
+        guard native > 0 else { return (cap, true) }
+        return cap < native ? (cap, true) : (native, false)
     }
 
     /// The bound group's context-limit override for the current session, or nil
