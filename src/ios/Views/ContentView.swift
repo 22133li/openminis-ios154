@@ -3992,10 +3992,12 @@ struct ContentView: View {
     }
 
     @available(iOS 26.0, *)
-    @available(iOS 26.0, *)
     private func _fetchAlarmsImpl() {
-        // iOS 15 backport: stubbed
-        hasAlarms = false
+        AlarmOffloadBridge.listAlarms { arr, _ in
+            DispatchQueue.main.async {
+                hasAlarms = (arr?.count ?? 0) > 0
+            }
+        }
     }
 
     // MARK: - Navigation Helper

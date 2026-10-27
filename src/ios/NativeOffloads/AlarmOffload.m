@@ -153,9 +153,11 @@ static BOOL ensureAuthorization(int stdout_fd, NSString *action, BOOL compact, B
     dispatch_sync(authQueue(), ^{
         dispatch_semaphore_t sem = dispatch_semaphore_create(0);
 
-        // iOS 15.4: AlarmKit 需要 iOS 26+，直接返回未授权
-        authorized = NO;
-        dispatch_semaphore_signal(sem);
+        [AlarmOffloadBridge requestAuthorizationWithCompletion:^(BOOL granted, NSError *error) {
+            authorized = granted;
+            authError = error;
+            dispatch_semaphore_signal(sem);
+        }];
 
         dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 30 * NSEC_PER_SEC));
     });
@@ -250,9 +252,15 @@ static int cmd_set_alarmkit(int argc, char **argv, int stdout_fd,
         __block NSError *schedError = nil;
         dispatch_semaphore_t sem = dispatch_semaphore_create(0);
 
-        // iOS 15.4: AlarmKit 需要 iOS 26+，已禁用
-        schedError = [NSError errorWithDomain:@"AlarmOffload" code:-1 userInfo:@{NSLocalizedDescriptionKey:@"需要 iOS 26+"}];
-        dispatch_semaphore_signal(sem);
+        [AlarmOffloadBridge scheduleAlarmWithId:alarmId
+                                      fireDate:fireDate
+                                         label:label
+                                    repeatMode:repeatMode
+                                    completion:^(NSDictionary *data, NSError *error) {
+            resultData = data;
+            schedError = error;
+            dispatch_semaphore_signal(sem);
+        }];
 
         dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
 
@@ -315,9 +323,14 @@ static int cmd_timer_alarmkit(int argc, char **argv, int stdout_fd,
         __block NSError *schedError = nil;
         dispatch_semaphore_t sem = dispatch_semaphore_create(0);
 
-        // iOS 15.4: AlarmKit 需要 iOS 26+，已禁用
-        schedError = [NSError errorWithDomain:@"AlarmOffload" code:-1 userInfo:@{NSLocalizedDescriptionKey:@"需要 iOS 26+"}];
-        dispatch_semaphore_signal(sem);
+        [AlarmOffloadBridge scheduleTimerWithId:timerId
+                                      duration:duration
+                                         label:label
+                                    completion:^(NSDictionary *data, NSError *error) {
+            resultData = data;
+            schedError = error;
+            dispatch_semaphore_signal(sem);
+        }];
 
         dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
 
@@ -357,9 +370,11 @@ static int cmd_list_alarmkit(int argc, char **argv, int stdout_fd,
         __block NSError *listError = nil;
         dispatch_semaphore_t sem = dispatch_semaphore_create(0);
 
-        // iOS 15.4: AlarmKit 需要 iOS 26+，已禁用
-        listError = [NSError errorWithDomain:@"AlarmOffload" code:-1 userInfo:@{NSLocalizedDescriptionKey:@"需要 iOS 26+"}];
-        dispatch_semaphore_signal(sem);
+        [AlarmOffloadBridge listAlarmsWithCompletion:^(NSArray *alarms, NSError *error) {
+            alarmList = alarms;
+            listError = error;
+            dispatch_semaphore_signal(sem);
+        }];
 
         dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
 
@@ -413,9 +428,11 @@ static int cmd_cancel_alarmkit(int argc, char **argv, int stdout_fd,
             __block NSError *cancelError = nil;
             dispatch_semaphore_t sem = dispatch_semaphore_create(0);
 
-            // iOS 15.4: AlarmKit 需要 iOS 26+，已禁用
-            cancelError = [NSError errorWithDomain:@"AlarmOffload" code:-1 userInfo:@{NSLocalizedDescriptionKey:@"需要 iOS 26+"}];
-            dispatch_semaphore_signal(sem);
+            [AlarmOffloadBridge cancelAllAlarmsWithCompletion:^(NSInteger count, NSError *error) {
+                cancelledCount = count;
+                cancelError = error;
+                dispatch_semaphore_signal(sem);
+            }];
 
             dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
 
@@ -440,9 +457,12 @@ static int cmd_cancel_alarmkit(int argc, char **argv, int stdout_fd,
             __block NSError *cancelError = nil;
             dispatch_semaphore_t sem = dispatch_semaphore_create(0);
 
-            // iOS 15.4: AlarmKit 需要 iOS 26+，已禁用
-            cancelError = [NSError errorWithDomain:@"AlarmOffload" code:-1 userInfo:@{NSLocalizedDescriptionKey:@"需要 iOS 26+"}];
-            dispatch_semaphore_signal(sem);
+            [AlarmOffloadBridge cancelAlarmWithId:cancelId
+                                      completion:^(BOOL ok, NSError *error) {
+                success = ok;
+                cancelError = error;
+                dispatch_semaphore_signal(sem);
+            }];
 
             dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, 15 * NSEC_PER_SEC));
 
