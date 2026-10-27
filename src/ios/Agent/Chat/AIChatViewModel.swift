@@ -1749,12 +1749,6 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     /// When true, the agent loop pauses at the next checkpoint to let the user operate the browser.
     @Published var browserTakeoverActive = false
 
-    /// Agent-initiated takeover (tool: request_browser_takeover). Unlike the
-    /// user tapping "Takeover" on their own, here the AGENT asks for help —
-    /// e.g. a login wall, CAPTCHA, 2FA, or payment confirmation. Setting this
-    /// opens the browser sheet with a banner explaining what the agent needs.
-    @Published var agentTakeoverRequest: AgentTakeoverRequest?
-
     // MARK: - Prompt Queue
     /// Prompts queued by the user while the agent loop is running.
     @Published var promptQueue: [QueuedPrompt] = []
@@ -2790,8 +2784,6 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     var midActionTakeoverContinuation: CheckedContinuation<Void, Never>?
     /// Timeout task for mid-action takeover (5 minutes).
     var takeoverTimeoutTask: Task<Void, Never>?
-    /// Timeout task for agent-initiated takeover (10 minutes).
-    var agentTakeoverTimeoutTask: Task<Void, Never>?
     var foregroundObserver: NSObjectProtocol?
     /// Timer that logs tool execution status while the app is backgrounded.
     var backgroundStatusTimer: Timer?
@@ -4851,13 +4843,6 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
         if let c = midActionTakeoverContinuation {
             midActionTakeoverContinuation = nil
             c.resume()
-        }
-        // An agent-initiated takeover request is also abandoned on cancel.
-        if let req = agentTakeoverRequest {
-            agentTakeoverRequest = nil
-            agentTakeoverTimeoutTask?.cancel()
-            agentTakeoverTimeoutTask = nil
-            req.continuation.resume(returning: .declined)
         }
         if let obs = foregroundObserver {
             NotificationCenter.default.removeObserver(obs)

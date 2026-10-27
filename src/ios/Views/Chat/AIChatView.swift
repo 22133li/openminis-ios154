@@ -1134,22 +1134,13 @@ struct AIChatView: View {
             }
         }
         .sheet(isPresented: $showBrowserSheet, onDismiss: {
-            // Resolves a pending agent-initiated takeover
-            // (request_browser_takeover): handedBack if the user engaged
-            // takeover, declined if they just closed it. Also ends a manual
-            // takeover. No-op when no takeover is in flight.
+            // Ends a manual takeover when the sheet is dismissed.
+            // No-op when no takeover is in flight.
             vm.resumeFromBrowserTakeover()
         }) {
             BrowserSheetView(pool: vm.browserTabPool, isAgentBusy: vm.browserTabPool.isAgentBrowsing, onTakeover: {
                 vm.browserTakeoverActive = true
-            }, agentTakeoverRequest: vm.agentTakeoverRequest, onStartAgentTakeover: {
-                vm.browserTakeoverActive = true
             })
-        }
-        .onChange(of: vm.agentTakeoverRequest != nil) { hasRequest in
-            // Agent-initiated takeover: bring the browser sheet up with the
-            // banner explaining what the agent needs.
-            if hasRequest { showBrowserSheet = true }
         }
         .sheet(isPresented: $showModelPicker) {
             NavigationView {

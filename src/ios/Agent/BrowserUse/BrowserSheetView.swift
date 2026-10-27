@@ -5,13 +5,10 @@ struct BrowserSheetView: View {
     @ObservedObject var pool: BrowserTabPool
     var isAgentBusy: Bool = false
     var onTakeover: (() -> Void)? = nil
-    /// Agent-initiated takeover request (tool: request_browser_takeover).
-    /// When set, a banner explains what the agent needs the user to do.
-    var agentTakeoverRequest: AgentTakeoverRequest? = nil
-    var onStartAgentTakeover: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var addressText: String = ""
     @State private var showHistory = false
+    @State private var isFullscreen = false
     @FocusState private var addressFocused: Bool
     /// True after the user taps 接管: the blocking overlay lifts and the
     /// user gets full control of the page until the sheet is dismissed.
@@ -36,24 +33,23 @@ struct BrowserSheetView: View {
         return pool.isAgentBrowsing
     }
 
-    /// User tapped 接管: lift the overlay, give full control, and tell the vm
-    /// the user is in charge (an agent-initiated request resolves on dismiss).
+    /// User tapped 接管: lift the overlay, give full control, and tell the
+    /// vm the user is in charge.
     private func engageTakeover() {
         takeoverEngaged = true
-        onStartAgentTakeover?()
         onTakeover?()
     }
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Tab bar — always visible. (Was gated on !isFullscreen;
-                // the conditional caused the top chrome to flicker.)
-                tabBar
-                    .allowsHitTesting(!effectiveBusy)
+                if !isFullscreen {
+                    // Tab bar
+                    tabBar
+                        .allowsHitTesting(!effectiveBusy)
 
-                // URL bar
-                HStack(spacing: 8) {
+                    // URL bar
+                    HStack(spacing: 8) {
                     BrowserAddressBarIcon(isLoading: manager?.isLoading ?? false)
 
                     TextField("Search or enter URL", text: $addressText)
@@ -80,36 +76,10 @@ struct BrowserSheetView: View {
                         .transition(.identity)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(UIColor.secondarySystemBackground))
-                .allowsHitTesting(!effectiveBusy)
-
-                // Agent-initiated takeover banner (tool:
-                // request_browser_takeover): the agent is stuck on something
-                // only the user can do. Tapping 接管 engages takeover mode:
-                // the blocking overlay lifts and the user gets full control
-                // until the sheet is dismissed (which hands back to the agent).
-                // The banner is fully static — explicit identity transition so
-                // no implicit animation can make it pulse or zoom.
-                if let req = agentTakeoverRequest {
-                    if takeoverEngaged {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("Takeover active — operate the page, then close to hand back")
-                                .font(.system(size: 13, weight: .medium))
-                            Spacer()
-                        }
-                        .padding(10)
-                        .background(Color.green.opacity(0.12))
-                        .transition(.identity)
-                    } else {
-                        AgentTakeoverBanner(reason: req.reason, whatToDo: req.whatToDo) {
-                            engageTakeover()
-                        }
-                        .transition(.identity)
-                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .allowsHitTesting(!effectiveBusy)
                 }
 
                 // Live webview + agent overlay
@@ -127,8 +97,29 @@ struct BrowserSheetView: View {
                     }
 
                     if effectiveBusy {
-                        AgentBrowsingOverlay(onTakeover: (onTakeover != nil || onStartAgentTakeover != nil) ? { engageTakeover() } : nil)
+                        AgentBrowsingOverlay(onTakeover: onTakeover != nil ? { engageTakeover() } : nil)
                             .transition(.opacity)
+                    }
+
+                    // Fullscreen exit button
+                    if isFullscreen {
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.25)) { isFullscreen = false }
+                                } label: {
+                                    Image(systemName: "arrow.down.right.and.arrow.up.left")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(.white)
+                                        .padding(8)
+                                        .background(Circle().fill(Color.black.opacity(0.5)))
+                                }
+                                .padding(.trailing, 12)
+                                .padding(.top, 8)
+                            }
+                            Spacer()
+                        }
                     }
                 }
                 .animation(.easeInOut(duration: 0.3), value: effectiveBusy)
@@ -139,10 +130,12 @@ struct BrowserSheetView: View {
                     BrowserDownloadBanner(manager: manager)
                 }
 
-                // Bottom navigation toolbar — always visible.
-                Divider()
+                if !isFullscreen {
+                    // Separator
+                    Divider()
 
-                HStack(spacing: 0) {
+                    // Bottom navigation toolbar
+                    HStack(spacing: 0) {
                     Button { pool.touchActivity(); manager?.goBack() } label: {
                         Image(systemName: "chevron.left")
                             .frame(maxWidth: .infinity)
@@ -170,13 +163,23 @@ struct BrowserSheetView: View {
                         .transition(.identity)
                         .disabled(effectiveBusy)
                     }
-                }
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) { isFullscreen = true }
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(effectiveBusy)
+                    }
                     .font(.system(size: 18))
                     .padding(.vertical, 10)
                     .background(Color(UIColor.secondarySystemBackground))
                     .allowsHitTesting(!effectiveBusy)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(isFullscreen)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 5) {
@@ -354,41 +357,6 @@ private struct BrowserAddressBarIcon: View {
 }
 
 // MARK: - Agent Browsing Overlay
-
-/// Banner shown when the agent explicitly asks the user to take over the
-/// browser (tool: request_browser_takeover). The reason/whatToDo are written
-/// by the model in the user's language.
-private struct AgentTakeoverBanner: View {
-    let reason: String
-    let whatToDo: String
-    var onStart: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Image(systemName: "hand.raised.fill")
-                    .foregroundStyle(.orange)
-                Text("Agent needs you to take over")
-                    .font(.system(size: 14, weight: .semibold))
-                Spacer()
-                Button("Take Over") { onStart() }
-                    .font(.system(size: 14, weight: .semibold))
-                    .buttonStyle(.borderedProminent)
-            }
-            Text(reason)
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-            Text(whatToDo)
-                .font(.system(size: 13))
-        }
-        .padding(12)
-        .background(Color.orange.opacity(0.12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 0)
-                .stroke(Color.orange.opacity(0.4), lineWidth: 0.5)
-        )
-    }
-}
 
 /// Breathing-light overlay shown when the agent is controlling the browser.
 /// Blocks all user interaction on the webview while providing a visual cue.

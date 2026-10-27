@@ -5,35 +5,6 @@ private let logger = AppLogger(category: "AIChatVM")
 
 // MARK: - Background Task + Background Status Timer
 
-/// Outcome of an agent-initiated browser takeover
-/// (tool: request_browser_takeover).
-enum TakeoverOutcome {
-    /// The user operated the browser and handed control back.
-    case handedBack
-    /// The user dismissed the sheet without taking over.
-    case declined
-    /// No response within the timeout window.
-    case timedOut
-}
-
-/// An agent-initiated request for the user to take over the browser.
-/// Mirrors the "hand the user the mouse" pattern: the agent names what's
-/// blocking it and what it needs the human to do.
-struct AgentTakeoverRequest: Identifiable {
-    let id: String
-    let reason: String
-    let whatToDo: String
-    let continuation: CheckedContinuation<TakeoverOutcome, Never>
-
-    init(reason: String, whatToDo: String,
-         continuation: CheckedContinuation<TakeoverOutcome, Never>) {
-        self.id = UUID().uuidString
-        self.reason = reason
-        self.whatToDo = whatToDo
-        self.continuation = continuation
-    }
-}
-
 extension AIChatViewModel {
 
     // MARK: - Current turn [T-bgnotif-current-turn]
@@ -697,7 +668,6 @@ extension AIChatViewModel {
 
     /// Called when the user dismisses the browser takeover sheet.
     func resumeFromBrowserTakeover() {
-        let engaged = browserTakeoverActive
         browserTakeoverActive = false
         // Cancel mid-action timeout
         takeoverTimeoutTask?.cancel()
@@ -711,15 +681,6 @@ extension AIChatViewModel {
         if let c = takeoverContinuation {
             takeoverContinuation = nil
             c.resume()
-        }
-        // Resolve an agent-initiated takeover request (tool:
-        // request_browser_takeover): handedBack if the user actually took
-        // over, declined if they just dismissed the sheet.
-        if let req = agentTakeoverRequest {
-            agentTakeoverRequest = nil
-            agentTakeoverTimeoutTask?.cancel()
-            agentTakeoverTimeoutTask = nil
-            req.continuation.resume(returning: engaged ? .handedBack : .declined)
         }
     }
 
