@@ -780,9 +780,10 @@ final class HostingCellContentView: UIView, UIContentView {
         // hosting view's own Auto Layout fitting (systemLayoutSizeFitting on
         // the _UIHostingView), which performs a real layout of the SwiftUI
         // graph at the target width. Measure that way here (build109's path,
-        // now with the sentinel guard above), keep sizeThatFits as a logged
-        // fallback, and keep the [HostFit] A/B log (al vs ctrl) until the
-        // device data proves which mechanism is true.
+        // now with the sentinel guard above), keep sizeThatFits as a
+        // fallback. Device data proved this mechanism (build113-115: true
+        // heights at first measure, no collapsed cells); the temporary
+        // [HostFit] A/B diagnostic log was removed in build116.
         hostingController.view.setNeedsLayout()
         hostingController.view.layoutIfNeeded()
         let alTarget = CGSize(width: measureWidth,
@@ -800,16 +801,9 @@ final class HostingCellContentView: UIView, UIContentView {
         if !(height.isFinite && height > 0 && height < expandedWidth) {
             height = bounds.height.isFinite ? bounds.height : 0
         }
-        if Self.hostFitLogCount < 300 {
-            Self.hostFitLogCount += 1
-            AppLogger(category: "HostFit").info(
-                "[HostFit] tw=\(String(format: "%.0f", targetSize.width)) mw=\(String(format: "%.0f", measureWidth)) bw=\(String(format: "%.0f", bounds.width)) th=\(String(format: "%.0f", targetSize.height)) bh=\(String(format: "%.0f", bounds.height)) al=\(String(format: "%.0f", alSize.height)) ctrl=\(String(format: "%.0f", ctrlHeight)) out=\(String(format: "%.0f", height))")
-        }
         return CGSize(width: measureWidth, height: height)
     }
 
-    /// Temporary [HostFit] diagnostic counter (see systemLayoutSizeFitting).
-    private static var hostFitLogCount = 0
 
     private func attachIfNeeded(parent: UIViewController?) {
         guard let parent, hostingController.parent !== parent else { return }
