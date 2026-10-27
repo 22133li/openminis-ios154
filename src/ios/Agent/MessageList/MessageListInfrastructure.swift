@@ -765,13 +765,42 @@ final class HostingCellContentView: UIView, UIContentView {
             // rather than the sentinel — UIKit raises on the sentinel.
             return .zero
         }
-        let measured = hostingController.sizeThatFits(
-            in: CGSize(width: measureWidth, height: .greatestFiniteMagnitude)
-        ).height
-        let height = (measured.isFinite && measured > 0) ? measured
-            : (bounds.height.isFinite ? bounds.height : 0)
+        // [T-ios15-hostfit-prime] On-device logs (build111) show the first
+        // sizeThatFits on a fresh hosting controller deterministically
+        // returns a collapsed height (32pt for tool blocks whose true height
+        // is 151-199pt): the SwiftUI graph has not completed its first
+        // layout, so the measure reads a placeholder state. The same cell
+        // re-measured moments later returns the true height. Prime the
+        // graph with a real layout pass, then measure until two consecutive
+        // heights agree (max 3 passes) and return the settled value.
+        // [HostFit] lines are TEMPORARY diagnostics for this investigation
+        // (capped, first 300 calls) and come out once the cause is proven.
+        hostingController.view.setNeedsLayout()
+        hostingController.view.layoutIfNeeded()
+        let proposal = CGSize(width: measureWidth, height: .greatestFiniteMagnitude)
+        var passes: [CGFloat] = []
+        var height = hostingController.sizeThatFits(in: proposal).height
+        passes.append(height)
+        for _ in 0..<2 {
+            let next = hostingController.sizeThatFits(in: proposal).height
+            passes.append(next)
+            if abs(next - height) < 1 { height = next; break }
+            height = next
+        }
+        if !(height.isFinite && height > 0) {
+            height = bounds.height.isFinite ? bounds.height : 0
+        }
+        if Self.hostFitLogCount < 300 {
+            Self.hostFitLogCount += 1
+            let passStr = passes.map { String(format: "%.0f", $0) }.joined(separator: "/")
+            AppLogger(category: "HostFit").info(
+                "[HostFit] tw=\(String(format: "%.0f", targetSize.width)) mw=\(String(format: "%.0f", measureWidth)) bw=\(String(format: "%.0f", bounds.width)) passes=\(passStr) out=\(String(format: "%.0f", height))")
+        }
         return CGSize(width: measureWidth, height: height)
     }
+
+    /// Temporary [HostFit] diagnostic counter (see systemLayoutSizeFitting).
+    private static var hostFitLogCount = 0
 
     private func attachIfNeeded(parent: UIViewController?) {
         guard let parent, hostingController.parent !== parent else { return }
