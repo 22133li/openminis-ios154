@@ -4023,11 +4023,13 @@ struct ContentView: View {
 
     @available(iOS 26.0, *)
     private func _fetchAlarmsImpl() {
+        #if canImport(AlarmKit)
         AlarmOffloadBridge.listAlarms { arr, _ in
             DispatchQueue.main.async {
                 hasAlarms = (arr?.count ?? 0) > 0
             }
         }
+        #endif
     }
 
     // MARK: - Navigation Helper

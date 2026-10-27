@@ -31,7 +31,7 @@ enum AudioTogglePlaybackBridge {
 /// compiling.
 @available(iOS 17.0, *)
 struct AudioTogglePlaybackIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Play or Pause Narration"
+    static var title: Foundation.LocalizedStringResource = "Play or Pause Narration"
     static var description = IntentDescription("Toggles play/pause on Minis audio narration from the Live Activity.")
     /// Never bring the app to the foreground — the whole point is to control
     /// playback from the Lock Screen / Dynamic Island in place.

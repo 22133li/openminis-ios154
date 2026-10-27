@@ -2817,13 +2817,6 @@ struct AIChatView: View {
                 onScreenshotImage: { image in
                     screenshotPreview = ChatScreenshotPreview(image: image)
                 },
-                // iOS 15 backport: message attachments open via the same
-                // minis:// tap handler the rest of the transcript uses.
-                onOpenAttachment: { [self] meta in
-                    if let url = meta.fileTapURL {
-                        _ = handleMinisURLTap(url)
-                    }
-                },
                 maxContentWidth: maxContentWidth ?? 0,
                 floatingBarHeight: floatingBarHeight,
                 inputBarHeight: inputBarHeight

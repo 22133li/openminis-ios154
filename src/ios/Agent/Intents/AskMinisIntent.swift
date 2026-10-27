@@ -13,7 +13,7 @@ private let logger = AppLogger(category: "AskMinisIntent")
 /// New session when `session` is nil; follow-up when a `SessionEntity` is given.
 @available(iOS 16, *)
 struct AskMinisIntent: AppIntent {
-    static var title: LocalizedStringResource = "Ask Minis"
+    static var title: Foundation.LocalizedStringResource = "Ask Minis"
     static var description = IntentDescription("Opens Minis, sends your prompt, and shows the conversation. Starts a new session, or continues an existing one when you pick a session.")
 
     // Open the app and land in the conversation (the Siri experience). The send

@@ -1260,3 +1260,21 @@ final class CellStateBridgeV2: ObservableObject {
     /// Compact summary — presented from overlay outside cell tree for animation.
     var onShowCompactSummary: ((String) -> Void)?
 }
+
+// MARK: - Context Menu With Preview (iOS 15 backport)
+
+/// Upstream uses `.contextMenu(menuItems:preview:)`, which is iOS 16+.
+/// On iOS 15 only the menu-only form exists, so fall back to it there;
+/// on iOS 16+ the lifted preview is preserved verbatim.
+extension View {
+    @ViewBuilder func contextMenuWithPreview<MenuItems: View, Preview: View>(
+        @ViewBuilder menuItems: () -> MenuItems,
+        @ViewBuilder preview: () -> Preview
+    ) -> some View {
+        if #available(iOS 16.0, *) {
+            self.contextMenu(menuItems: menuItems, preview: preview)
+        } else {
+            self.contextMenu(menuItems: menuItems)
+        }
+    }
+}
