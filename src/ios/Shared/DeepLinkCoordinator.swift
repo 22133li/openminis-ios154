@@ -29,9 +29,6 @@ enum SettingsDeepLinkTarget: Equatable {
     case about
     case permissions
     case environments
-    /// Auto-Compact settings (global auto-compaction switch + context
-    /// budget). Reachable as `minis://settings/auto-compact`.
-    case autoCompact
     /// [T-mcp-oauth-deeplink] MCP Integrations list / a specific server's
     /// edit form (where the Authorize button lives).
     case mcpIntegrations

@@ -201,9 +201,6 @@ enum DeepLinkRouter {
             }
             coord.pendingSettingsTarget = .environments
 
-        case "auto-compact", "autocompact", "auto_compact":
-            coord.pendingSettingsTarget = .autoCompact
-
         case "rootfs", "rootfs-management", "rootfs_management",
              "mirrors":
             // RootfsManagementView lives in its own sheet on iOS, not
