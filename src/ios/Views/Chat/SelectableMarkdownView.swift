@@ -7447,6 +7447,55 @@ final class SelectableMarkdownTextView: UITextView, UIGestureRecognizerDelegate 
         return Int(total.rounded())
     }
 
+    // [ios15-size-hook] iOS 15 backport of the sizing contract upstream
+    // implements in the representable's sizeThatFits(_:uiView:context:) -
+    // an iOS 16+ UIViewRepresentable requirement the iOS 15 runtime never
+    // calls, so on 15.4 nothing ever measured the PENDING content: a fresh
+    // text view (empty storage) measured one line (~32pt) and a reused one
+    // measured the previous cell's content, which is exactly the collapsed /
+    // stale heights the message list showed on device (build109-113). The
+    // two overrides below give the view itself a truthful answer whenever
+    // UIKit or SwiftUI asks the view directly (the only sizing channel iOS
+    // 15 has, and the same one invalidateCellSizeIfNeeded uses on every
+    // version): force a full layout of the CURRENT storage at the queried
+    // width and report the used rect, mirroring the real-measure path of
+    // the iOS 16 hook. A bogus probe width (non-finite / sentinel / zero -
+    // SwiftUI's fitting passes probe with those) falls back to the view's
+    // own laid-out width, then the screen width. On iOS 16+ the
+    // representable hook stays the primary path; these answers are computed
+    // by the same formula it uses, so behavior does not diverge.
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
+        guard textStorage.length > 0 else {
+            return super.sizeThatFits(size)
+        }
+        var targetWidth = size.width
+        if !(targetWidth.isFinite && targetWidth > 1 && targetWidth < 4096) {
+            targetWidth = bounds.width > 1 ? bounds.width : UIScreen.main.bounds.width
+        }
+        let containerWidth = max(0, targetWidth - textContainerInset.left - textContainerInset.right)
+        let oldContainerSize = textContainer.size
+        if abs(oldContainerSize.width - containerWidth) > 0.5
+            || oldContainerSize.height < CGFloat.greatestFiniteMagnitude {
+            textContainer.size = CGSize(width: containerWidth,
+                                        height: CGFloat.greatestFiniteMagnitude)
+        }
+        layoutManager.ensureLayout(for: textContainer)
+        let used = layoutManager.usedRect(for: textContainer)
+        if textContainer.size != oldContainerSize {
+            textContainer.size = oldContainerSize
+        }
+        let height = ceil(used.height) + textContainerInset.top + textContainerInset.bottom
+        return CGSize(width: targetWidth, height: height)
+    }
+
+    override var intrinsicContentSize: CGSize {
+        if bounds.width > 1 {
+            return sizeThatFits(CGSize(width: bounds.width,
+                                       height: CGFloat.greatestFiniteMagnitude))
+        }
+        return super.intrinsicContentSize
+    }
+
     func invalidateCellSizeIfNeeded() {
         guard textContainer.size.width > 1 else {
             return
@@ -8033,6 +8082,16 @@ struct SelectableMarkdownView: UIViewRepresentable {
         let rId = String(ObjectIdentifier(context.coordinator.renderer).hashValue & 0xFFFFFF, radix: 16)
         AppLogger(category: "MarkdownRenderer").info("[MK-VIEW] new textView rnd=\(rId)")
         #endif
+        // [ios15-size-hook] Commit the pending content NOW, during make.
+        // Sizing queries can reach the view before SwiftUI's first
+        // updateUIView (the ordering upstream's iOS 16 sizeThatFits hook
+        // exists to work around); with the view-level sizing channel above,
+        // a query landing in that window would measure the empty storage
+        // and cache a one-line height for this cell. updateUIView is
+        // deduped by coordinator.lastMarkdown, so the system's own update
+        // pass right after this returns is a no-op - total render work is
+        // unchanged, it just happens before the first possible measure.
+        updateUIView(textView, context: context)
         return textView
     }
 
