@@ -673,6 +673,80 @@ class SelfSizingCell: UICollectionViewCell {
     }
 }
 
+
+// MARK: - Hosting Cell Content (iOS 15 replacement for UIHostingConfiguration)
+
+/// [ios15-backport] `UIHostingConfiguration` is iOS 16+. This pair provides
+/// the same contract through the iOS 13+ mechanism it replaced: a
+/// `UIContentConfiguration` whose content view hosts a SwiftUI view via a
+/// `UIHostingController` pinned to the content view's edges — equivalent to
+/// upstream's `.minSize(width: 0, height: 0).margins(.all, 0)` (zero margins,
+/// no minimum size; sizing flows through `systemLayoutSizeFitting`, which is
+/// exactly what `SelfSizingCell` measures).
+struct HostingCellConfiguration: UIContentConfiguration {
+    var rootView: AnyView
+    /// List view controller the hosting controller is added to as a child,
+    /// so SwiftUI lifecycle callbacks (onAppear/onDisappear) fire as they do
+    /// under UIHostingConfiguration.
+    weak var hostParent: UIViewController?
+
+    func makeContentView() -> UIView & UIContentView {
+        HostingCellContentView(configuration: self)
+    }
+
+    func updated(for state: UIConfigurationState) -> HostingCellConfiguration {
+        self
+    }
+}
+
+final class HostingCellContentView: UIView, UIContentView {
+    private let hostingController: UIHostingController<AnyView>
+    private var currentConfiguration: HostingCellConfiguration
+
+    var configuration: UIContentConfiguration {
+        get { currentConfiguration }
+        set {
+            guard let newConfig = newValue as? HostingCellConfiguration else { return }
+            currentConfiguration = newConfig
+            hostingController.rootView = newConfig.rootView
+            attachIfNeeded(parent: newConfig.hostParent)
+            hostingController.view.invalidateIntrinsicContentSize()
+            setNeedsLayout()
+        }
+    }
+
+    init(configuration: HostingCellConfiguration) {
+        currentConfiguration = configuration
+        hostingController = UIHostingController(rootView: configuration.rootView)
+        super.init(frame: .zero)
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(hostingController.view)
+        NSLayoutConstraint.activate([
+            hostingController.view.leadingAnchor.constraint(equalTo: leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: trailingAnchor),
+            hostingController.view.topAnchor.constraint(equalTo: topAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+        attachIfNeeded(parent: configuration.hostParent)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func attachIfNeeded(parent: UIViewController?) {
+        guard let parent, hostingController.parent !== parent else { return }
+        if hostingController.parent != nil {
+            hostingController.willMove(toParent: nil)
+            hostingController.removeFromParent()
+        }
+        parent.addChild(hostingController)
+        hostingController.didMove(toParent: parent)
+    }
+}
+
+
 // MARK: - NoAnimationCollectionView
 
 /// UICollectionView subclass that strips ALL UIKit implicit animations.
