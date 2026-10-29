@@ -120,8 +120,15 @@ fetch_ffmpeg_source() {
 
     log_info "FFmpeg source not present — downloading ${version}..."
     if ! curl -fL# "$url" -o "$tmp/$tarball"; then
-        rm -rf "$tmp"
-        log_error "Failed to download $url — check your network, or place the source at $FFMPEG_DIR manually."
+        # [mirror-fallback 2026-10-29] ffmpeg.org timed out / reset the download
+        # from CI runners twice in a row. MacPorts distfiles mirrors the identical
+        # tarball (SHA256 3b624649725ecdc565c903ca6643d41f33bd49239922e45c9b1442c63dca4e38,
+        # size 10466152 — cross-checked against FreeBSD ports distinfo).
+        log_info "Primary download failed - trying MacPorts distfiles mirror..."
+        if ! curl -fL# "https://distfiles.macports.org/ffmpeg/${tarball}" -o "$tmp/$tarball"; then
+            rm -rf "$tmp"
+            log_error "Failed to download $url — check your network, or place the source at $FFMPEG_DIR manually."
+        fi
     fi
 
     log_info "Extracting..."
