@@ -6,6 +6,12 @@ import UserNotifications
 private let shareLog = AppLogger(category: "Share")
 private let lifecycleLog = AppLogger(category: "Lifecycle")
 
+// [Bisect117] TEMPORARY DIAGNOSTIC (build117 / 1.33, signal-loss bisect —
+// remove after diagnosis): when true, the root view's onAppear skips the
+// launch-time subsystem group: NetworkMonitor, BackgroundKeepAlive setup,
+// mounted-folder activation + iSH mount symlinks, AppGroupChangeWatcher.
+private let bisect117DisableLaunchGroup = true
+
 // MARK: - Bundle Language Override
 
 /// Overrides `Bundle.main.localizedString(forKey:value:table:)` so that
@@ -421,10 +427,13 @@ struct MinisApp: App {
                     Task { await ProviderConfigStore.shared.createDefaultGroupIfNeeded() }
                     shareLog.info("[Share] onAppear — checking for pending share")
                     shareCoordinator.checkForPendingShare()
+                    if bisect117DisableLaunchGroup {
+                        shareLog.info("[Bisect117] launch group DISABLED (NetworkMonitor, BackgroundKeepAlive, MountedFolders, AppGroupChangeWatcher)")
+                    }
                     // Set up background keep-alive manager
-                    BackgroundKeepAliveManager.shared.setup()
+                    if !bisect117DisableLaunchGroup { BackgroundKeepAliveManager.shared.setup() }
                     // Monitor network changes to keep iSH DNS up to date
-                    NetworkMonitor.shared.start()
+                    if !bisect117DisableLaunchGroup { NetworkMonitor.shared.start() }
                     // Register FileProvider domain for shared files (iOS 16+)
                     if #available(iOS 16.0, *) {
                         Self.registerFileProviderDomain()
@@ -437,13 +446,13 @@ struct MinisApp: App {
                     Self.logFPSyncTracePaths()
                     // Start watching shared/skills/memory subtrees so iSH writes
                     // and FileBrowserView mutations propagate to the Files app.
-                    AppGroupChangeWatcher.shared.start()
+                    if !bisect117DisableLaunchGroup { AppGroupChangeWatcher.shared.start() }
                     // Activate security scopes for user-mounted external folders
                     // (e.g. Obsidian vault in iCloud Drive). Held for app lifetime.
-                    MountedFoldersManager.shared.activateAll()
+                    if !bisect117DisableLaunchGroup { MountedFoldersManager.shared.activateAll() }
                     // Create /var/minis/mounts/<name> symlinks in the fakefs now
                     // that the rootfs exists and mounts are active.
-                    AIChatViewModel.refreshMountedFolderSymlinks()
+                    if !bisect117DisableLaunchGroup { AIChatViewModel.refreshMountedFolderSymlinks() }
                     // Start iCloud sync engine. v2 takes precedence when its
                     // feature flag is on (see SyncV2Bootstrap); v1 stays
                     // paused while v2 is active. When v2 is off, v1 boots
