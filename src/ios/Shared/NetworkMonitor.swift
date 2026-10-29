@@ -26,7 +26,7 @@ final class NetworkMonitor {
         lastInterfaceTypes = activeInterfaceTypes(initialPath)
         logger.info("[Network] Monitor started — writing initial DNS config")
         NSLog("NetworkMonitor: about to refreshDns + dump proxy")
-        ISHKernel.shared.refreshDns()
+        if !bisect118SkipEarlyWork { ISHKernel.shared.refreshDns() }
         dumpSystemProxySettings(reason: "monitor-start")
 
         monitor.pathUpdateHandler = { [weak self] path in
@@ -61,7 +61,7 @@ final class NetworkMonitor {
             logger.info("[Network] Path updated — refreshing DNS")
         }
 
-        ISHKernel.shared.refreshDns()
+        if !bisect118SkipEarlyWork { ISHKernel.shared.refreshDns() }
         dumpSystemProxySettings(reason: typesChanged ? "interface-change" : "path-update")
 
         // Evict LLM provider connection pools ONLY when the active interface
