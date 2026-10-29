@@ -6,14 +6,6 @@ import UserNotifications
 private let shareLog = AppLogger(category: "Share")
 private let lifecycleLog = AppLogger(category: "Lifecycle")
 
-// [Bisect118] TEMPORARY DIAGNOSTIC (build118 / 1.34, signal-loss bisect #2 —
-// remove after diagnosis): when true, launch skips the first-second heavy
-// work group: KaTeX WKWebView warm-up, biometric prewarm, ChatStore deferred
-// migrations + zombie sweep, session-badge tail scan/reconcile, provider
-// migration/refresh, and every launch-time ISHKernel touch (NetworkMonitor
-// refreshDns, scene-active refreshDns, mounted-folder activation).
-let bisect118SkipEarlyWork = true
-
 // MARK: - Bundle Language Override
 
 /// Overrides `Bundle.main.localizedString(forKey:value:table:)` so that
@@ -136,7 +128,6 @@ struct MinisApp: App {
         //
         // `install` is idempotent, so the later onAppLaunch() call is a no-op.
         CrashSignalHandler.install()
-        if bisect118SkipEarlyWork { lifecycleLog.info("[Bisect118] early-work group SKIPPED (KaTeX, Biometric, ChatStore migrations/sweep, badge scan, provider refresh, ISHKernel launch touches)") }
         // [T-auto-grouping-default-on] Auto-grouping ships ON. `bool(forKey:)`
         // returns false for an unregistered key, so the default has to be
         // registered here rather than expressed at the (multiple) read sites —
@@ -172,13 +163,13 @@ struct MinisApp: App {
         // user set a custom name. refreshCache() only reads the tiny SOUL.md file.
         SoulStore.refreshCache()
         // Pre-warm KaTeX WKWebView as fallback for formulas SwiftMath can't render
-        if !bisect118SkipEarlyWork { KaTeXRenderer.shared.warmUp() }
+        KaTeXRenderer.shared.warmUp()
         // Pre-warm the biometric capability probe off the main thread. The
         // first LAContext.canEvaluatePolicy call cold-starts the
         // LocalAuthentication XPC daemon (~500 ms); without this it would run
         // inline on the first sessionContextMenu builder during scroll and
         // hang a frame. (T-ios-biometric-probe-scroll-hang)
-        if !bisect118SkipEarlyWork { BiometricAuth.prewarm() }
+        BiometricAuth.prewarm()
         // Clean up Live Activities left over from a previous app session (e.g. app was killed)
         AgentLiveActivityManager.shared.cleanupStaleActivities(source: "MinisApp.init")
         // Start screen-awake controller — it will observe running tasks
@@ -190,7 +181,7 @@ struct MinisApp: App {
         // Cold start only (this init runs once per process) and at background
         // priority: it competes with nothing, and a zombie that survives one
         // extra launch costs nothing.
-        if !bisect118SkipEarlyWork { Task.detached(priority: .background) {
+        Task.detached(priority: .background) {
             // [T-ios27-scene-create-watchdog] Run the one-shot data migrations
             // that used to sit inside ChatStore's dispatch_once (the part_flags
             // backfill and the v1 dirty-row sweep). They are bulk UPDATE/DELETE
@@ -203,7 +194,7 @@ struct MinisApp: App {
             // before that query runs; both are idempotent and actor-serialised.
             await ChatStore.shared.runDeferredMigrations()
             await ChatStore.shared.sweepZombieChildSessions()
-        } }
+        }
     }
 
     /// [T-ios-reboot-keychain-identity-rotation] The sync bootstrap, factored out
@@ -415,19 +406,19 @@ struct MinisApp: App {
                     // Ownership is enforced where it belongs, by the run token
                     // in BackupRunController.finished(token:).
                     // Migrate legacy provider config on first launch after upgrade
-                    if !bisect118SkipEarlyWork { ProviderMigration.migrateIfNeeded(store: ProviderConfigStore.shared) }
+                    ProviderMigration.migrateIfNeeded(store: ProviderConfigStore.shared)
                     // Refresh model lists once per day to keep them current
-                    if !bisect118SkipEarlyWork { ProviderConfigStore.shared.refreshAllModelsIfNeeded() }
+                    ProviderConfigStore.shared.refreshAllModelsIfNeeded()
                     // [T-mimo-shadow-voice] One-time upgrade fix: force-refresh
                     // mixed-modality providers (MiMo/DashScope) mis-classified by
                     // the old voice-only whitelist, so their text models + shadow
                     // voice rows recover promptly without waiting for a natural refresh.
-                    if !bisect118SkipEarlyWork { ProviderConfigStore.shared.migrateVoiceModalityIfNeeded() }
+                    ProviderConfigStore.shared.migrateVoiceModalityIfNeeded()
                     // [T-tools-granular-switches] Carry the one-round master
                     // Tools switch forward into the per-tool Agents switch.
                     AgentToolSwitch.migrateLegacyIfNeeded()
                     // For existing users with no model groups, create a default group silently
-                    if !bisect118SkipEarlyWork { Task { await ProviderConfigStore.shared.createDefaultGroupIfNeeded() } }
+                    Task { await ProviderConfigStore.shared.createDefaultGroupIfNeeded() }
                     shareLog.info("[Share] onAppear — checking for pending share")
                     shareCoordinator.checkForPendingShare()
                     // Set up background keep-alive manager
@@ -449,10 +440,10 @@ struct MinisApp: App {
                     AppGroupChangeWatcher.shared.start()
                     // Activate security scopes for user-mounted external folders
                     // (e.g. Obsidian vault in iCloud Drive). Held for app lifetime.
-                    if !bisect118SkipEarlyWork { MountedFoldersManager.shared.activateAll() }
+                    MountedFoldersManager.shared.activateAll()
                     // Create /var/minis/mounts/<name> symlinks in the fakefs now
                     // that the rootfs exists and mounts are active.
-                    if !bisect118SkipEarlyWork { AIChatViewModel.refreshMountedFolderSymlinks() }
+                    AIChatViewModel.refreshMountedFolderSymlinks()
                     // Start iCloud sync engine. v2 takes precedence when its
                     // feature flag is on (see SyncV2Bootstrap); v1 stays
                     // paused while v2 is active. When v2 is off, v1 boots
@@ -564,7 +555,6 @@ struct MinisApp: App {
                 // [T-ios-group-pause-badge-reconcile-stamp] Carry each tail's
                 // own date so a restored marker is stamped with WHEN the
                 // session was interrupted, not with "now".
-                if !bisect118SkipEarlyWork {
                 let interruptedWithDates = await ChatStore.shared.interruptedSessionsWithTailDate()
                 let interruptedSessions = Set(interruptedWithDates.keys)
                 // Exclude sessions that are actively streaming RIGHT NOW: a
@@ -582,8 +572,7 @@ struct MinisApp: App {
                     interruptedSessions.subtracting(activeNow),
                     entryDates: interruptedWithDates,
                     trigger: "launch-or-foreground")
-                }
-                if !bisect118SkipEarlyWork { ISHKernel.shared.refreshDns() }
+                ISHKernel.shared.refreshDns()
 
                 #if DEBUG
                 debugServer.restartIfDead(port: 8321)
