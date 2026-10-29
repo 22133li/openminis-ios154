@@ -37,11 +37,13 @@ enum RcloneBridge {
 
     /// Idempotent. Must run before any RPC; safe to call from anywhere.
     static func initializeIfNeeded() {
+        // [Bisect119] TEMPORARY DIAGNOSTIC (build119 / 1.35, signal-loss structural
+        // test — remove after diagnosis): the rclone Go c-archive is NOT linked
+        // into this build, so no MinisRclone* C call may be referenced. All RPCs
+        // throw; rclone-backed backup destinations report as failed.
         guard !initialised else { return }
-        MinisRcloneInitialize()
         initialised = true
-        applyGlobalOptions()
-        logger.info("[Rclone] initialised")
+        logger.info("[Bisect119] rclone stubbed — Go runtime not linked in this build")
     }
 
     /// rclone's defaults are tuned for a desktop batch job, not a phone.
@@ -146,54 +148,16 @@ enum RcloneBridge {
     @discardableResult
     private static func rpcUnchecked(_ method: String,
                                      _ params: [String: Any] = [:]) throws -> [String: Any] {
-        let input = String(data: try JSONSerialization.data(withJSONObject: params),
-                           encoding: .utf8) ?? "{}"
-        let cMethod = strdup(method)
-        let cInput = strdup(input)
-        defer { free(cMethod); free(cInput) }
-        var status: Int32 = 0
-        guard let raw = MinisRcloneRPC(cMethod, cInput, &status) else {
-            throw RPCError(status: -1, payload: "")
-        }
-        defer { MinisRcloneFreeString(raw) }
-        let out = String(cString: raw)
-        guard status == 200 else { throw RPCError(status: Int(status), payload: out) }
-        guard let d = out.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any]
-        else { return [:] }
-        return obj
+        // [Bisect119] stubbed — see initializeIfNeeded.
+        throw RPCError(status: -119, payload: "rclone unlinked in build119 diagnostic")
     }
 
     /// One RPC call. `params` is encoded to JSON; the reply is decoded from it.
     @discardableResult
     static func rpc(_ method: String, _ params: [String: Any] = [:]) throws -> [String: Any] {
         initializeIfNeeded()
-
-        let input = String(
-            data: try JSONSerialization.data(withJSONObject: params),
-            encoding: .utf8) ?? "{}"
-
-        // cgo declares the parameters as `char *` (mutable), so Swift will not
-        // accept a String or a `const char *` bridge. strdup gives us a
-        // mutable copy we own; both are freed before returning.
-        let cMethod = strdup(method)
-        let cInput = strdup(input)
-        defer { free(cMethod); free(cInput) }
-
-        var status: Int32 = 0
-        guard let raw = MinisRcloneRPC(cMethod, cInput, &status) else {
-            throw RPCError(status: -1, payload: "")
-        }
-        // The C string is malloc'd by Go and owned by us — free it on every
-        // path, including the throwing ones.
-        defer { MinisRcloneFreeString(raw) }
-        let out = String(cString: raw)
-
-        guard status == 200 else { throw RPCError(status: Int(status), payload: out) }
-        guard let d = out.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any]
-        else { return [:] }
-        return obj
+        // [Bisect119] stubbed — see initializeIfNeeded.
+        throw RPCError(status: -119, payload: "rclone unlinked in build119 diagnostic")
     }
 
     /// Stage 0 smoke test: prove the Go runtime starts and answers on-device.

@@ -64,4 +64,8 @@
 #endif /* MinisApp_Bridging_Header_h */
 
 // rclone static library (deps/frameworks/Rclone.xcframework) — see RcloneBridge.swift
+// [Bisect119] TEMPORARY: rclone is unlinked in build119; skip the import when
+// the header is not on the search path.
+#if __has_include("librclone.h")
 #import "librclone.h"
+#endif
