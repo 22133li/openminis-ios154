@@ -10,6 +10,7 @@ final class NetworkMonitor {
     private let queue = DispatchQueue(label: "com.openminis.networkmonitor")
     private let logger = AppLogger(category: "Network")
     private var lastInterfaceTypes: Set<NWInterface.InterfaceType> = []
+    private var lastSatisfied = false
     private var isStarted = false
 
     private init() {}
@@ -24,6 +25,7 @@ final class NetworkMonitor {
         // delayed by several hundred milliseconds).
         let initialPath = monitor.currentPath
         lastInterfaceTypes = activeInterfaceTypes(initialPath)
+        lastSatisfied = initialPath.status == .satisfied
         logger.info("[Network] Monitor started — writing initial DNS config")
         NSLog("NetworkMonitor: about to refreshDns + dump proxy")
         ISHKernel.shared.refreshDns()
@@ -49,7 +51,12 @@ final class NetworkMonitor {
         logger.info("[Network] Path update — status: \(String(describing: path.status)), interfaces: \(currentTypes.map { String(describing: $0) })")
 
         let typesChanged = currentTypes != lastInterfaceTypes
+        // [ios15-signal-fix] Detect unsatisfied -> satisfied recovery on the
+        // SAME interface set (e.g. a WiFi blip): no interface change fires,
+        // but pooled connections may still be dead sockets.
+        let recovered = satisfied && !lastSatisfied
         lastInterfaceTypes = currentTypes
+        lastSatisfied = satisfied
 
         // Always refresh DNS on any path update — even when unsatisfied, refreshDns
         // will write the public-DNS fallback so resolv.conf is never left empty.
@@ -75,6 +82,11 @@ final class NetworkMonitor {
         if typesChanged {
             LLMSessionRegistry.shared.evictAllConnections(
                 reason: satisfied ? "interface-change" : "connectivity-lost")
+        } else if recovered {
+            // [ios15-signal-fix] Connectivity restored without an interface
+            // change: evict stale pools so the next stream reconnects
+            // immediately instead of reusing a dead socket until timeout.
+            LLMSessionRegistry.shared.evictAllConnections(reason: "connectivity-restored")
         }
     }
 

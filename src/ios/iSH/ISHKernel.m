@@ -655,6 +655,8 @@ static void handle_process_exit(struct task *task, int code) {
     NSString *_rootPath;    // Host filesystem path to fakefs root (contains data/ + meta.db)
     NSString *_dataPath;    // Host filesystem path to fakefs data/ directory
     NSString *_dnsHostPath; // Host path to resolv.conf (Library/MinisChat/dns/resolv.conf)
+    BOOL _dnsRefreshRetryPending; // [ios15-signal-fix] a deferred DNS refresh is scheduled
+    int _dnsRefreshRetryCount;    // [ios15-signal-fix] deferred DNS refresh attempts so far
 
     // Command execution state
     NSMutableString *_commandOutputBuffer;
@@ -961,11 +963,42 @@ static void handle_process_exit(struct task *task, int code) {
 
 - (void)refreshDns {
     if (!_dnsHostPath) {
-        NSLog(@"ISHKernel: [DNS] Cannot refresh DNS — dnsHostPath not set yet");
+        // [ios15-signal-fix] NetworkMonitor starts before the kernel has
+        // booted and set _dnsHostPath (mountDnsConfig). The old code dropped
+        // the request, so a path update landing in that window left
+        // resolv.conf at the seeded fallback until the next network change.
+        // Defer instead: retry until the path exists (bounded, see below).
+        NSLog(@"ISHKernel: [DNS] Cannot refresh DNS — dnsHostPath not set yet (deferring)");
+        [self scheduleDeferredDnsRefresh];
         return;
     }
+    _dnsRefreshRetryCount = 0;
     NSLog(@"ISHKernel: [DNS] Refreshing DNS configuration");
     [self configureDns];
+}
+
+/// [ios15-signal-fix] Retry a deferred DNS refresh until mountDnsConfig has
+/// set _dnsHostPath. 0.5s interval, 20 attempts (~10s covers normal boot).
+- (void)scheduleDeferredDnsRefresh {
+    if (_dnsRefreshRetryPending) return;
+    _dnsRefreshRetryPending = YES;
+    __weak ISHKernel *weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        ISHKernel *strongSelf = weakSelf;
+        if (!strongSelf) return;
+        strongSelf->_dnsRefreshRetryPending = NO;
+        if (strongSelf->_dnsHostPath) {
+            strongSelf->_dnsRefreshRetryCount = 0;
+            NSLog(@"ISHKernel: [DNS] dnsHostPath ready — applying deferred DNS refresh");
+            [strongSelf configureDns];
+        } else if (++strongSelf->_dnsRefreshRetryCount < 20) {
+            [strongSelf scheduleDeferredDnsRefresh];
+        } else {
+            strongSelf->_dnsRefreshRetryCount = 0;
+            NSLog(@"ISHKernel: [DNS] deferred DNS refresh gave up — kernel not booted");
+        }
+    });
 }
 
 /// Build resolv.conf content from iOS system resolver state.
@@ -1175,6 +1208,10 @@ static void handle_process_exit(struct task *task, int code) {
         struct task *prev = current;
         current = pid_get_task(1);
         if (current) {
+            // [ios15-signal-fix] Populate the host file with the real system
+            // DNS first, so the VFS fallback below writes actual nameservers
+            // instead of the seeded public fallback.
+            [self configureDns];
             NSString *seed = [NSString stringWithContentsOfFile:_dnsHostPath encoding:NSUTF8StringEncoding error:nil];
             if (seed) {
                 struct fd *fd = generic_open("/etc/resolv.conf", O_WRONLY_ | O_CREAT_ | O_TRUNC_, 0666);
