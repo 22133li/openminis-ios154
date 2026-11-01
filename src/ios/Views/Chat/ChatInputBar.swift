@@ -157,9 +157,13 @@ private struct FlowLayout16: Layout {
 
 
 // iOS 15 backport: the SwiftUI Layout protocol is iOS 16+. Keep the
-// upstream Layout implementation for iOS 16+; on iOS 15 use the measured
-// flow layout below, which runs the same arrange algorithm (same wrap
-// condition, row heights, spacing, and trailing-row alignment).
+// upstream Layout implementation for iOS 16+; on iOS 15 fall back to
+// LazyVGrid (the pre-build109, device-verified behaviour). The measured
+// _VariadicView FlowLayout15 shipped in build109 (69a4c29) rendered
+// nothing on 15.4: picked-file chips and sent attachment tiles were
+// invisible while the attachments themselves were registered and sent
+// (user recording, 2026-11-01). Trailing tile lists do not use this
+// fallback; they use TrailingTileRows below (see UserAttachmentList).
 private struct FlowLayout<Content: View>: View {
     var hSpacing: CGFloat = 8
     var vSpacing: CGFloat = 8
@@ -179,144 +183,10 @@ private struct FlowLayout<Content: View>: View {
                 content
             }
         } else {
-            FlowLayout15(hSpacing: hSpacing, vSpacing: vSpacing, alignment: alignment) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 60), spacing: hSpacing)], alignment: .leading, spacing: vSpacing) {
                 content
             }
         }
-    }
-}
-
-private struct FlowLayout15<Content: View>: View {
-    var hSpacing: CGFloat = 8
-    var vSpacing: CGFloat = 8
-    var alignment: HorizontalAlignment = .leading
-    let content: Content
-
-    init(hSpacing: CGFloat = 8, vSpacing: CGFloat = 8, alignment: HorizontalAlignment = .leading, @ViewBuilder content: () -> Content) {
-        self.hSpacing = hSpacing
-        self.vSpacing = vSpacing
-        self.alignment = alignment
-        self.content = content()
-    }
-
-    var body: some View {
-        _VariadicView.Tree(FlowLayout15Root(hSpacing: hSpacing, vSpacing: vSpacing, alignment: alignment)) {
-            content
-        }
-    }
-}
-
-private struct FlowLayout15SizePreferenceKey: PreferenceKey {
-    static var defaultValue: [AnyHashable: CGSize] = [:]
-    static func reduce(value: inout [AnyHashable: CGSize], nextValue: () -> [AnyHashable: CGSize]) {
-        value.merge(nextValue()) { _, new in new }
-    }
-}
-
-private struct FlowLayout15Root: _VariadicView.UnaryViewRoot {
-    var hSpacing: CGFloat
-    var vSpacing: CGFloat
-    var alignment: HorizontalAlignment
-
-    @State private var measuredSizes: [AnyHashable: CGSize] = [:]
-    @State private var containerWidth: CGFloat = 0
-
-    func body(children: _VariadicView.Children) -> some View {
-        let maxWidth = containerWidth > 0 ? containerWidth : .infinity
-        let result = arrange(children: children, maxWidth: maxWidth)
-        return ZStack(alignment: .topLeading) {
-            ForEach(children) { child in
-                let index = children.firstIndex(where: { $0.id == child.id }) ?? 0
-                let position = index < result.positions.count ? result.positions[index] : .zero
-                let rowIndex = index < result.rowIndices.count ? result.rowIndices[index] : 0
-                let rowWidth = rowIndex < result.rowWidths.count ? result.rowWidths[rowIndex] : 0
-                let xOffset = (alignment == .trailing && containerWidth > 0)
-                    ? containerWidth - rowWidth + position.x
-                    : position.x
-                child
-                    .fixedSize()
-                    .background(
-                        GeometryReader { geometry in
-                            Color.clear.preference(
-                                key: FlowLayout15SizePreferenceKey.self,
-                                value: [child.id: geometry.size]
-                            )
-                        }
-                    )
-                    .offset(x: xOffset, y: position.y)
-            }
-        }
-        .frame(height: result.size.height)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            GeometryReader { geometry in
-                Color.clear
-                    .onAppear { updateContainerWidth(geometry.size.width) }
-                    .onChange(of: geometry.size.width) { updateContainerWidth($0) }
-            }
-        )
-        .onPreferenceChange(FlowLayout15SizePreferenceKey.self) { measuredSizes = $0 }
-    }
-
-    private func updateContainerWidth(_ width: CGFloat) {
-        guard width > 0, abs(containerWidth - width) > 0.5 else { return }
-        // State writes from inside a layout pass can recurse; defer a tick.
-        DispatchQueue.main.async { containerWidth = width }
-    }
-
-    private struct ArrangeResult {
-        var positions: [CGPoint]
-        var sizes: [CGSize]
-        var size: CGSize
-        var rowWidths: [CGFloat]
-        var rowIndices: [Int]
-    }
-
-    // Same packing algorithm as the upstream Layout's arrange(): walk the
-    // subviews in order, wrap when the next ideal size would exceed the
-    // available width (and the row is non-empty), track per-row widths for
-    // trailing alignment. Ideal sizes come from measuring each child at
-    // its fixed (unspecified-proposal) size above.
-    private func arrange(children: _VariadicView.Children, maxWidth: CGFloat) -> ArrangeResult {
-        var positions: [CGPoint] = []
-        var sizes: [CGSize] = []
-        var rowIndices: [Int] = []
-        var rowWidths: [CGFloat] = []
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var totalWidth: CGFloat = 0
-        var currentRow = 0
-
-        for child in children {
-            let size = measuredSizes[child.id] ?? .zero
-            if x + size.width > maxWidth, x > 0 {
-                // Finish current row
-                rowWidths.append(x - hSpacing)
-                currentRow += 1
-                x = 0
-                y += rowHeight + vSpacing
-                rowHeight = 0
-            }
-            positions.append(CGPoint(x: x, y: y))
-            sizes.append(size)
-            rowIndices.append(currentRow)
-            rowHeight = max(rowHeight, size.height)
-            x += size.width + hSpacing
-            totalWidth = max(totalWidth, x - hSpacing)
-        }
-        // Last row
-        if !children.isEmpty {
-            rowWidths.append(x - hSpacing)
-        }
-
-        return ArrangeResult(
-            positions: positions,
-            sizes: sizes,
-            size: CGSize(width: totalWidth, height: y + rowHeight),
-            rowWidths: rowWidths,
-            rowIndices: rowIndices
-        )
     }
 }
 
@@ -870,6 +740,39 @@ enum UserAttachmentTileMetrics {
     }
 }
 
+/// [ios15-trailing-tiles] iOS 15 stand-in for FlowLayout's .trailing packing
+/// of the uniform user-attachment tiles. The 16+ Layout reports the full
+/// proposed width and right-aligns every row inside it; the 15 LazyVGrid
+/// fallback cannot right-align a row (it fills columns from the leading
+/// edge and ignores the alignment), so the tile lists chunk their items
+/// into rows themselves. Row packing reuses
+/// UserAttachmentTileMetrics.tilesPerRow with the same available width the
+/// cell-height estimator uses (collection width - 32 cell - 60 spacer; the
+/// V3 list is full-bleed, so the collection width is the screen width),
+/// which keeps the rendered height identical to the estimate.
+/// Ported verbatim from nanoMuse round31 (9f72215, device-verified).
+struct TrailingTileRows<Item, Tile: View>: View {
+    let items: [Item]
+    @ViewBuilder let tile: (Item) -> Tile
+
+    var body: some View {
+        let per = max(1, UserAttachmentTileMetrics.tilesPerRow(
+            availableWidth: UIScreen.main.bounds.width - 32 - 60))
+        let rows: [[Item]] = stride(from: 0, to: items.count, by: per).map {
+            Array(items[$0 ..< min($0 + per, items.count)])
+        }
+        VStack(alignment: .trailing, spacing: UserAttachmentTileMetrics.gap) {
+            ForEach(rows.indices, id: \.self) { row in
+                HStack(spacing: UserAttachmentTileMetrics.gap) {
+                    ForEach(rows[row].indices, id: \.self) { col in
+                        tile(rows[row][col])
+                    }
+                }
+            }
+        }
+    }
+}
+
 struct UserAttachmentList: View {
     let attachments: [AttachmentMeta]
     @Environment(\.openURL) private var openURL
@@ -884,20 +787,34 @@ struct UserAttachmentList: View {
     }
 
     var body: some View {
-        FlowLayout(hSpacing: UserAttachmentTileMetrics.gap, vSpacing: UserAttachmentTileMetrics.gap, alignment: .trailing) {
-            ForEach(attachments) { meta in
-                if meta.isImage {
-                    AsyncImageTile(meta: meta, tileSize: tileSize) {
-                        openGallery(startingAt: meta)
-                    }
-                } else if meta.isVideo {
-                    AsyncVideoTile(meta: meta, tileSize: tileSize)
-                } else if meta.pastedId != nil {
-                    pastedTile(meta)
-                } else {
-                    fileTile(meta)
+        if #available(iOS 16, *) {
+            FlowLayout(hSpacing: UserAttachmentTileMetrics.gap, vSpacing: UserAttachmentTileMetrics.gap, alignment: .trailing) {
+                ForEach(attachments) { meta in
+                    tileContent(meta)
                 }
             }
+        } else {
+            // [ios15-trailing-tiles] See TrailingTileRows: the 15 fallback
+            // grid drops the .trailing alignment, landing tiles on the
+            // leading edge instead of over the bubble's right edge.
+            TrailingTileRows(items: attachments) { meta in
+                tileContent(meta)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func tileContent(_ meta: AttachmentMeta) -> some View {
+        if meta.isImage {
+            AsyncImageTile(meta: meta, tileSize: tileSize) {
+                openGallery(startingAt: meta)
+            }
+        } else if meta.isVideo {
+            AsyncVideoTile(meta: meta, tileSize: tileSize)
+        } else if meta.pastedId != nil {
+            pastedTile(meta)
+        } else {
+            fileTile(meta)
         }
     }
 
@@ -1064,18 +981,31 @@ struct QueuedAttachmentPreview: View {
     private let tileSize: CGFloat = UserAttachmentTileMetrics.tile
 
     var body: some View {
-        FlowLayout(hSpacing: UserAttachmentTileMetrics.gap, vSpacing: UserAttachmentTileMetrics.gap, alignment: .trailing) {
-            ForEach(attachments) { attachment in
-                switch attachment.kind {
-                case .image:
-                    AsyncCacheURLImageTile(cacheURL: attachment.cacheURL, tileSize: tileSize)
-                        .opacity(0.7)
-                case .video:
-                    placeholderTile(icon: "film", fileName: attachment.fileName)
-                case .document:
-                    placeholderTile(icon: "doc.fill", fileName: attachment.fileName)
+        if #available(iOS 16, *) {
+            FlowLayout(hSpacing: UserAttachmentTileMetrics.gap, vSpacing: UserAttachmentTileMetrics.gap, alignment: .trailing) {
+                ForEach(attachments) { attachment in
+                    tileContent(attachment)
                 }
             }
+        } else {
+            // [ios15-trailing-tiles] Same fallback-alignment loss as
+            // UserAttachmentList - chunked trailing rows on 15.
+            TrailingTileRows(items: attachments) { attachment in
+                tileContent(attachment)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func tileContent(_ attachment: InputAttachment) -> some View {
+        switch attachment.kind {
+        case .image:
+            AsyncCacheURLImageTile(cacheURL: attachment.cacheURL, tileSize: tileSize)
+                .opacity(0.7)
+        case .video:
+            placeholderTile(icon: "film", fileName: attachment.fileName)
+        case .document:
+            placeholderTile(icon: "doc.fill", fileName: attachment.fileName)
         }
     }
 
