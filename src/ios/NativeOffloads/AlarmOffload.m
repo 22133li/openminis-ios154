@@ -146,6 +146,11 @@ static dispatch_queue_t authQueue(void) {
     return q;
 }
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
+// Only compiled when the SDK provides AlarmKit (Xcode 26+): all four callers
+// of ensureAuthorization sit inside the same __IPHONE_OS_VERSION_MAX_ALLOWED gate below,
+// and AlarmOffloadBridge.swift is itself wrapped in #if canImport(AlarmKit), so on older
+// SDKs the bridge class does not exist and this function must not be compiled.
 static BOOL ensureAuthorization(int stdout_fd, NSString *action, BOOL compact, BOOL quiet) {
     __block BOOL authorized = NO;
     __block NSError *authError = nil;
@@ -175,6 +180,7 @@ static BOOL ensureAuthorization(int stdout_fd, NSString *action, BOOL compact, B
     }
     return authorized;
 }
+#endif /* __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000 */
 
 // ── AlarmKit availability ──
 //

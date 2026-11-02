@@ -35,8 +35,8 @@ struct BackupAndRestoreView: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("", selection: $tab) {
-                Text("Backup").tag(Tab.backup)
-                Text("Restore").tag(Tab.restore)
+                Text(AppLocalized("Backup")).tag(Tab.backup)
+                Text(AppLocalized("Restore")).tag(Tab.restore)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)

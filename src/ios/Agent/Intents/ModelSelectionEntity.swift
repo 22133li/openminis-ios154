@@ -3,6 +3,7 @@ import Foundation
 
 /// Represents a selectable model target in Shortcuts:
 /// either a ModelGroup (e.g. "Agent Loop") or a specific ModelEntry (e.g. "claude-opus-4-5").
+@available(iOS 16, *)
 struct ModelSelectionEntity: AppEntity {
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Default Model")
     static var defaultQuery = ModelSelectionEntityQuery()
@@ -12,6 +13,7 @@ struct ModelSelectionEntity: AppEntity {
     var subtitle: String
     var kind: Kind
 
+    @available(iOS 16, *)
     enum Kind: String {
         case group
         case entry
@@ -36,6 +38,7 @@ struct ModelSelectionEntity: AppEntity {
     }
 
     @MainActor
+    @available(iOS 16, *)
     func toSessionModelBinding(sessionId: String, store: ProviderConfigStore) -> SessionModelBinding? {
         switch kind {
         case .group:
@@ -57,6 +60,7 @@ struct ModelSelectionEntity: AppEntity {
     }
 }
 
+@available(iOS 16, *)
 struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
     typealias Result = IntentItemCollection<ModelSelectionEntity>
 
@@ -84,6 +88,7 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
     }
 
     @MainActor
+    @available(iOS 16, *)
     func entities(for identifiers: [String]) async throws -> [ModelSelectionEntity] {
         let store = ProviderConfigStore.shared
         var results: [ModelSelectionEntity] = []
@@ -96,6 +101,7 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
     }
 
     @MainActor
+    @available(iOS 16, *)
     func entities(matching string: String) async throws -> IntentItemCollection<ModelSelectionEntity> {
         let store = ProviderConfigStore.shared
         let query = string.lowercased()
@@ -126,14 +132,15 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
     }
 
     @MainActor
+    @available(iOS 16, *)
     func suggestedEntities() async throws -> IntentItemCollection<ModelSelectionEntity> {
         let store = ProviderConfigStore.shared
 
         let groupItems: [IntentItem<ModelSelectionEntity>] = store.config.modelGroups.map { group in
             IntentItem(
                 ModelSelectionEntity(group: group),
-                title: LocalizedStringResource(stringLiteral: group.name),
-                subtitle: LocalizedStringResource(stringLiteral: "Group · \(group.memberEntryIds.count) model\(group.memberEntryIds.count == 1 ? "" : "s")")
+                title: Foundation.LocalizedStringResource(stringLiteral: group.name),
+                subtitle: Foundation.LocalizedStringResource(stringLiteral: "Group · \(group.memberEntryIds.count) model\(group.memberEntryIds.count == 1 ? "" : "s")")
             )
         }
 
@@ -147,14 +154,15 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
                 return id
             }
 
+        @available(iOS 16, *)
         func providerItems(for instanceId: String) -> [IntentItem<ModelSelectionEntity>] {
             store.config.modelEntries
                 .filter { $0.providerInstanceId == instanceId && isOfferable($0, store: store) }
                 .map { entry in
                     IntentItem(
                         ModelSelectionEntity(entry: entry),
-                        title: LocalizedStringResource(stringLiteral: entry.model.displayName),
-                        subtitle: LocalizedStringResource(stringLiteral: entry.model.id)
+                        title: Foundation.LocalizedStringResource(stringLiteral: entry.model.displayName),
+                        subtitle: Foundation.LocalizedStringResource(stringLiteral: entry.model.id)
                     )
                 }
         }
@@ -164,7 +172,7 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
 
             if !groupItems.isEmpty {
                 sections.append(IntentItemSection(
-                    LocalizedStringResource("Model Groups"),
+                    Foundation.LocalizedStringResource("Model Groups"),
                     items: groupItems
                 ))
             }
@@ -174,7 +182,7 @@ struct ModelSelectionEntityQuery: EntityQuery, EntityStringQuery {
                 guard !items.isEmpty else { continue }
                 let label = store.instance(for: iid)?.label ?? "Unknown Provider"
                 sections.append(IntentItemSection(
-                    LocalizedStringResource(stringLiteral: label),
+                    Foundation.LocalizedStringResource(stringLiteral: label),
                     items: items
                 ))
             }

@@ -6,7 +6,7 @@ import Foundation
 /// then deletes all messages after the chosen one and re-runs the agent.
 @available(iOS 17.0, *)
 struct RetryRunIntent: AppIntent {
-    static var title: LocalizedStringResource = "Retry Run"
+    static var title: Foundation.LocalizedStringResource = "Retry Run"
     static var description = IntentDescription("Re-runs the AI agent from a specific user message in a session. Presents a list of user messages to choose from, then retries from that point.")
     static var openAppWhenRun = false
 
@@ -228,7 +228,7 @@ struct RetryRunIntent: AppIntent {
                 prompt: targetMessage.content,
                 responseText: responseText
             )
-            return .result(value: result, dialog: "\(responseText.prefix(500))")
+            return .result(value: result, dialog: "\(String(responseText.prefix(500)))")
         }
 
         // Async mode

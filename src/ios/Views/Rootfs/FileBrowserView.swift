@@ -164,23 +164,12 @@ struct FileBrowserView: View {
             }
         }
         .animation(.spring(response: 0.3), value: copiedToast)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Close") {
-                    dismiss()
-                }
-            }
-            // T-hidden-files a3e7f1d0: trailing toolbar collapsed to a
-            // single ⋯ menu. Previously surfaced Sort / Import (+) /
-            // Parent-dir (up.doc) as three separate buttons; users
-            // ignored the menu icon, accidentally tapped Import while
-            // trying to switch sort, etc. All functional actions now live
-            // under one entry point so the chrome stays consistent with
-            // the rest of the app's "... overflow" pattern.
-            ToolbarItem(placement: .navigationBarTrailing) {
-                moreMenu
-            }
-        }
+        .navigationBarItems(
+            leading: Button("Close") {
+                dismiss()
+            },
+            trailing: moreMenu
+        )
         .sheet(isPresented: $showExportSheet) {
             if let file = exportingFile {
                 DocumentExportView(fileURL: file.url)
@@ -219,7 +208,7 @@ struct FileBrowserView: View {
         .sheet(item: $moveOrCopyItem) { item in
             let minisPath = viewModel.rootPath.appendingPathComponent("var/minis")
             let initial = FileManager.default.fileExists(atPath: minisPath.path) ? minisPath : nil
-            NavigationStack {
+            NavigationView {
                 DirectoryPickerView(
                     rootPath: viewModel.rootPath,
                     rootLabel: viewModel.rootLabel,
@@ -416,15 +405,11 @@ private struct FilePreviewSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             content
                 .navigationTitle(item.name)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") { dismiss() }
-                    }
-                }
+                .navigationBarItems(trailing: Button("Done") { dismiss() })
         }
     }
 
@@ -487,25 +472,9 @@ private struct MarkdownFilePreview: View {
                 }
             }
         }
-        .toolbar {
-            if case .loaded = loadState {
-                ToolbarItem(placement: .topBarLeading) {
-                    // Single toggle button, NOT a segmented Picker.
-                    //
-                    // A `.segmented` Picker asks for the width of all its
-                    // segments, but a toolbar item on iOS 26's Liquid Glass
-                    // bar is laid out as one round glass button. The control
-                    // got squeezed into that circular slot and drew both
-                    // segments on top of each other — the reported "two
-                    // overlapping, distorted icons" (screenshot
-                    // /tmp/md_preview_toggle_bug.jpg), not an animation stuck
-                    // mid-transition.
-                    //
-                    // A plain Button showing ONE icon is what a toolbar slot
-                    // is shaped for, and it matches the icon-swap toggles
-                    // used elsewhere in the app. The icon shows the mode you
-                    // will switch TO, which is the convention for a toggle
-                    // that has no separate label.
+        .navigationBarItems(leading:
+            Group {
+                if case .loaded = loadState {
                     Button {
                         renderMode = (renderMode == .rendered) ? .source : .rendered
                     } label: {
@@ -513,12 +482,9 @@ private struct MarkdownFilePreview: View {
                               ? "chevron.left.forwardslash.chevron.right"
                               : "doc.richtext")
                     }
-                    .accessibilityLabel(renderMode == .rendered
-                                        ? Text("Show Source")
-                                        : Text("Show Rendered"))
                 }
             }
-        }
+        )
         .task { await load() }
     }
 
@@ -1661,16 +1627,12 @@ private struct DirectoryPickerView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
+        .navigationBarItems(
+            leading: Button("Cancel") { dismiss() },
+            trailing: Button("Select") {
+                onSelect(currentDir)
             }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Select") {
-                    onSelect(currentDir)
-                }
-            }
-        }
+        )
         .onAppear { loadDirectories() }
     }
 
@@ -1743,7 +1705,7 @@ private struct DirectoryPickerView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         FileBrowserView()
     }
 }

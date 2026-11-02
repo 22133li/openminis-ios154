@@ -25,7 +25,7 @@ struct FaceIDProtectionSettingsView: View {
             Section {
                 Toggle(isOn: $appLockEnabled) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Lock App")
+                        Text(AppLocalized("Lock App"))
                         Text("Require \(BiometricAuth.biometryDisplayName) to open Minis.")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
@@ -62,7 +62,7 @@ struct FaceIDProtectionSettingsView: View {
                         store.appLockIdleSeconds = newValue
                     }
                 } header: {
-                    Text("App Lock Timeout")
+                    Text(AppLocalized("App Lock Timeout"))
                 } footer: {
                     Text("How long after leaving the app before the lock re-engages.")
                 }
@@ -72,7 +72,7 @@ struct FaceIDProtectionSettingsView: View {
             Section {
                 Toggle(isOn: $enabled) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Lock Sessions")
+                        Text(AppLocalized("Lock Sessions"))
                         Text("Long-press a session in the list to lock it.")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
@@ -103,14 +103,14 @@ struct FaceIDProtectionSettingsView: View {
                     // Session-only timeout (bound to `idleSeconds`). The app-level
                     // lock has its own separate "App Lock Timeout" above bound to
                     // `appLockIdleSeconds` — so this stays session-scoped.
-                    Text("Session Lock Timeout")
+                    Text(AppLocalized("Session Lock Timeout"))
                 } footer: {
                     Text("After leaving an unlocked session, the lock re-engages once the idle window elapses.")
                 }
 
                 Section {
                     HStack {
-                        Text("Locked sessions")
+                        Text(AppLocalized("Locked sessions"))
                         Spacer()
                         Text("\(store.lockedSessionIds.count)")
                             .foregroundStyle(.secondary)

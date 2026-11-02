@@ -11,8 +11,9 @@ private let logger = AppLogger(category: "AskMinisIntent")
 /// It reuses the exact normal send pipeline (`AIChatViewModel.send()`) and the
 /// existing `.openSessionFromIntent` navigation path — no separate agent logic.
 /// New session when `session` is nil; follow-up when a `SessionEntity` is given.
+@available(iOS 16, *)
 struct AskMinisIntent: AppIntent {
-    static var title: LocalizedStringResource = "Ask Minis"
+    static var title: Foundation.LocalizedStringResource = "Ask Minis"
     static var description = IntentDescription("Opens Minis, sends your prompt, and shows the conversation. Starts a new session, or continues an existing one when you pick a session.")
 
     // Open the app and land in the conversation (the Siri experience). The send
@@ -26,6 +27,7 @@ struct AskMinisIntent: AppIntent {
     var session: SessionEntity?
 
     @MainActor
+    @available(iOS 16, *)
     func perform() async throws -> some IntentResult & ProvidesDialog {
         // Same eager keep-alive discipline as SendPromptIntent: arm before any
         // await so an intent-woken process isn't suspended before the send path

@@ -1,0 +1,104 @@
+name: iOS 15.4 Backport Build
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - run: |
+          brew install ninja llvm libarchive pkg-config meson
+          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
+      - run: xcodebuild -downloadComponent MetalToolchain || true
+      - name: Ensure lld for iSH VDSO build
+        run: |
+          # The iSH VDSO (aarch64-linux-gnu ELF) requires lld. Try Homebrew llvm's
+          # bundled lld first; fall back to installing the standalone lld formula.
+          set -x
+          export PATH="$(brew --prefix llvm)/bin:$PATH"
+          if ! command -v ld.lld >/dev/null 2>&1; then
+            echo "ld.lld not in llvm bin, trying brew lld formula"
+            brew install lld || true
+            export PATH="$(brew --prefix lld)/bin:$PATH" || true
+          fi
+          command -v ld.lld && ld.lld --version | head -2 || echo "WARNING: lld unavailable, VDSO will use stub fallback"
+      - run: |
+          cp src/ios/Configs/ProviderCustomization.xcconfig.example \
+             src/ios/Configs/ProviderCustomization.xcconfig || true
+      - run: |
+          ./deps/build_lame.sh
+          ./deps/build_ffmpeg.sh
+      - run: |
+          ./deps/build_ish.sh
+          ./deps/prepare_alpine_rootfs.sh
+      - run: ./deps/build_rclone_ios.sh
+      - run: |
+          cd src/ios
+          xcodebuild -project Minis.xcodeproj -scheme Minis -configuration Release \
+            -sdk iphoneos -derivedDataPath ../../build/derived \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM=""
+      - name: Ad-hoc sign app and extensions with project entitlements
+        run: |
+          APP_PATH=$(find build/derived/Build/Products/Release-iphoneos -name "Minis.app" -maxdepth 1)
+          echo "Ad-hoc signing $APP_PATH"
+          # Inside-out: embedded frameworks/dylibs first (no entitlements).
+          find "$APP_PATH" \( -name "*.framework" -o -name "*.dylib" \) -print0 | while IFS= read -r -d '' item; do
+            codesign -f -s - "$item"
+          done
+          # Extensions, each with its own entitlements file.
+          codesign -f -s - --entitlements src/ios/ShareExtension/ShareExtension.entitlements "$APP_PATH/PlugIns/MinisShare.appex"
+          codesign -f -s - --entitlements src/ios/FileProvider/FileProvider.entitlements "$APP_PATH/PlugIns/MinisFileProvider.appex"
+          codesign -f -s - --entitlements src/ios/AgentWidget/AgentWidget.entitlements "$APP_PATH/PlugIns/AgentWidgetExtension.appex"
+          # Main app last, with the full entitlement set (application-groups
+          # group.com.openminis.app). Builds were previously shipped
+          # completely unsigned (CODE_SIGNING_ALLOWED=NO); without the
+          # application-groups entitlement the App Group container is
+          # unavailable on device, so the Files "Open in Minis" and
+          # Share Extension pipelines silently dropped every file.
+          codesign -f -s - --entitlements src/ios/Minis.entitlements "$APP_PATH"
+          codesign -d --entitlements - "$APP_PATH" 2>/dev/null | grep -A1 application-groups || true
+      - run: |
+          APP_PATH=$(find build/derived/Build/Products/Release-iphoneos -name "Minis.app" -maxdepth 1)
+          mkdir -p build/ipa/Payload
+          cp -R "$APP_PATH" build/ipa/Payload/
+          cd build/ipa && zip -qr Minis-iOS154.ipa Payload && cd ../..
+          ls -lh build/ipa/Minis-iOS154.ipa
+          shasum -a 256 build/ipa/Minis-iOS154.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Minis-iOS154
+          path: build/ipa/Minis-iOS154.ipa
+
+  uitest:
+    runs-on: macos-15
+    timeout-minutes: 60
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: |
+          cp src/ios/Configs/ProviderCustomization.xcconfig.example \
+             src/ios/Configs/ProviderCustomization.xcconfig || true
+      - name: Run UI smoke tests on simulator
+        run: |
+          cd src/ios
+          # 找一个可用的 iPhone 模拟器
+          SIM=$(xcrun simctl list devices available | grep "iPhone 16" | head -1 | sed -E 's/.*\(([-A-F0-9]+)\).*/\1/')
+          echo "Using simulator: $SIM"
+          xcodebuild test \
+            -project Minis.xcodeproj \
+            -scheme Minis \
+            -destination "platform=iOS Simulator,id=$SIM" \
+            -only-testing:MinisUITests/SmokeTests \
+            -derivedDataPath ../../build/uitest-derived \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" \
+            2>&1 | tail -50

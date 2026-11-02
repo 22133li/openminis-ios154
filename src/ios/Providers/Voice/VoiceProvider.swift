@@ -155,7 +155,7 @@ class VoiceProvider: VoiceInputCapable, VoiceOutputCapable {
     static func iso639_1(from tag: String) -> String? {
         let trimmed = tag.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
-        let primary = Locale(identifier: trimmed).language.languageCode?.identifier
+        let primary = Locale(identifier: trimmed).languageCode
             ?? trimmed.split(separator: "-").first.map(String.init)
         return primary?.lowercased()
     }

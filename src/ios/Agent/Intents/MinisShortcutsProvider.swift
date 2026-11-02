@@ -41,6 +41,7 @@ import AppIntents
 /// call) and `systemImageName` is `_const`. Branching with `if #available`
 /// inside the builder is not an option either: that needs AppShortcutsBuilder
 /// methods that are themselves iOS 17.4+.
+@available(iOS 16, *)
 struct MinisShortcutsProvider: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         // Siri-facing "ask Minis" entry — opens the app and lands in the

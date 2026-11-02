@@ -117,40 +117,29 @@ struct ProviderInstancesView: View {
         }
         .navigationTitle("Providers")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if !store.instances.isEmpty {
-                ToolbarItem(placement: .topBarLeading) {
+        .navigationBarItems(
+            leading: Group {
+                if !store.instances.isEmpty {
                     EditButton()
                 }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button {
-                        showAddProvider = true
-                    } label: {
-                        Label(AppLocalized("Add Provider"), systemImage: "plus")
-                    }
-                    Button {
-                        showImportFile = true
-                    } label: {
-                        Label(AppLocalized("Import Provider"), systemImage: "square.and.arrow.down")
-                    }
-                    if #available(iOS 17.0, *), iCloudSyncEnabled {
-                        Divider()
-                        Button {
-                            Task { await forceSyncProviders() }
-                        } label: {
-                            Label(AppLocalized("Force iCloud Sync"),
-                                  systemImage: "arrow.triangle.2.circlepath.icloud")
-                        }
-                    }
+            },
+            trailing: Menu {
+                Button {
+                    showAddProvider = true
                 } label: {
-                    Image(systemName: "plus")
+                    Label(AppLocalized("Add Provider"), systemImage: "plus")
                 }
+                Button {
+                    showImportFile = true
+                } label: {
+                    Label(AppLocalized("Import Provider"), systemImage: "square.and.arrow.down")
+                }
+            } label: {
+                Image(systemName: "plus")
             }
-        }
+        )
         .sheet(isPresented: $showAddProvider) {
-            NavigationStack {
+            NavigationView {
                 AddProviderView()
             }
         }

@@ -12,7 +12,7 @@ struct SessionMemoryView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 // Section 1: Auto-injected memories
                 Section {
@@ -52,11 +52,7 @@ struct SessionMemoryView: View {
             }
             .navigationTitle("Memories in Session")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .navigationBarItems(trailing: Button("Done") { dismiss() })
         }
     }
 
@@ -273,13 +269,11 @@ private struct MemoryContentView: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if fileURL != nil {
-                ToolbarItem(placement: .topBarTrailing) {
+        .navigationBarItems(trailing:
+            Group {
+                if fileURL != nil {
                     if isEditing {
-                        Button("Save") {
-                            save()
-                        }
+                        Button("Save") { save() }
                     } else {
                         Button {
                             editedContent = content
@@ -290,7 +284,7 @@ private struct MemoryContentView: View {
                     }
                 }
             }
-        }
+        )
         .overlay(alignment: .bottom) {
             if saved {
                 Text("Saved")
@@ -373,8 +367,8 @@ private struct MemoryWriteDetailView: View {
         }
         .navigationTitle(item.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
+        .navigationBarItems(trailing:
+            HStack {
                 if isEditing {
                     Button("Save") { saveEdit() }
                 } else {
@@ -394,7 +388,7 @@ private struct MemoryWriteDetailView: View {
                     .disabled(item.writtenContent == nil)
                 }
             }
-        }
+        )
         .overlay(alignment: .bottom) {
             if saved {
                 Text("Saved")

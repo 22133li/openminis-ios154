@@ -33,7 +33,7 @@ struct WebAppAddToHomeSheet: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 if unsupportedScope {
                     unsupportedSection
@@ -70,7 +70,6 @@ struct WebAppAddToHomeSheet: View {
                                     ProgressView().tint(.white)
                                 } else {
                                     Text("Continue in Safari")
-                                        .fontWeight(.semibold)
                                 }
                                 Spacer()
                             }

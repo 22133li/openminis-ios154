@@ -186,7 +186,7 @@ struct SubAgentEditorView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 // [T-sub-agents-v1] The built-in's name and description are
                 // fixed. They are what the delegating model reads to decide
@@ -216,8 +216,8 @@ struct SubAgentEditorView: View {
                     if isBuiltIn {
                         Text(existing?.displayDescription ?? descriptionText).foregroundStyle(.secondary)
                     } else {
-                        TextField(AppLocalized("Description"), text: $descriptionText, axis: .vertical)
-                            .lineLimit(2...4)
+                        TextEditor(text: $descriptionText)
+                            .frame(minHeight: 60, maxHeight: 120)
                         counter(descriptionText.count, SubAgentLimits.descriptionMaxLength)
                     }
                 } header: {
@@ -229,8 +229,8 @@ struct SubAgentEditorView: View {
                 }
 
                 Section {
-                    TextField(AppLocalized("Instructions"), text: $instructions, axis: .vertical)
-                        .lineLimit(4...12)
+                    TextEditor(text: $instructions)
+                        .frame(minHeight: 100, maxHeight: 300)
                     counter(instructions.count, SubAgentLimits.instructionsMaxLength)
                 } header: {
                     Text(AppLocalized("Instructions"))
@@ -310,15 +310,11 @@ struct SubAgentEditorView: View {
             }
             .navigationTitle(existing == nil ? AppLocalized("New Sub Agent") : AppLocalized("Edit Sub Agent"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppLocalized("Cancel")) { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(AppLocalized("Save")) { save() }
-                        .disabled(!isValid)
-                }
-            }
+            .navigationBarItems(
+                leading: Button(AppLocalized("Cancel")) { dismiss() },
+                trailing: Button(AppLocalized("Save")) { save() }
+                    .disabled(!isValid)
+            )
             .onAppear(perform: seed)
         }
     }

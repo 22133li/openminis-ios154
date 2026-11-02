@@ -123,6 +123,7 @@ class AlarmListViewModel: ObservableObject {
 
     @available(iOS 26.0, *)
     private func _loadImpl() {
+        #if canImport(AlarmKit)
         AlarmOffloadBridge.listAlarms { [weak self] arr, err in
             DispatchQueue.main.async {
                 self?.isLoading = false
@@ -137,6 +138,7 @@ class AlarmListViewModel: ObservableObject {
                 self?.alarms = dicts.map { AlarmItem(dict: $0) }
             }
         }
+        #endif
     }
 
     func delete(id: String) {
@@ -147,7 +149,9 @@ class AlarmListViewModel: ObservableObject {
 
     @available(iOS 26.0, *)
     private func _cancelImpl(id: String) {
+        #if canImport(AlarmKit)
         AlarmOffloadBridge.cancelAlarm(withId: id) { _, _ in }
+        #endif
     }
 
     func clearAll() {
@@ -159,9 +163,11 @@ class AlarmListViewModel: ObservableObject {
 
     @available(iOS 26.0, *)
     private func _clearAllImpl(ids: [String]) {
+        #if canImport(AlarmKit)
         for id in ids {
             AlarmOffloadBridge.cancelAlarm(withId: id) { _, _ in }
         }
+        #endif
     }
 
     /// Group alarms by week for sectioned display.
@@ -230,14 +236,14 @@ struct AlarmListView: View {
     @State private var showClearConfirm = false
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Group {
                 if vm.alarms.isEmpty && !vm.isLoading {
                     VStack(spacing: 12) {
                         Image(systemName: "alarm")
                             .font(.system(size: 48, weight: .thin))
                             .foregroundStyle(.secondary)
-                        Text("No Alarms")
+                        Text(AppLocalized("No Alarms"))
                             .font(.title3)
                             .foregroundStyle(.secondary)
                     }
@@ -265,14 +271,14 @@ struct AlarmListView: View {
             .navigationTitle("Alarms")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") { dismiss() }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(role: .destructive) {
                         showClearConfirm = true
                     } label: {
-                        Text("Clear All")
+                        Text(AppLocalized("Clear All"))
                     }
                     .disabled(vm.alarms.isEmpty)
                     .opacity(vm.alarms.isEmpty ? 0 : 1)

@@ -30,7 +30,7 @@ struct BackupDestinationPicker: View {
     @State private var errorText: String?
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 if !remotes.isEmpty || !folders.isEmpty {
                     savedSection
@@ -155,7 +155,7 @@ struct BackupDestinationPicker: View {
                 }
             }
         } header: {
-            Text("Saved Destinations")
+            Text(AppLocalized("Saved Destinations"))
         } footer: {
             Text("Backups are copied to the enabled destinations. Tap for details, or swipe to remove.")
         }
@@ -195,7 +195,7 @@ struct BackupDestinationPicker: View {
                 }
             }
         } header: {
-            Text("Add New")
+            Text(AppLocalized("Add New"))
         }
     }
 

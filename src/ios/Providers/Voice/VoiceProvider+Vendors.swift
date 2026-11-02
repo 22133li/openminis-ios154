@@ -322,7 +322,8 @@ final class XunfeiVoiceProvider: VoiceProvider {
         guard let url = URL(string: signedURL) else {
             throw VoiceProviderError.parseError("Failed to build Xunfei TTS URL")
         }
-        let session = URLSession(configuration: .default)
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config)
         let ws = session.webSocketTask(with: url)
         ws.resume()
         defer { ws.cancel(with: .normalClosure, reason: nil) }
