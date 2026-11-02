@@ -273,7 +273,7 @@ private struct LazyRevealChunks<ChunkView: View>: View {
             Button {
                 revealed = chunks.count
             } label: {
-                Text("Load all")
+                Text(AppLocalized("Load all"))
                     .font(.system(size: 13, weight: .medium))
             }
         }
@@ -1084,7 +1084,6 @@ struct ToolLiveSheet: View {
         .onReceive(block.objectWillChange) { _ in
             blockUpdateTick += 1
         }
-        .presentationDragIndicator(.hidden)
         // Tapping a URL in shell output (underlined via attributedShellLine)
         // routes through `activeSheet` so it shares one `.sheet(item:)`
         // modifier with the browser takeover below.
@@ -1159,7 +1158,7 @@ struct ToolLiveSheet: View {
                 // out to the step pill's trailing column (under the
                 // elapsed-duration "5s" text) so it lives next to where the
                 // user is already scanning timing info.
-                Text("Minis Computer")
+                Text(AppLocalized("Minis Computer"))
                     .font(.system(size: 15, weight: .semibold))
 
                 Spacer()
@@ -1349,7 +1348,7 @@ struct ToolLiveSheet: View {
         .padding(.vertical, 10)
         .background(Color(UIColor.systemBackground))
         .fullScreenCover(isPresented: $showTerminal) {
-            NavigationStack {
+            NavigationView {
                 // Pre-fill the shell command the tool is currently running,
                 // WITHOUT a trailing newline — the user can review/edit and
                 // press Enter themselves (intentional, not auto-run).
@@ -1392,6 +1391,8 @@ struct ToolLiveSheet: View {
             return "read_image(\(truncateParam(path)))"
         case .memoryTool(let action):
             return "\(truncateParam(action))"
+        case .vaultTool(let action):
+            return "vault(\(truncateParam(action)))"
         case .userAskTool:
             return "user_ask"
         case .delegateTool(let title):
@@ -1415,6 +1416,7 @@ struct ToolLiveSheet: View {
         case .browserTool: Image(systemName: "globe")
         case .readImageTool: Image(systemName: "photo")
         case .memoryTool: Image(systemName: "brain.head.profile")
+        case .vaultTool: Image(systemName: "key.fill")
         case .delegateTool: Image(systemName: HelperAccent.icon)
         case .userAskTool: Image(systemName: "questionmark.bubble")
         case .info: Image(systemName: "arrow.triangle.2.circlepath")
@@ -1603,7 +1605,7 @@ struct ToolLiveSheet: View {
                                 Image(systemName: "globe")
                                     .font(.system(size: 12))
                                     .foregroundStyle(Color(UIColor.secondaryLabel))
-                                Text("Result")
+                                Text(AppLocalized("Result"))
                                     .font(.system(size: 13, weight: .medium))
                                     .foregroundStyle(Color(UIColor.label))
                                     .lineLimit(1)
@@ -1684,7 +1686,7 @@ struct ToolLiveSheet: View {
                             Image(systemName: "globe")
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color(UIColor.secondaryLabel))
-                            Text("Result")
+                            Text(AppLocalized("Result"))
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(Color(UIColor.label))
                                 .lineLimit(1)
@@ -2089,7 +2091,7 @@ struct ToolLiveSheet: View {
                 Image(systemName: "chevron.left.forwardslash.chevron.right")
                     .font(.system(size: 11))
                     .foregroundStyle(.orange.opacity(0.7))
-                Text("JavaScript")
+                Text(AppLocalized("JavaScript"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.orange)
                     .lineLimit(1)
@@ -2441,7 +2443,7 @@ struct ToolLiveSheet: View {
                 Button {
                     revealedChunkCount = totalChunks
                 } label: {
-                    Text("Load all")
+                    Text(AppLocalized("Load all"))
                         .font(.system(size: 13, weight: .medium))
                 }
             }
@@ -2786,7 +2788,7 @@ struct ToolLiveSheet: View {
                         Circle()
                             .fill(.green)
                             .frame(width: 7, height: 7)
-                        Text("Live")
+                        Text(AppLocalized("Live"))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(ChatColors.primaryText)
                     }
@@ -2848,6 +2850,7 @@ struct ToolLiveSheet: View {
         case .browserTool: return "Minis is using Browser"
         case .readImageTool: return "Minis is reading Image"
         case .memoryTool: return "Minis is using Memory"
+        case .vaultTool: return "Minis is using Credential Vault"
         case .delegateTool: return "Minis is using an Agent"
         case .userAskTool: return "Minis is asking you"
         case .info: return "Minis"
@@ -2883,6 +2886,7 @@ struct ToolLiveSheet: View {
         case .browserTool: return .blue
         case .readImageTool: return .purple
         case .memoryTool: return .pink
+        case .vaultTool: return .blue
         case .delegateTool: return HelperAccent.color
         case .userAskTool: return .accentColor
         case .info: return .secondary
@@ -3049,7 +3053,7 @@ private struct ToolPreviewThumbnail: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 2)
                     .background(Color.black.opacity(0.6))
-                    .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 8, bottomTrailingRadius: 8))
+                    .clipShape(BackportUnevenRoundedRectangle(bottomLeadingRadius: 8, bottomTrailingRadius: 8))
             }
         }
         .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 3)
@@ -3294,6 +3298,7 @@ private struct ToolPreviewThumbnail: View {
         case .browserTool: return .blue
         case .readImageTool: return .purple
         case .memoryTool: return .pink
+        case .vaultTool: return .blue
         case .delegateTool: return HelperAccent.color
         case .userAskTool: return .accentColor
         case .info: return .secondary
@@ -3334,7 +3339,6 @@ private struct ToolStatusBarSurface: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: shape)
         } else {
             content
                 .background(Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(white: 0.15, alpha: 1) : UIColor.systemBackground }))

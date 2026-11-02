@@ -129,7 +129,6 @@ private struct ContextMenuPreviewSurface: ViewModifier {
             content
                 // Opaque floor first — see the note above.
                 .background(shape.fill(ChatColors.background))
-                .glassEffect(.regular, in: shape)
         } else {
             content.background(ChatColors.background)
         }
@@ -193,7 +192,6 @@ private struct UserBubbleSurface: ViewModifier {
                         .foregroundStyle(ChatColors.secondaryText.opacity(0.5))
                 )
         } else if #available(iOS 26.0, *), !snapshotRendering {
-            content.glassEffect(.regular, in: shape)
         } else {
             content.background(shape.fill(ChatColors.userBubble))
         }
@@ -300,6 +298,8 @@ struct ChatMessageRow: View {
                 parts.append("Image: \(path)")
             case .memoryTool(let action):
                 parts.append("Memory: \(action)\n\(block.content)")
+            case .vaultTool(let action):
+                parts.append("Vault: \(action)\n\(block.content)")
             case .delegateTool(let title):
                 parts.append("Agent: \(title)\n\(block.content)")
             case .userAskTool:
@@ -469,8 +469,7 @@ struct ChatMessageRow: View {
             // otherwise the lifted preview shows square corners while the bubble
             // is RoundedRectangle(cornerRadius: 18). iOS 16+ lets us specify the
             // preview clip shape independently from the interaction shape.
-            .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 18))
-            .contextMenu {
+            .contextMenuWithPreview {
                 Button {
                     UIPasteboard.general.string = message.content
                 } label: {
@@ -655,7 +654,7 @@ struct ChatMessageRow: View {
         // (ViewGraphGeometryObservers.needsUpdate SIGTRAP). onGeometryChange
         // measures the same row bounds the background GeometryReader did,
         // and its initial fire covers the old onAppear seed.
-        .onGeometryChange(for: CGRect.self) { proxy in
+        .onGeometryChangeBackport(for: CGRect.self) { proxy in
             proxy.frame(in: .global)
         } action: { rowFrameInWindow = $0 }
         .background {
@@ -663,7 +662,7 @@ struct ChatMessageRow: View {
             // blank areas — UITextView link taps in the foreground take priority.
             Color.clear
                 .contentShape(Rectangle())
-                .contextMenu {
+                .contextMenuWithPreview {
                     // [T-ios-msg-contextmenu-recursion-crash] Gate the eager menu
                     // tree behind an Equatable key so the cell body churn during
                     // `gh`/shell streaming output doesn't rebuild + re-diff the
@@ -851,7 +850,7 @@ struct ChatMessageRow: View {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.clockwise")
                             .font(.caption.weight(.semibold))
-                        Text("Retry")
+                        Text(AppLocalized("Retry"))
                             .font(.caption.weight(.semibold))
                     }
                     .foregroundStyle(ChatColors.primaryText)
@@ -886,7 +885,7 @@ struct ChatMessageRow: View {
                     HStack(spacing: 4) {
                         Image(systemName: "play.fill")
                             .font(.caption.weight(.semibold))
-                        Text("Resume")
+                        Text(AppLocalized("Resume"))
                             .font(.caption.weight(.semibold))
                     }
                     .foregroundStyle(.white)
