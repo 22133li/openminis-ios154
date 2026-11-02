@@ -68,7 +68,7 @@ struct SheetOverlayView: View {
             // page) that hides the page's bar for good. Pin visible so the
             // bridged state can never be "hidden"; a no-op where the bar is
             // already shown.
-            .toolbar(.visible, for: .navigationBar)
+            .pinnedNavigationBarVisible()
             .sheet(item: $toolPresenter.sheetData) { data in
                 // [T-agent-tool-sheet-unified] Every tool block — the agent
                 // block included — opens the same live sheet (this is the
@@ -97,5 +97,21 @@ struct SheetOverlayView: View {
                     onRevert: compactPresenter.onRevert
                 )
             }
+    }
+}
+
+// MARK: - iOS 15 backport helpers
+extension View {
+    /// [ios15-backport] `.toolbar(.visible, for: .navigationBar)` is iOS 16+.
+    /// On iOS 15 there is no declarative toolbar-visibility API; the nav bar
+    /// is managed by the enclosing navigation controller, so this is a no-op
+    /// there and the upstream pin applies on iOS 16+.
+    @ViewBuilder
+    func pinnedNavigationBarVisible() -> some View {
+        if #available(iOS 16, *) {
+            self.toolbar(.visible, for: .navigationBar)
+        } else {
+            self
+        }
     }
 }

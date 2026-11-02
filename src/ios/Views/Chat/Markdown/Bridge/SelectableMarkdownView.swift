@@ -248,6 +248,16 @@ struct SelectableMarkdownView: UIViewRepresentable {
                 note: "coord=\(Self.diagId(context.coordinator)) mid=\(messageId.map { String($0.uuidString.prefix(8)) } ?? "-") blk=\(blockId.map { String($0.uuidString.prefix(8)) } ?? "-") len=\(markdown.count)")
         }
         #endif
+        // [ios15-size-hook] Commit the pending content NOW, during make.
+        // Sizing queries can reach the view before SwiftUI's first
+        // updateUIView (the ordering upstream's iOS 16 sizeThatFits hook
+        // exists to work around); with the view-level sizing channel above,
+        // a query landing in that window would measure the empty storage
+        // and cache a one-line height for this cell. updateUIView is
+        // deduped by coordinator.lastMarkdown, so the system's own update
+        // pass right after this returns is a no-op - total render work is
+        // unchanged, it just happens before the first possible measure.
+        updateUIView(textView, context: context)
         return textView
     }
 
@@ -544,7 +554,9 @@ struct SelectableMarkdownView: UIViewRepresentable {
         // becomes a measurable chunk of every updateUIView pass (and
         // updateUIView runs on each SwiftUI body re-evaluation, so it
         // multiplies during streaming and self-sizing measurement loops).
-        let imageMatches = markdown.ranges(of: /!\[([^\]]*)\]\(([^)]+)\)/)
+        // iOS 15 backport: Regex is iOS 16+, use NSRegularExpression
+        let imagePattern = "!\\[([^\\]]*)\\]\\(([^)]+)\\)"
+        let imageMatches: [Range<String.Index>] = (try? NSRegularExpression(pattern: imagePattern))?.matches(in: markdown, range: NSRange(markdown.startIndex..., in: markdown)).compactMap { Range($0.range, in: markdown) } ?? []
         if !imageMatches.isEmpty {
             for match in imageMatches {
                 let matchStr = String(markdown[match])

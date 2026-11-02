@@ -104,6 +104,66 @@ final class SelectableMarkdownTextView: UITextView, UIGestureRecognizerDelegate 
     /// the check UIKit intends here, and it filters out the many trait changes
     /// (size class, dynamic type, layout direction) that must NOT trigger a
     /// re-render storm across every formula on screen.
+    // [ios15-size-hook] iOS 15 backport of the sizing contract upstream
+    // implements in the representable's sizeThatFits(_:uiView:context:) -
+    // an iOS 16+ UIViewRepresentable requirement the iOS 15 runtime never
+    // calls, so on 15.4 nothing ever measured the PENDING content: a fresh
+    // text view (empty storage) measured one line (~32pt) and a reused one
+    // measured the previous cell's content, which is exactly the collapsed /
+    // stale heights the message list showed on device (build109-113). The
+    // two overrides below give the view itself a truthful answer whenever
+    // UIKit or SwiftUI asks the view directly (the only sizing channel iOS
+    // 15 has, and the same one invalidateCellSizeIfNeeded uses on every
+    // version): force a full layout of the CURRENT storage at the queried
+    // width and report the used rect, mirroring the real-measure path of
+    // the iOS 16 hook. A bogus probe width (non-finite / sentinel / zero -
+    // SwiftUI's fitting passes probe with those) falls back to the view's
+    // own laid-out width, then the screen width. A probe width WIDER than
+    // the screen is bogus too (build114 evidence: the unwrapped text's own
+    // width, 1491-2234pt, came back as a probe and SwiftUI framed the view
+    // at that width, so text overflowed the screen and heights halved);
+    // it takes the same fallback. On iOS 16+ the
+    // representable hook stays the primary path; these answers are computed
+    // by the same formula it uses, so behavior does not diverge.
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
+        guard textStorage.length > 0 else {
+            return super.sizeThatFits(size)
+        }
+        let screenWidth = UIScreen.main.bounds.width
+        var targetWidth = size.width
+        if !(targetWidth.isFinite && targetWidth > 1 && targetWidth <= screenWidth) {
+            targetWidth = (bounds.width > 1 && bounds.width <= screenWidth)
+                ? bounds.width : screenWidth
+        }
+        let containerWidth = max(0, targetWidth - textContainerInset.left - textContainerInset.right)
+        let oldContainerSize = textContainer.size
+        if abs(oldContainerSize.width - containerWidth) > 0.5
+            || oldContainerSize.height < CGFloat.greatestFiniteMagnitude {
+            textContainer.size = CGSize(width: containerWidth,
+                                        height: CGFloat.greatestFiniteMagnitude)
+        }
+        layoutManager.ensureLayout(for: textContainer)
+        let used = layoutManager.usedRect(for: textContainer)
+        if textContainer.size != oldContainerSize {
+            textContainer.size = oldContainerSize
+        }
+        let height = ceil(used.height) + textContainerInset.top + textContainerInset.bottom
+        return CGSize(width: targetWidth, height: height)
+    }
+
+    override var intrinsicContentSize: CGSize {
+        // Never report a width wider than the screen: an over-wide
+        // intrinsic width is what framed build114's text views at the
+        // unwrapped text width. sizeThatFits clamps its width argument
+        // the same way, so route every case through it (empty storage
+        // still falls through to super inside sizeThatFits).
+        let screenWidth = UIScreen.main.bounds.width
+        let width = (bounds.width > 1 && bounds.width <= screenWidth)
+            ? bounds.width : screenWidth
+        return sizeThatFits(CGSize(width: width,
+                                   height: CGFloat.greatestFiniteMagnitude))
+    }
+
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         guard traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection),

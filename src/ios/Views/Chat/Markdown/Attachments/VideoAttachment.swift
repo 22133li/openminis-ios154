@@ -203,7 +203,8 @@ final class VideoAttachment: NSTextAttachment {
 
             var thumb: UIImage?
             do {
-                let (cgImage, _) = try await generator.image(at: .zero)
+                // iOS 15 backport: image(at:) is iOS 16+
+                let cgImage = try generator.copyCGImage(at: .zero, actualTime: nil)
                 thumb = UIImage(cgImage: cgImage)
             } catch {
                 // Fallback: no thumbnail

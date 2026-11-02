@@ -36,6 +36,7 @@ struct BridgedAssistantBlockV3: View {
         case .browserTool: return "assistantBrowserBlock"
         case .readImageTool: return "assistantReadImageBlock"
         case .memoryTool: return "assistantMemoryBlock"
+        case .vaultTool: return "assistantVaultBlock"
         case .delegateTool: return "assistantDelegateBlock"
         case .userAskTool: return "assistantUserAskBlock"
         case .info: return "assistantInfoBlock"
@@ -83,7 +84,7 @@ struct BridgedAssistantBlockV3: View {
         // (same pattern as BridgedAssistantFooterV3).
         .overlay {
             Color.clear.frame(width: 0, height: 0)
-                .contextMenu {
+                .contextMenuWithPreview {
                     Button {
                         let text = message.blocks
                             .filter { if case .text = $0.kind { return true }; return false }

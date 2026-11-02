@@ -121,7 +121,7 @@ struct BridgedAssistantFooterV3: View {
                 .sheet(isPresented: $showRetryLog) {
                     RetryLogSheet(key: retryLogKey)
                 }
-                .contextMenu {
+                .contextMenuWithPreview {
                     Button {
                         let text = message.blocks
                             .filter { if case .text = $0.kind { return true }; return false }
