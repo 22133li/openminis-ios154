@@ -958,7 +958,7 @@ struct AIChatView: View {
             }
         }
         .sheet(item: $browseMinisFolder) { target in
-            NavigationStack {
+            NavigationView {
                 FileBrowserView(rootPath: target.root, initialPath: target.folder, rootLabel: target.label)
             }
         }
