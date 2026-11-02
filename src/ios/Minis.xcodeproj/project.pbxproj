@@ -624,7 +624,6 @@
 		E5BP0006 /* GeometryChangeBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0005 /* GeometryChangeBackport.swift */; };
 		E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0007 /* LocalizedStringResourceBackport.swift */; };
 		E5BP0010 /* ShortcutHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0009 /* ShortcutHelpers.swift */; };
-		E5BP0012 /* ShortcutRunTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0011 /* ShortcutRunTracker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1452,7 +1451,6 @@
 		E5BP0005 /* GeometryChangeBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryChangeBackport.swift; sourceTree = "<group>"; };
 		E5BP0007 /* LocalizedStringResourceBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedStringResourceBackport.swift; sourceTree = "<group>"; };
 		E5BP0009 /* ShortcutHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutHelpers.swift; sourceTree = "<group>"; };
-		E5BP0011 /* ShortcutRunTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRunTracker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -2112,7 +2110,6 @@
 				E5BP0005 /* GeometryChangeBackport.swift */,
 				E5BP0007 /* LocalizedStringResourceBackport.swift */,
 				E5BP0009 /* ShortcutHelpers.swift */,
-				E5BP0011 /* ShortcutRunTracker.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -3096,7 +3093,6 @@
 				E5BP0006 /* GeometryChangeBackport.swift in Sources */,
 				E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */,
 				E5BP0010 /* ShortcutHelpers.swift in Sources */,
-				E5BP0012 /* ShortcutRunTracker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3649,7 +3645,6 @@
 				E5BP0006 /* GeometryChangeBackport.swift in Sources */,
 				E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */,
 				E5BP0010 /* ShortcutHelpers.swift in Sources */,
-				E5BP0012 /* ShortcutRunTracker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
