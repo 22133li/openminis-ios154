@@ -355,8 +355,8 @@ struct ContainerNetworkSection: View {
                 Text("Custom").tag(ContainerDnsSettings.Mode.custom)
             }
             if mode == .custom {
-                TextField("One IPv4 or IPv6 address per line", text: $draft, axis: .vertical)
-                    .lineLimit(2...6)
+                TextField("One IPv4 or IPv6 address per line", text: $draft)
+                    .lineLimit(6)
                     .font(.system(.body, design: .monospaced))
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()

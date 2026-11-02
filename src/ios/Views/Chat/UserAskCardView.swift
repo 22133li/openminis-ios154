@@ -1374,7 +1374,7 @@ private struct UserAskInputSheet: View {
     @State private var savedVoiceExpanded: Bool?
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(alignment: .leading, spacing: 12) {
                 Text(question)
                     .font(.system(size: t.resolvedDetail))
@@ -1388,8 +1388,8 @@ private struct UserAskInputSheet: View {
                 // editing with the keyboard. Grows with the text between 3 and 8
                 // lines, then scrolls. One hairline frame: a TextEditor in a
                 // filled box read as a thick double frame in dark mode.
-                TextField("", text: $text, axis: .vertical)
-                    .lineLimit(3...8)
+                TextField("", text: $text)
+                    .lineLimit(8)
                     .font(.system(size: t.question))
                     .focused($focused)
                     .padding(.horizontal, 12)

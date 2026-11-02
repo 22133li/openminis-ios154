@@ -360,8 +360,6 @@ struct ModelGroupDetailView: View {
         }
         .sheet(item: $quotaDetailProviderId) { target in
             QuotaDetailSheet(instanceId: target.id)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
         }
     }
 

@@ -34,7 +34,7 @@ struct QuotaDetailSheet: View {
     @State private var consoleURL: URL?
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 if let instance = ProviderConfigStore.shared.instance(for: instanceId) {
                     let display = quota.display(for: instance)

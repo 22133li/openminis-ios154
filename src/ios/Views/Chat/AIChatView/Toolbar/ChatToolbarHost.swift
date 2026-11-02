@@ -929,6 +929,7 @@ struct ChatNavMenuBarItemInstaller: UIViewRepresentable {
         return view
     }
 
+    @available(iOS 16.0, *)
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: AnchorView, context: Context) -> CGSize? {
         .zero
     }

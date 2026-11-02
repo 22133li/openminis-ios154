@@ -738,7 +738,7 @@ struct UnifiedModelPicker: View {
             // the picker (same pattern as the Model Groups "Edit" sheet), so the
             // user returns to the picker with their place kept. Edits land in the
             // store and the picker rebuilds from `configRevision`.
-            NavigationStack {
+            NavigationView {
                 ProviderInstanceDetailView(instanceId: target.id)
                     .toolbar {
                         // Leading: the detail page's own action owns the trailing slot.
@@ -751,8 +751,6 @@ struct UnifiedModelPicker: View {
         .sheet(item: $quotaDetailProvider) { target in
             // [T-quota-badge-ui] Read-only quota details, on top of the picker.
             QuotaDetailSheet(instanceId: target.id)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
         }
         .sheet(item: $quickTestEntry) { entry in
             // [T-quicktest-stale-session] .id(entry.id) forces a FRESH view

@@ -21,8 +21,9 @@ import Foundation
 /// Not registered in MinisShortcutsProvider: it is a building block for the
 /// user's own Shortcuts, found under the app's actions, with no Siri phrase
 /// of its own.
+@available(iOS 16, *)
 struct SaveEnvVarIntent: AppIntent {
-    static var title: LocalizedStringResource = "Save Environment Variable to Minis"
+    static var title: Foundation.LocalizedStringResource = "Save Environment Variable to Minis"
     static var description = IntentDescription("Saves text from Shortcuts, such as a received message, as the environment variable MINIS_SHORTCUT_OPT_ followed by the name suffix. Every Minis session can read it in the shell, saving the same name again updates it, and it can be deleted under Settings → Environment Variables.")
     static var openAppWhenRun = false
 
@@ -44,6 +45,7 @@ struct SaveEnvVarIntent: AppIntent {
         Summary("Save \(\.$text) to Minis as $MINIS_SHORTCUT_OPT_\(\.$suffix)")
     }
 
+    @available(iOS 16, *)
     func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
         let text = self.text
         let suffix = self.suffix

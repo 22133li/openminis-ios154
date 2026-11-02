@@ -385,6 +385,7 @@ private struct ExportLabel: UIViewRepresentable {
         label.numberOfLines = lines
     }
 
+    @available(iOS 16.0, *)
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UILabel, context: Context) -> CGSize? {
         let width = proposal.width ?? .greatestFiniteMagnitude
         let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))

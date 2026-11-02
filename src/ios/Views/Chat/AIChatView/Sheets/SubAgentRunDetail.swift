@@ -332,7 +332,11 @@ struct SubAgentStatChips: View {
 }
 
 /// Leading-aligned wrapping row.
-private struct ChipFlow: Layout {
+/// [ios15-backport] Same split as ChatInputBar's FlowLayout: the Layout
+/// implementation is iOS 16+; on iOS 15 the ChipFlow wrapper below falls
+/// back to LazyVGrid (device-verified pattern from the 1.14 line).
+@available(iOS 16.0, *)
+private struct ChipFlow16: Layout {
     var spacing: CGFloat = 6
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -365,6 +369,30 @@ private struct ChipFlow: Layout {
         return (CGSize(width: widest, height: y + rowHeight), origins)
     }
 }
+
+/// iOS 15 fallback wrapper for ChipFlow16 (see ChatInputBar.FlowLayout).
+private struct ChipFlow<Content: View>: View {
+    var spacing: CGFloat = 6
+    let content: Content
+
+    init(spacing: CGFloat = 6, @ViewBuilder content: () -> Content) {
+        self.spacing = spacing
+        self.content = content()
+    }
+
+    var body: some View {
+        if #available(iOS 16.0, *) {
+            ChipFlow16(spacing: spacing) {
+                content
+            }
+        } else {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 60), spacing: spacing)], alignment: .leading, spacing: spacing) {
+                content
+            }
+        }
+    }
+}
+
 
 // MARK: - Collapsible text
 
@@ -531,9 +559,9 @@ struct SubAgentActionsCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 if canSteer {
                     HStack(alignment: .bottom, spacing: 8) {
-                        TextField(AppLocalized("Send a course correction…"), text: $draft, axis: .vertical)
+                        TextField(AppLocalized("Send a course correction…"), text: $draft)
                             .font(.system(size: 13))
-                            .lineLimit(1...4)
+                            .lineLimit(4)
                             .focused($focused)
                             .padding(.horizontal, 10).padding(.vertical, 7)
                             .background(RoundedRectangle(cornerRadius: 8).fill(Color(UIColor.tertiarySystemFill)))

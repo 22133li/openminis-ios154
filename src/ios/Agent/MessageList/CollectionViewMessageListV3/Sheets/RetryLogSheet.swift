@@ -55,7 +55,7 @@ struct RetryLogSheet: View {
     private var runEnded: Bool { live.isEmpty && !lastSeen.isEmpty }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 if shown.isEmpty {
                     Text("No retries so far in this run.")
@@ -82,7 +82,6 @@ struct RetryLogSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
         .onAppear { if !live.isEmpty { lastSeen = live } }
         .onChange(of: live) { new in if !new.isEmpty { lastSeen = new } }
     }

@@ -111,7 +111,7 @@ struct ChatShareSelectionView: View {
 
     var body: some View {
         let messages = byId
-        NavigationStack {
+        NavigationView {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
@@ -563,7 +563,7 @@ private struct ChatSharePreviewSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 0) {
                 ZStack {
                     if let result = rendered[key] {
@@ -845,7 +845,6 @@ private struct ChatShareFloatingButtonSurface: ViewModifier {
         if #available(iOS 26.0, *) {
             content
                 .buttonStyle(.plain)
-                .glassEffect(.regular.interactive(), in: .capsule)
         } else {
             content
                 .buttonStyle(.plain)

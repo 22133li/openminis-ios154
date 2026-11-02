@@ -283,8 +283,8 @@ private struct EnvVarFormSheet: View {
                         // [T-shortcut-envvar] Shortcut-stored text (an SMS, a
                         // note) can span lines; a single-line field would
                         // flatten it on save.
-                        TextField("Value", text: $value, axis: .vertical)
-                            .lineLimit(1...8)
+                        TextField("Value", text: $value)
+                            .lineLimit(8)
                             .font(.system(.body, design: .monospaced))
                             .autocorrectionDisabled()
                             .focused($focusedField, equals: .value)
