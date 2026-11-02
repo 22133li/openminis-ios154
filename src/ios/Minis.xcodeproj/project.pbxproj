@@ -619,6 +619,12 @@
 		RCL000119 /* BackupHistoryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCL000219 /* BackupHistoryDetailView.swift */; };
 		RCL000120 /* BackupCategoryIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCL000220 /* BackupCategoryIcon.swift */; };
 		RCL000121 /* BackupHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCL000221 /* BackupHUD.swift */; };
+		E5BP0002 /* ShapeBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0001 /* ShapeBackport.swift */; };
+		E5BP0004 /* LabeledContentBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0003 /* LabeledContentBackport.swift */; };
+		E5BP0006 /* GeometryChangeBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0005 /* GeometryChangeBackport.swift */; };
+		E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0007 /* LocalizedStringResourceBackport.swift */; };
+		E5BP0010 /* ShortcutHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0009 /* ShortcutHelpers.swift */; };
+		E5BP0012 /* ShortcutRunTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BP0011 /* ShortcutRunTracker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1441,6 +1447,12 @@
 		RCL000219 /* BackupHistoryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupHistoryDetailView.swift; sourceTree = "<group>"; };
 		RCL000220 /* BackupCategoryIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupCategoryIcon.swift; sourceTree = "<group>"; };
 		RCL000221 /* BackupHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupHUD.swift; sourceTree = "<group>"; };
+		E5BP0001 /* ShapeBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeBackport.swift; sourceTree = "<group>"; };
+		E5BP0003 /* LabeledContentBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabeledContentBackport.swift; sourceTree = "<group>"; };
+		E5BP0005 /* GeometryChangeBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryChangeBackport.swift; sourceTree = "<group>"; };
+		E5BP0007 /* LocalizedStringResourceBackport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedStringResourceBackport.swift; sourceTree = "<group>"; };
+		E5BP0009 /* ShortcutHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutHelpers.swift; sourceTree = "<group>"; };
+		E5BP0011 /* ShortcutRunTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRunTracker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -2095,6 +2107,12 @@
 				E5E0000A2 /* ExternalFileImporter.swift */,
 				E5E000017 /* SharedContainerStore.swift */,
 				AADDA9E02F6ECCF400B66649 /* ThumbnailCache.swift */,
+				E5BP0001 /* ShapeBackport.swift */,
+				E5BP0003 /* LabeledContentBackport.swift */,
+				E5BP0005 /* GeometryChangeBackport.swift */,
+				E5BP0007 /* LocalizedStringResourceBackport.swift */,
+				E5BP0009 /* ShortcutHelpers.swift */,
+				E5BP0011 /* ShortcutRunTracker.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -3073,6 +3091,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E5BP0002 /* ShapeBackport.swift in Sources */,
+				E5BP0004 /* LabeledContentBackport.swift in Sources */,
+				E5BP0006 /* GeometryChangeBackport.swift in Sources */,
+				E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */,
+				E5BP0010 /* ShortcutHelpers.swift in Sources */,
+				E5BP0012 /* ShortcutRunTracker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3620,6 +3644,12 @@
 				8B886DA8A270E8FB58A9A1FA /* SpeechPlayerControl.swift in Sources */,
 				7A49962E84F115865D41B933 /* AudioSessionCoordinator.swift in Sources */,
 				C0B1AF9A75C90C3C178A8804 /* VoiceTextSanitizer.swift in Sources */,
+				E5BP0002 /* ShapeBackport.swift in Sources */,
+				E5BP0004 /* LabeledContentBackport.swift in Sources */,
+				E5BP0006 /* GeometryChangeBackport.swift in Sources */,
+				E5BP0008 /* LocalizedStringResourceBackport.swift in Sources */,
+				E5BP0010 /* ShortcutHelpers.swift in Sources */,
+				E5BP0012 /* ShortcutRunTracker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3746,7 +3776,7 @@
 					"$(inherited)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.openminis.MinisUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3766,7 +3796,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.openminis.MinisUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3801,7 +3831,7 @@
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/extensions/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/RealTimeCutVADLibrary/RealTimeCutVADLibrary/src/include",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3845,7 +3875,7 @@
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/extensions/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/RealTimeCutVADLibrary/RealTimeCutVADLibrary/src/include",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -3925,7 +3955,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -3988,7 +4018,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -4030,7 +4060,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4089,7 +4119,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4127,7 +4157,7 @@
 				INFOPLIST_FILE = ShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Share to Minis";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4154,7 +4184,7 @@
 				INFOPLIST_FILE = ShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Share to Minis";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4181,7 +4211,7 @@
 				INFOPLIST_FILE = FileProvider/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Minis Files";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4208,7 +4238,7 @@
 				INFOPLIST_FILE = FileProvider/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Minis Files";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4235,7 +4265,7 @@
 				INFOPLIST_FILE = AgentWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Agent Activity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4262,7 +4292,7 @@
 				INFOPLIST_FILE = AgentWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Agent Activity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4288,7 +4318,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4313,7 +4343,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
