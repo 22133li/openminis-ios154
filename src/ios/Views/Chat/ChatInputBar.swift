@@ -71,7 +71,8 @@ struct SwipeToSendHint: View {
 // MARK: - Flow Layout
 
 /// A custom Layout that arranges subviews in a wrapping horizontal flow.
-private struct FlowLayout: Layout {
+@available(iOS 16.0, *)
+private struct FlowLayout16: Layout {
     var hSpacing: CGFloat = 8
     var vSpacing: CGFloat = 8
     var alignment: HorizontalAlignment = .leading
@@ -151,6 +152,41 @@ private struct FlowLayout: Layout {
             rowWidths: rowWidths,
             rowIndices: rowIndices
         )
+    }
+}
+
+
+// iOS 15 backport: the SwiftUI Layout protocol is iOS 16+. Keep the
+// upstream Layout implementation for iOS 16+; on iOS 15 fall back to
+// LazyVGrid (the pre-build109, device-verified behaviour). The measured
+// _VariadicView FlowLayout15 shipped in build109 (69a4c29) rendered
+// nothing on 15.4: picked-file chips and sent attachment tiles were
+// invisible while the attachments themselves were registered and sent
+// (user recording, 2026-11-01). Trailing tile lists do not use this
+// fallback; they use TrailingTileRows below (see UserAttachmentList).
+private struct FlowLayout<Content: View>: View {
+    var hSpacing: CGFloat = 8
+    var vSpacing: CGFloat = 8
+    var alignment: HorizontalAlignment = .leading
+    let content: Content
+
+    init(hSpacing: CGFloat = 8, vSpacing: CGFloat = 8, alignment: HorizontalAlignment = .leading, @ViewBuilder content: () -> Content) {
+        self.hSpacing = hSpacing
+        self.vSpacing = vSpacing
+        self.alignment = alignment
+        self.content = content()
+    }
+
+    var body: some View {
+        if #available(iOS 16.0, *) {
+            FlowLayout16(hSpacing: hSpacing, vSpacing: vSpacing, alignment: alignment) {
+                content
+            }
+        } else {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 60), spacing: hSpacing)], alignment: .leading, spacing: vSpacing) {
+                content
+            }
+        }
     }
 }
 
@@ -558,7 +594,7 @@ struct PastedTextChipRow: View {
             .padding(.trailing, 4)
         }
         .sheet(item: $previewEntry) { entry in
-            NavigationStack {
+            NavigationView {
                 ScrollView {
                     // Read-only by construction: selectable text (copyable),
                     // deliberately NOT a TextEditor.
@@ -577,7 +613,7 @@ struct PastedTextChipRow: View {
                 .navigationTitle("Pasted#\(entry.id) · " + String(format: AppLocalized("%d chars"), entry.charCount))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .navigationBarTrailing) {
                         Button(AppLocalized("Done")) { previewEntry = nil }
                     }
                 }
@@ -669,23 +705,7 @@ private struct AttachmentPreviewView: UIViewControllerRepresentable {
     }
 }
 
-// MARK: - Video File Transferable (for PhotosPicker video export)
-
-struct VideoFileTransferable: Transferable {
-    let url: URL
-
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(contentType: .movie) { video in
-            SentTransferredFile(video.url)
-        } importing: { received in
-            // Copy to a temp location so the file outlives the picker callback
-            let tmp = FileManager.default.temporaryDirectory
-                .appendingPathComponent(UUID().uuidString.prefix(8) + "_" + received.file.lastPathComponent)
-            try FileManager.default.copyItem(at: received.file, to: tmp)
-            return Self(url: tmp)
-        }
-    }
-}
+// iOS 15 backport: VideoFileTransferable removed
 
 // MARK: - Camera Picker (UIImagePickerController wrapper)
 
@@ -787,6 +807,39 @@ enum UserAttachmentTileMetrics {
     }
 }
 
+/// [ios15-trailing-tiles] iOS 15 stand-in for FlowLayout's .trailing packing
+/// of the uniform user-attachment tiles. The 16+ Layout reports the full
+/// proposed width and right-aligns every row inside it; the 15 LazyVGrid
+/// fallback cannot right-align a row (it fills columns from the leading
+/// edge and ignores the alignment), so the tile lists chunk their items
+/// into rows themselves. Row packing reuses
+/// UserAttachmentTileMetrics.tilesPerRow with the same available width the
+/// cell-height estimator uses (collection width - 32 cell - 60 spacer; the
+/// V3 list is full-bleed, so the collection width is the screen width),
+/// which keeps the rendered height identical to the estimate.
+/// Ported verbatim from nanoMuse round31 (9f72215, device-verified).
+struct TrailingTileRows<Item, Tile: View>: View {
+    let items: [Item]
+    @ViewBuilder let tile: (Item) -> Tile
+
+    var body: some View {
+        let per = max(1, UserAttachmentTileMetrics.tilesPerRow(
+            availableWidth: UIScreen.main.bounds.width - 32 - 60))
+        let rows: [[Item]] = stride(from: 0, to: items.count, by: per).map {
+            Array(items[$0 ..< min($0 + per, items.count)])
+        }
+        VStack(alignment: .trailing, spacing: UserAttachmentTileMetrics.gap) {
+            ForEach(rows.indices, id: \.self) { row in
+                HStack(spacing: UserAttachmentTileMetrics.gap) {
+                    ForEach(rows[row].indices, id: \.self) { col in
+                        tile(rows[row][col])
+                    }
+                }
+            }
+        }
+    }
+}
+
 struct UserAttachmentList: View {
     let attachments: [AttachmentMeta]
     /// [T-in-chat-search] The message these tiles belong to, so a file name
@@ -804,24 +857,38 @@ struct UserAttachmentList: View {
     }
 
     var body: some View {
-        FlowLayout(hSpacing: UserAttachmentTileMetrics.gap, vSpacing: UserAttachmentTileMetrics.gap, alignment: .trailing) {
-            ForEach(attachments) { meta in
-                if meta.isImage {
-                    AsyncImageTile(meta: meta, tileSize: tileSize) {
-                        openGallery(startingAt: meta)
-                    }
-                } else if meta.isVideo {
-                    AsyncVideoTile(meta: meta, tileSize: tileSize)
-                } else if meta.pastedId != nil {
-                    pastedTile(meta)
-                } else {
-                    fileTile(meta, searchKey: searchMessageId.flatMap { mid in
-                        attachments.firstIndex(where: { $0.id == meta.id }).map {
-                            ChatSearchUnitKey(messageId: mid, blockId: nil, field: .attachmentName($0))
-                        }
-                    })
+        if #available(iOS 16, *) {
+            FlowLayout(hSpacing: UserAttachmentTileMetrics.gap, vSpacing: UserAttachmentTileMetrics.gap, alignment: .trailing) {
+                ForEach(attachments) { meta in
+                    tileContent(meta)
                 }
             }
+        } else {
+            // [ios15-trailing-tiles] See TrailingTileRows: the 15 fallback
+            // grid drops the .trailing alignment, landing tiles on the
+            // leading edge instead of over the bubble's right edge.
+            TrailingTileRows(items: attachments) { meta in
+                tileContent(meta)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func tileContent(_ meta: AttachmentMeta) -> some View {
+        if meta.isImage {
+            AsyncImageTile(meta: meta, tileSize: tileSize) {
+                openGallery(startingAt: meta)
+            }
+        } else if meta.isVideo {
+            AsyncVideoTile(meta: meta, tileSize: tileSize)
+        } else if meta.pastedId != nil {
+            pastedTile(meta)
+        } else {
+            fileTile(meta, searchKey: searchMessageId.flatMap { mid in
+                attachments.firstIndex(where: { $0.id == meta.id }).map {
+                    ChatSearchUnitKey(messageId: mid, blockId: nil, field: .attachmentName($0))
+                }
+            })
         }
     }
 
@@ -870,7 +937,7 @@ struct UserAttachmentList: View {
     /// file named by its storage UUID. Tap opens the stored text preview.
     private func pastedTile(_ meta: AttachmentMeta) -> some View {
         Button {
-            if let url = URL(string: meta.minisURL) { openURL(url) }
+            if let url = meta.fileTapURL { openURL(url) }
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: "doc.text")
@@ -900,7 +967,7 @@ struct UserAttachmentList: View {
 
     private func fileTile(_ meta: AttachmentMeta, searchKey: ChatSearchUnitKey? = nil) -> some View {
         Button {
-            if let url = URL(string: meta.minisURL) { openURL(url) }
+            if let url = meta.fileTapURL { openURL(url) }
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: fileIconName(for: meta.fileName))
@@ -990,18 +1057,31 @@ struct QueuedAttachmentPreview: View {
     private let tileSize: CGFloat = UserAttachmentTileMetrics.tile
 
     var body: some View {
-        FlowLayout(hSpacing: UserAttachmentTileMetrics.gap, vSpacing: UserAttachmentTileMetrics.gap, alignment: .trailing) {
-            ForEach(attachments) { attachment in
-                switch attachment.kind {
-                case .image:
-                    AsyncCacheURLImageTile(cacheURL: attachment.cacheURL, tileSize: tileSize)
-                        .opacity(0.7)
-                case .video:
-                    placeholderTile(icon: "film", fileName: attachment.fileName)
-                case .document:
-                    placeholderTile(icon: "doc.fill", fileName: attachment.fileName)
+        if #available(iOS 16, *) {
+            FlowLayout(hSpacing: UserAttachmentTileMetrics.gap, vSpacing: UserAttachmentTileMetrics.gap, alignment: .trailing) {
+                ForEach(attachments) { attachment in
+                    tileContent(attachment)
                 }
             }
+        } else {
+            // [ios15-trailing-tiles] Same fallback-alignment loss as
+            // UserAttachmentList - chunked trailing rows on 15.
+            TrailingTileRows(items: attachments) { attachment in
+                tileContent(attachment)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func tileContent(_ attachment: InputAttachment) -> some View {
+        switch attachment.kind {
+        case .image:
+            AsyncCacheURLImageTile(cacheURL: attachment.cacheURL, tileSize: tileSize)
+                .opacity(0.7)
+        case .video:
+            placeholderTile(icon: "film", fileName: attachment.fileName)
+        case .document:
+            placeholderTile(icon: "doc.fill", fileName: attachment.fileName)
         }
     }
 
@@ -1795,6 +1875,7 @@ struct PastableTextView: UIViewRepresentable {
         return tv
     }
 
+    @available(iOS 16, *)
     func sizeThatFits(_ proposal: ProposedViewSize, uiView tv: PastableUITextView, context: Context) -> CGSize? {
         let width = proposal.width ?? UIScreen.main.bounds.width
         // [T-share-url-input-height] UITextView.sizeThatFits returns the
