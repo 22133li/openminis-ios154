@@ -57,6 +57,8 @@ struct MemoryManagementView: View {
                 deleteFiles(at: offsets)
             }
         }
+
+
         .navigationTitle("Memory")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -65,7 +67,7 @@ struct MemoryManagementView: View {
             // buildLimitedAvailability, which the Xcode 27.1 SDK marks iOS
             // 17.5+, so it no longer compiles for the 16.0 target.
             if showsForceSync {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
                             if #available(iOS 17.0, *) {
@@ -267,7 +269,7 @@ private struct MemoryFileEditView: View {
             // user had to press Return to reveal it. Keeping it always present
             // sidesteps every input-source quirk. `save()` is a harmless
             // no-op rewrite when nothing changed.
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Save") { save() }
             }
         }

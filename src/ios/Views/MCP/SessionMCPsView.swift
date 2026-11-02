@@ -84,7 +84,7 @@ struct SessionMCPsView: View {
         // Reference the version counter so SwiftUI refreshes on override changes.
         let _ = store.sessionOverrideVersion
 
-        NavigationStack {
+        NavigationView {
             List {
                 if store.servers.isEmpty {
                     Section {
@@ -143,7 +143,7 @@ struct SessionMCPsView: View {
                         prompt: Text(AppLocalized("Search MCP servers")))
             .onAppear { store.load() }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }
             }

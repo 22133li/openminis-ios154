@@ -84,7 +84,7 @@ struct ModelGroupDetailView: View {
         .navigationTitle(group?.name ?? "Group")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .secondaryAction) {
+            ToolbarItem(placement: .automatic) {
                 if let group {
                     Button {
                         UIPasteboard.general.string = "group:\(group.id)"
@@ -352,15 +352,9 @@ struct ModelGroupDetailView: View {
                 }
             }
         }
-        // [T-ipad-sheet-keyboard-crash] `.immediately`, not `.interactively`:
-        // this page lives inside the Settings sheet, where an interactive
-        // keyboard drag and the sheet's drag-to-dismiss can share one gesture —
-        // the iPadOS 27 abort described at ModelEntryDetailSheet
-        // (ProviderInstanceDetailView.swift).
-        .scrollDismissesKeyboard(.immediately)
         .environment(\.editMode, $editMode)
         .sheet(isPresented: $showAddModels) {
-            NavigationStack {
+            NavigationView {
                 UnifiedModelPicker(config: addModelsConfig())
             }
         }

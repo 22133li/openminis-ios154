@@ -52,15 +52,11 @@ struct ProviderInstanceDetailView: View {
         }
         .navigationTitle(instance?.label ?? "Provider")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showExportShare = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-            }
-        }
+        .navigationBarItems(trailing: Button {
+            showExportShare = true
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+        })
         .sheet(item: $quotaConsoleURL) { url in
             MinisLinkPreviewView(url: url, browserPool: nil)
         }
@@ -116,7 +112,7 @@ struct ProviderInstanceDetailView: View {
             }
         }
         .sheet(isPresented: $showManualTokenInput) {
-            NavigationStack {
+            NavigationView {
                 Form {
                     Section {
                         SecureField("Bearer token", text: $manualTokenInputText)
@@ -142,26 +138,19 @@ struct ProviderInstanceDetailView: View {
                 }
                 .navigationTitle("Manual Bearer Token")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            showManualTokenInput = false
-                            manualTokenInputText = ""
-                        }
+                .navigationBarItems(
+                    leading: Button("Cancel") {
+                        showManualTokenInput = false
+                        manualTokenInputText = ""
+                    },
+                    trailing: Button("Save") {
+                        let cleaned = manualTokenInputText.components(separatedBy: .whitespacesAndNewlines).joined()
+                        ProviderKeychainHelper.saveOAuthString(cleaned, instanceId: instanceId, account: "manual-oauth-token")
+                        manualTokenInputText = ""
+                        showManualTokenInput = false
                     }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") {
-                            let cleaned = manualTokenInputText.components(separatedBy: .whitespacesAndNewlines).joined()
-                            ProviderKeychainHelper.saveOAuthString(cleaned, instanceId: instanceId, account: "manual-oauth-token")
-                            manualTokenInputText = ""
-                            showManualTokenInput = false
-                            oauthRefreshTrigger.toggle()
-                        }
-                        .disabled(manualTokenInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                }
+                )
             }
-            .presentationDetents([.medium])
         }
         .alert("Delete Provider", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
@@ -460,11 +449,9 @@ struct ProviderInstanceDetailView: View {
                 let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(label).json")
                 let _ = try? json.write(to: tempURL, atomically: true, encoding: .utf8)
                 ProviderShareSheet(url: tempURL)
-                    .presentationDetents([.medium])
             } else {
                 Text("Failed to export provider configuration.")
                     .foregroundStyle(.secondary)
-                    .presentationDetents([.medium])
             }
         }
     }
@@ -1333,7 +1320,7 @@ struct AddCustomModelSheet: View {
     private var instance: ProviderInstance? { store.instance(for: instanceId) }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 Section {
                     TextField("Model ID (e.g. claude-3-opus-latest)", text: $modelId)
@@ -1394,16 +1381,12 @@ struct AddCustomModelSheet: View {
             }
             .navigationTitle("Add Custom Model")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Add") { addModel() }
-                        .font(.body.weight(.semibold))
-                        .disabled(modelId.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-            }
+            .navigationBarItems(
+                leading: Button("Cancel") { dismiss() },
+                trailing: Button("Add") { addModel() }
+                    .font(.body.weight(.semibold))
+                    .disabled(modelId.trimmingCharacters(in: .whitespaces).isEmpty)
+            )
             .onAppear { initializeModalityFromProvider() }
         }
     }
@@ -1520,7 +1503,7 @@ struct ModelEntryDetailSheet: View {
     @State private var showResetAlert: Bool = false
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 Section("Identity") {
                     HStack {
@@ -1532,7 +1515,7 @@ struct ModelEntryDetailSheet: View {
                             // stays visible while editing. Single-line +
                             // trailing alignment lost the cursor past the row
                             // edge with no horizontal autoscroll.
-                            TextField("model-id", text: $modelId, axis: .vertical)
+                            TextField("model-id", text: $modelId)
                                 .font(.system(.body, design: .monospaced))
                                 .multilineTextAlignment(.trailing)
                                 .textInputAutocapitalization(.never)
@@ -1712,15 +1695,14 @@ struct ModelEntryDetailSheet: View {
             // views activates constraints across hierarchies. `.immediately`
             // hides the keyboard outright on the first scroll, so it is never
             // left minimized for that path to resurrect.
-            .scrollDismissesKeyboard(.immediately)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         Self.endEditing()
                         dismiss()
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         Self.endEditing()
                         save()
@@ -1736,8 +1718,6 @@ struct ModelEntryDetailSheet: View {
                 // pin a stale TestSession.
                 ModelQuickTestSheet(entry: entry)
                     .id(entry.id)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
             }
             .alert(
                 AppLocalized("Force Enable Thinking"),

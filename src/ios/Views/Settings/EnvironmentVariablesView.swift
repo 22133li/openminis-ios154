@@ -40,7 +40,7 @@ struct EnvironmentVariablesView: View {
                         Image(systemName: "terminal")
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
-                        Text("No Environment Variables")
+                        Text(AppLocalized("No Environment Variables"))
                             .font(.headline)
                         Text("Add variables like API keys or tokens that will be available in the shell environment.")
                             .font(.caption)
@@ -62,7 +62,7 @@ struct EnvironmentVariablesView: View {
         .navigationTitle("Environment Variables")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showingAddSheet = true
                 } label: {
@@ -256,7 +256,7 @@ private struct EnvVarFormSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section {
                     TextField("NAME", text: Binding(
@@ -270,7 +270,7 @@ private struct EnvVarFormSheet: View {
                     .submitLabel(.next)
                     .onSubmit { focusedField = .value }
                 } header: {
-                    Text("Name")
+                    Text(AppLocalized("Name"))
                 } footer: {
                     if !key.isEmpty && !isValid {
                         Text("Must start with a letter and contain only letters, digits, and underscores.")
@@ -310,7 +310,6 @@ private struct EnvVarFormSheet: View {
                         TextEditor(text: $note)
                             .frame(minHeight: 80)
                             .focused($focusedField, equals: .note)
-                            .scrollContentBackground(.hidden)
                     }
                 }
 
@@ -328,7 +327,7 @@ private struct EnvVarFormSheet: View {
                             showingDeleteConfirm = true
                         } label: {
                             Label {
-                                Text("Delete Variable")
+                                Text(AppLocalized("Delete Variable"))
                             } icon: {
                                 Image(systemName: "trash.fill")
                                     .font(.system(size: 9))
@@ -356,7 +355,6 @@ private struct EnvVarFormSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
         .alert(
             AppLocalized("Delete this variable?"),
             isPresented: $showingDeleteConfirm
