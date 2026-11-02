@@ -1156,17 +1156,27 @@ struct UnifiedModelPicker: View {
                 // to make room for the fixed-size tags ("Claude / Sonnet 5 [pill]
                 // [Active]"), and a wrapped text is only as wide as its longest
                 // line, which left the unused space on the right.
-                ViewThatFits(in: .horizontal) {
+                // [ios15-backport] ViewThatFits is iOS 16+; on 15 use the
+                // first (single-line) candidate unconditionally.
+                if #available(iOS 16.0, *) {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .quotaCapCenter, spacing: 4) {
+                            memberRowName(entry, disabled: disabled)
+                                .fixedSize(horizontal: true, vertical: false)
+                            memberRowTags(entry, isSystem: isSystem, isActive: isActive, disabled: disabled)
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            memberRowName(entry, disabled: disabled)
+                            HStack(alignment: .center, spacing: 4) {
+                                memberRowTags(entry, isSystem: isSystem, isActive: isActive, disabled: disabled)
+                            }
+                        }
+                    }
+                } else {
                     HStack(alignment: .quotaCapCenter, spacing: 4) {
                         memberRowName(entry, disabled: disabled)
                             .fixedSize(horizontal: true, vertical: false)
                         memberRowTags(entry, isSystem: isSystem, isActive: isActive, disabled: disabled)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        memberRowName(entry, disabled: disabled)
-                        HStack(alignment: .center, spacing: 4) {
-                            memberRowTags(entry, isSystem: isSystem, isActive: isActive, disabled: disabled)
-                        }
                     }
                 }
                 HStack(spacing: 4) {
@@ -1486,7 +1496,30 @@ struct UnifiedModelPicker: View {
                     // of a 245 pt column). One line when it all fits; otherwise the
                     // id keeps the full width and the tags drop below it.
                     let badges = traits.subtitle == nil ? modalityBadges(entry.model) : []
-                    ViewThatFits(in: .horizontal) {
+                    // [ios15-backport] ViewThatFits is iOS 16+; on 15 use
+                    // the first (single-line) candidate unconditionally.
+                    if #available(iOS 16.0, *) {
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 4) {
+                                entryRowSubtitle(entry, traits: traits)
+                                    .fixedSize(horizontal: true, vertical: false)
+                                if !badges.isEmpty {
+                                    Text("·")
+                                        .font(.caption2)
+                                        .foregroundStyle(.quaternary)
+                                }
+                                entryRowTags(badges, disabled: disabled)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                entryRowSubtitle(entry, traits: traits)
+                                if !badges.isEmpty || disabled {
+                                    HStack(spacing: 4) {
+                                        entryRowTags(badges, disabled: disabled)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
                         HStack(spacing: 4) {
                             entryRowSubtitle(entry, traits: traits)
                                 .fixedSize(horizontal: true, vertical: false)
@@ -1496,14 +1529,6 @@ struct UnifiedModelPicker: View {
                                     .foregroundStyle(.quaternary)
                             }
                             entryRowTags(badges, disabled: disabled)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            entryRowSubtitle(entry, traits: traits)
-                            if !badges.isEmpty || disabled {
-                                HStack(spacing: 4) {
-                                    entryRowTags(badges, disabled: disabled)
-                                }
-                            }
                         }
                     }
                 }

@@ -253,7 +253,10 @@ extension ToolFoldPlanner {
         case .info, .delegateTool, .userAskTool:  // [T-user-ask] never folded
             return .barrier
         case .shellTool, .fileReadTool, .fileWriteTool, .fileEditTool,
-             .browserTool, .readImageTool, .memoryTool:
+             .browserTool, .readImageTool, .memoryTool, .vaultTool:
+            // [ios15-backport] .vaultTool exists only in this backport
+            // (credential vault); upstream 1.15 has no such case. It is a
+            // foldable tool call like the others in this group.
             switch block.toolStatus {
             case .success: return .tool(.succeeded)
             case .failed: return .tool(.failed)

@@ -216,10 +216,14 @@ struct ChatToolbarHost<Title: View, Trailing: View>: View, Equatable {
         Color.clear
             .frame(width: 0, height: 0)
             .allowsHitTesting(false)
+            // [ios15-backport] A conditional ToolbarItem inside the builder
+            // is ambiguous between the two toolbar(content:) overloads on
+            // the iOS 15 toolchain; the item stays unconditional and the
+            // condition moves inside it (empty when hidden).
             .toolbar {
                 ToolbarItem(placement: .principal) { title() }
-                if showsTrailing {
-                    ToolbarItem(placement: .navigationBarTrailing) { trailing() }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if showsTrailing { trailing() }
                 }
             }
     }

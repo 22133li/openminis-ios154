@@ -494,7 +494,7 @@ final class ChatExportRenderer {
     }
 
     private func collectLineBreaks(in view: UIView, root: UIView, into breaks: inout [CGFloat]) {
-        if let tv = view as? UITextView, tv.textLayoutManager == nil {
+        if let tv = view as? UITextView, textViewUsesTextKit1(tv) {
             let lm = tv.layoutManager
             let glyphs = lm.glyphRange(for: tv.textContainer)
             let inset = tv.textContainerInset.top
@@ -782,7 +782,7 @@ final class ChatExportRenderer {
         func isPrivate(_ v: UIView) -> Bool { NSStringFromClass(type(of: v)).hasPrefix("_") }
         func walk(_ v: UIView) {
             guard !v.isHidden, v.alpha > 0.01 else { return }
-            if let tv = v as? UITextView, tv.textLayoutManager == nil {
+            if let tv = v as? UITextView, textViewUsesTextKit1(tv) {
                 textViews.append(tv)
                 for sub in tv.subviews where isPrivate(sub) && !sub.isHidden {
                     sub.isHidden = true
@@ -941,3 +941,13 @@ enum ChatExportDebugRPC {
     }
 }
 #endif
+
+// [ios15-backport] UITextView.textLayoutManager is iOS 16+ (TextKit 2).
+// On iOS 15 every text view uses TextKit 1, so the upstream check
+// `textLayoutManager == nil` is unconditionally true there.
+private func textViewUsesTextKit1(_ tv: UITextView) -> Bool {
+    if #available(iOS 16.0, *) {
+        return tv.textLayoutManager == nil
+    }
+    return true
+}

@@ -1013,16 +1013,6 @@ private struct UserAskPendingCard: View {
                     allowOnceButton
                 }
             }
- else {
-                HStack(spacing: 8) {
-                if showsPrevious {
-                previousButton(fill: false)
-                }
-                Spacer(minLength: 12)
-                cancelButton
-                allowOnceButton
-                }
-            }
         }
     }
 

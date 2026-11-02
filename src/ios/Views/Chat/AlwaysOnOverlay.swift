@@ -163,7 +163,7 @@ struct AlwaysOnOverlayView: View {
             soul = SoulStore.cachedMetadata
         }
         .statusBarHidden(true)
-        .persistentSystemOverlays(.hidden)
+        .persistentSystemOverlays15(.hidden)
     }
 
     private var content: some View {
@@ -233,5 +233,18 @@ struct AlwaysOnOverlayView: View {
         let total = max(0, Int(now.timeIntervalSince(since)))
         let h = total / 3600, m = (total % 3600) / 60, sec = total % 60
         return h > 0 ? String(format: "%d:%02d:%02d", h, m, sec) : String(format: "%02d:%02d", m, sec)
+    }
+}
+
+// [ios15-backport] persistentSystemOverlays is iOS 16+; on 15 there is no
+// equivalent, so the overlay simply leaves the system overlays as they are.
+private extension View {
+    @ViewBuilder
+    func persistentSystemOverlays15(_ visibility: Visibility) -> some View {
+        if #available(iOS 16.0, *) {
+            self.persistentSystemOverlays(visibility)
+        } else {
+            self
+        }
     }
 }

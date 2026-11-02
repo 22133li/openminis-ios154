@@ -3391,13 +3391,7 @@ private struct ToolStatusBar: View {
             // them would fire on the same hold. The preview is an opaque card
             // because the bar's glass does not survive the lift snapshot.
             .contentShape(Rectangle())
-            .contextMenu {
-                Toggle(isOn: FloatingToolBar.toolPreviewBinding) {
-                    Label(AppLocalized("Tool Preview Window"), systemImage: "rectangle.inset.topleft.filled")
-                }
-            } preview: {
-                MessageContextMenuPreview(text: title)
-            }
+            .modifier(ToolPreviewContextMenu15(title: title))
 
             if toolBlocks.count > 1 {
                 HStack(spacing: 2) {
@@ -3584,4 +3578,27 @@ struct ChildToolTarget: Identifiable {
     let sessionId: String
     let block: AssistantBlock
     var id: String { block.toolUseId ?? block.id.uuidString }
+}
+
+// [ios15-backport] contextMenu(menuItems:preview:) is iOS 16+; on 15 the
+// same menu is presented without the preview card.
+private struct ToolPreviewContextMenu15: ViewModifier {
+    let title: String
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, *) {
+            content.contextMenu {
+                Toggle(isOn: FloatingToolBar.toolPreviewBinding) {
+                    Label(AppLocalized("Tool Preview Window"), systemImage: "rectangle.inset.topleft.filled")
+                }
+            } preview: {
+                MessageContextMenuPreview(text: title)
+            }
+        } else {
+            content.contextMenu {
+                Toggle(isOn: FloatingToolBar.toolPreviewBinding) {
+                    Label(AppLocalized("Tool Preview Window"), systemImage: "rectangle.inset.topleft.filled")
+                }
+            }
+        }
+    }
 }

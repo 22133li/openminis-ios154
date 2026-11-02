@@ -561,7 +561,11 @@ struct ContentView: View {
     /// override where the user just chose to be.
     static let pendingBackgroundNavigationTTL: TimeInterval = 90
 
-    var body: some View {
+    // [ios15-backport] Upstream body is a single ~880-line modifier
+    // chain, which the Swift 6.1 type-checker (Xcode 16.4) cannot
+    // type-check in reasonable time; the chain is split across two
+    // properties. Every modifier and its order are unchanged.
+    private var bodyBase: some View {
         GeometryReader { geo in
             let wide = isIPad && geo.size.width >= compactThreshold
             Group {
@@ -965,6 +969,10 @@ struct ContentView: View {
                 .animation(.easeInOut(duration: 0.2), value: isExporting)
             }
         }
+    }
+
+    var body: some View {
+        bodyBase
         .task {
             // [T-p1-delegate-task] Hidden child sessions never reach the
             // sidebar; they are entered from their parent's helper block.

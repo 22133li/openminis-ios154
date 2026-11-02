@@ -2507,9 +2507,16 @@ extension BackgroundKeepAliveManager {
             return
         }
         continuedAwaitingForeground = false
+        // [ios15-backport] BGContinuedProcessingTask is iOS 26+ and absent
+        // from the iOS 18 SDK, so the submission path is compiled out
+        // on this toolchain (on iOS 15 it is unreachable anyway: the
+        // iOS 26 availability guard above returns first).
+#if compiler(>=6.2)
         submitContinuedTask(caller: caller)
+#endif
     }
 
+#if compiler(>=6.2)
     @available(iOS 26.0, *)
     private func submitContinuedTask(caller: String) {
         // A fresh identifier per request: registering one identifier twice
@@ -2548,7 +2555,9 @@ extension BackgroundKeepAliveManager {
             continuedUnavailableThisRun = true
         }
     }
+#endif
 
+#if compiler(>=6.2)
     @available(iOS 26.0, *)
     private func continuedTaskStarted(_ task: BGContinuedProcessingTask, id: String, hold: DispatchSemaphore) {
         guard continuedPendingId == id, continuedBusy else {
@@ -2574,7 +2583,9 @@ extension BackgroundKeepAliveManager {
         evaluateLocationUpdates()
         evaluateBackgroundActivitySession()
     }
+#endif
 
+#if compiler(>=6.2)
     @available(iOS 26.0, *)
     private func tickContinuedProgress() {
         guard let task = continuedTask as? BGContinuedProcessingTask else { return }
@@ -2592,6 +2603,7 @@ extension BackgroundKeepAliveManager {
             logger.info("[BKA][Continued] tick \(p.completedUnitCount)/\(p.totalUnitCount) appState=\(UIApplication.shared.applicationState.rawValue) bgRemaining=\(Int(min(UIApplication.shared.backgroundTimeRemaining, 99999)))")
         }
     }
+#endif
 
     private func continuedTaskExpired(id: String) {
         // Also what the card's Stop button produces: the API does not tell the
@@ -2607,6 +2619,7 @@ extension BackgroundKeepAliveManager {
         continuedPendingId = nil
         let callbacks = continuedEndCallbacks
         continuedEndCallbacks = []
+#if compiler(>=6.2)
         guard #available(iOS 26.0, *), let task = continuedTask as? BGContinuedProcessingTask else { return }
         continuedTask = nil
         task.progress.completedUnitCount = task.progress.totalUnitCount
@@ -2618,6 +2631,9 @@ extension BackgroundKeepAliveManager {
         evaluateLocationUpdates()
         evaluateBackgroundActivitySession()
         if continuedBusy { callbacks.forEach { $0() } }
+#else
+        return
+#endif
     }
 }
 

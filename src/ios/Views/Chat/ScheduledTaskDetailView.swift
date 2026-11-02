@@ -1255,11 +1255,9 @@ struct ScheduledTaskBanner: View {
         .accessibilityAction(named: Text(AppLocalized("Cancel All Scheduled Tasks"))) { confirmCancelAll = true }
         // [T-sched-run-now] Offered only while counting down; the action
         // re-checks at activation like the menu item.
-        .accessibilityActions {
-            if runNowOffered(jobId: state.job.id, phase: state.phase) {
-                Button(AppLocalized("Run Now")) { runNow(state.job.id, run: state.job.runsDone) }
-            }
-        }
+        .modifier(RunNowAccessibility15(
+            offered: runNowOffered(jobId: state.job.id, phase: state.phase),
+            runNow: { runNow(state.job.id, run: state.job.runsDone) }))
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .padding(.horizontal, 12)
         .padding(.top, 6)
@@ -1466,6 +1464,26 @@ extension ScheduledBannerModel {
                 nextRunAt: state.phase == .countdown ? state.job.nextFireAt : nil,
                 runCounter: counter
             )
+        }
+    }
+}
+
+// [ios15-backport] accessibilityActions(content:) is iOS 16+; on 15 the
+// same conditional action is exposed as a named accessibility action.
+private struct RunNowAccessibility15: ViewModifier {
+    let offered: Bool
+    let runNow: () -> Void
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, *) {
+            content.accessibilityActions {
+                if offered {
+                    Button(AppLocalized("Run Now")) { runNow() }
+                }
+            }
+        } else if offered {
+            content.accessibilityAction(named: Text(AppLocalized("Run Now"))) { runNow() }
+        } else {
+            content
         }
     }
 }

@@ -66,8 +66,12 @@ struct MemoryManagementView: View {
             // `if #available` inside a ToolbarContentBuilder needs
             // buildLimitedAvailability, which the Xcode 27.1 SDK marks iOS
             // 17.5+, so it no longer compiles for the 16.0 target.
-            if showsForceSync {
-                ToolbarItem(placement: .navigationBarTrailing) {
+            // [ios15-backport] A conditional ToolbarItem inside the builder
+            // is ambiguous between the two toolbar(content:) overloads on
+            // the iOS 15 toolchain; the item stays unconditional and the
+            // condition moves inside it (empty when hidden).
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if showsForceSync {
                     Menu {
                         Button {
                             if #available(iOS 17.0, *) {

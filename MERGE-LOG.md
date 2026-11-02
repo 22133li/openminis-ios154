@@ -365,3 +365,19 @@
 
 ## CI 诊断（2026-11-03）
 - run 41462912253 两次尝试均在同一位置静默失败：流式日志停在 SwiftDriverJobDiscovery「Compiling bridging header」，无任何 error 行，xcodebuild 退出码 65。仅改 CI 工作流（非 App 源码）：xcodebuild 输出落盘 build-xcodebuild.log、失败也上传 artifact（含 ~/Library/Logs/DiagnosticReports 拷贝），用于抓真实失败原因。
+
+## CI 修复轮 1（2026-11-03，针对 run 41479264302 完整日志的 24 条错误）
+诊断结论纠正：前两轮并非构建机中断——流式日志被截断，落盘日志显示真实编译错误 24 条 / 17 文件。逐项处理（全部带 [ios15-backport] 注释）：
+- 合并损伤 2 处：UserAskCardView 删除重复 else 块（10 行）；SettingsSheet 删除重复的 @State showFeedbackDialog 声明。
+- ToolFoldPlanner：我方独有枚举 case .vaultTool（凭证保险库）加入可折叠工具组（上游 1.15 无此 case，其 switch 因此不穷尽）。
+- MinisApp：ShortcutRunTracker（上游标 iOS 16+）调用点加 #available 守卫，iOS 15 不跑孤儿扫描。
+- HelperRunner：SendPromptIntent.extractResponseText 加 #available 分支，iOS 15 走既有 ShortcutHelpers 同名实现。
+- ChatExportRenderer：UITextView.textLayoutManager（iOS 16+）两处改走 textViewUsesTextKit1() 助手（15 上恒为 TextKit 1，与上游判空等价）。
+- ContentView+SessionList：navigationSplitViewColumnWidth 改 15 守卫版（15 上保持默认列宽）。
+- AlwaysOnOverlay：persistentSystemOverlays 改 15 守卫版（15 上无对应 API、保持系统默认）。
+- ToolLiveSheet：contextMenu(preview:) 改 ToolPreviewContextMenu15 修饰符（15 上同菜单、无预览卡）。
+- ScheduledTaskDetailView：accessibilityActions 改 RunNowAccessibility15 修饰符（15 上用具名无障碍动作，条件相同）。注：MinisTests 的 ScheduledRunNowTests 有一处源码字符串断言与此不符，该测试不在出包构建路径内。
+- UnifiedModelPicker 两处 ViewThatFits：按工程内既有 15 替身模式（ChatExportRenderer/UserAskCardView）加 #available 分支，15 上固定第一候选（单行）。
+- ChatToolbarHost / MemoryManagementView：工具栏内条件 ToolbarItem 在 15 工具链下与两个 toolbar(content:) 重载歧义；改为 item 常驻、条件移入 item 内部（隐藏时为空）。
+- BackgroundKeepAliveManager：BGContinuedProcessingTask 为 iOS 26 API、iOS 18 SDK 中不存在；submitContinuedTask / continuedTaskStarted / tickContinuedProgress 三个函数、evaluate 内的提交调用、finishContinuedTask 的完成尾段全部加 #if compiler(>=6.2) 编译期守卫。iOS 15 上该功能本就被 #available(iOS 26) 挡住，行为不变。
+- ContentView：body 为约 880 行单一修饰链，Swift 6.1 类型检查超时；拆为 bodyBase + body 两段，修饰符与顺序逐字不变。

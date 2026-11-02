@@ -131,8 +131,6 @@ struct SettingsSheet: View {
 
     @State private var showFeedbackDialog = false
 
-    @State private var showFeedbackDialog = false
-
     var body: some View {
         NavigationView {
             List {

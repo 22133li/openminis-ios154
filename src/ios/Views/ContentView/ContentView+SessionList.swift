@@ -371,7 +371,7 @@ extension ContentView {
 
         }
         .listStyle(.plain)
-        .navigationSplitViewColumnWidth(min: 340, ideal: 380, max: 500)
+        .navigationSplitViewColumnWidth15(min: 340, ideal: 380, max: 500)
         // [T-macos27-liquid-glass-navbar] See MacOS27GlassWorkaround. Applied to
         // the Mac sidebar List only; the iPhone compact list (the other branch
         // of sessionList) is unaffected and does not get it.
@@ -390,6 +390,19 @@ extension ContentView {
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sidebarToolbarContent }
+        }
+    }
+}
+
+// [ios15-backport] navigationSplitViewColumnWidth is iOS 16+; on 15 the
+// split column keeps its default width.
+private extension View {
+    @ViewBuilder
+    func navigationSplitViewColumnWidth15(min: CGFloat, ideal: CGFloat, max: CGFloat) -> some View {
+        if #available(iOS 16.0, *) {
+            self.navigationSplitViewColumnWidth(min: min, ideal: ideal, max: max)
+        } else {
+            self
         }
     }
 }

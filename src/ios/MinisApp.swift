@@ -606,7 +606,11 @@ struct MinisApp: App {
                 // against ChatStore whether each orphan actually completed before
                 // warning. Wrapped in a Task so scenePhase handling stays
                 // synchronous; the scan is advisory and nothing below depends on it.
-                Task { await ShortcutRunTracker.checkPendingOnForeground() }
+                // [ios15-backport] ShortcutRunTracker is iOS 16+ upstream
+                // (AppIntents); the orphan scan simply does not run on 15.
+                if #available(iOS 16.0, *) {
+                    Task { await ShortcutRunTracker.checkPendingOnForeground() }
+                }
                 AgentLiveActivityManager.shared.cleanupStaleActivities(source: "scenePhase.active")
                 // [T-ios-live-activity-soft-finish] If a completed task's Live
                 // Activity is lingering (soft-finished, awaiting the user), the
