@@ -132,6 +132,7 @@ extension AIChatViewModel {
                 case .browserTool: return "browser"
                 case .readImageTool: return "readImage"
                 case .memoryTool: return "memory"
+                case .vaultTool: return "vault"
                 case .delegateTool: return SubAgentDefinition.toolName
                 case .userAskTool: return UserAskTool.name
                 case .info: return "info"

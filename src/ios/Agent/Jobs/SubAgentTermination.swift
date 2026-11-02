@@ -286,6 +286,7 @@ extension AIChatViewModel {
         case .browserTool: "browser_use"
         case .readImageTool: "read_image"
         case .memoryTool(let a): a
+        case .vaultTool(let a): "vault:\(a)"
         case .delegateTool: SubAgentDefinition.toolName
         case .userAskTool: UserAskTool.name
         default: "other"

@@ -1,3 +1,4 @@
+import UIKit
 import ActivityKit
 import AVFoundation
 import BackgroundTasks
@@ -974,10 +975,17 @@ final class BackgroundKeepAliveManager: NSObject, ObservableObject, CLLocationMa
     private func refreshActiveTaskBadge(sessions: Set<String>, enabled: Bool) {
         let total = AppBadge.total(runningSessions: sessions.count, notificationsEnabled: enabled,
                                    unseenNotifications: unseenBadgeCount)
-        UNUserNotificationCenter.current().setBadgeCount(total) { err in
-            if let err {
-                logger.error("[Badge] setBadgeCount failed: \(err.localizedDescription)")
+        if #available(iOS 16, *) {
+            UNUserNotificationCenter.current().setBadgeCount(total) { err in
+                if let err {
+                    logger.error("[Badge] setBadgeCount failed: \(err.localizedDescription)")
+                }
             }
+        } else {
+            // [ios15-backport] `setBadgeCount` is iOS 16+. On iOS 15 the
+            // same AppBadge total is written through the legacy icon badge
+            // number (the 1.14 line's delivery API for this value).
+            UIApplication.shared.applicationIconBadgeNumber = total
         }
     }
 
@@ -2189,7 +2197,7 @@ struct BackgroundInterruptionBanner: View {
                 .gesture(swipeToDismiss)
                 .animation(.spring(response: 0.35), value: tracker.showBanner)
                 .sheet(isPresented: $showSettings) {
-                    NavigationStack { EnhancedBackgroundSettingsView() }
+                    NavigationView { EnhancedBackgroundSettingsView() }
                 }
                 // [T-ios-scene-create-watchdog-corelocation] Subscribe only once
                 // the banner is actually on screen — the subscription exists to
@@ -2254,7 +2262,7 @@ struct BackgroundInterruptionBanner: View {
         .padding(.top, 4)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.orange.gradient)
+                .fill(Color.orange)
                 .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
         )
         .padding(.horizontal, 12)

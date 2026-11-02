@@ -160,6 +160,12 @@ extension AIChatViewModel {
             let errMsg = ChatMessage(role: .assistant, content: "", blocks: [])
             errMsg.error = AppLocalized("No model configured. Add a provider in Settings.")
             messages.append(errMsg)
+            // [ios15-backport] Also put the specific reason in the top
+            // banner: the identical row alone made Retry look dead,
+            // because retrying just re-runs the same failing
+            // resolution and appends an identical row (2026-10-25
+            // report).
+            errorMessage = noModelResolutionHint()
             return
         }
         var provider = await makeAgentProvider(for: entry)

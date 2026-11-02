@@ -613,8 +613,18 @@ extension AIChatViewModel {
     /// keeping all previously completed tool blocks and conversation history).
     func retry() {
         settlePendingStop(before: "retry")  // [T-stop-cleanup-before-new-turn]
-        guard !isProcessing else { return }
-        guard let lastMsg = messages.last, lastMsg.role == .assistant else { return }
+        // [ios15-backport] Upstream's guards return silently; in the
+        // iOS 15 List backport that made the error-row Retry button
+        // look completely dead when a tap was rejected (2026-10-25
+        // report). Surface the reason in the top banner instead.
+        guard !isProcessing else {
+            errorMessage = AppLocalized("Still processing — wait for the current turn to finish, then retry.")
+            return
+        }
+        guard let lastMsg = messages.last, lastMsg.role == .assistant else {
+            errorMessage = AppLocalized("Nothing to retry — the last message is not an assistant reply.")
+            return
+        }
 
         // [T-ios-retry-keyboard] This turn exists because the user re-sent an
         // old failure, so its completion must not be treated as "a reply
