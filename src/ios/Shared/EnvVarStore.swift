@@ -123,7 +123,7 @@ final class EnvVarStore: ObservableObject {
     /// [T-envvar-disable] Enabled / disabled state, see EnvVarStateBook.
     @Published private(set) var stateBook = EnvVarStateBook()
 
-    private let fileURL: URL
+    private var fileURL: URL
     nonisolated private static let keychainService = "com.openminis.app.envvar"
 
     /// [T-envvar-disable] env-vars-state.json, beside env-vars.json.
@@ -150,13 +150,36 @@ final class EnvVarStore: ObservableObject {
     }
 
     init() {
-        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
-        let baseURL = libraryURL.appendingPathComponent("MinisChat", isDirectory: true)
-        try? FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true)
+        // 修复 iOS 15.4 点击环境变量闪退：init 不做文件 IO，
+        // 避免主线程阻塞被看门狗杀掉（SIGKILL）。
+        // fileURL 先用临时值，后台加载完成后再更新。
+        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        let baseURL = (libraryURL ?? FileManager.default.temporaryDirectory)
+            .appendingPathComponent("MinisChat", isDirectory: true)
         self.fileURL = baseURL.appendingPathComponent("env-vars.json")
-        self.entries = Self.loadEntries(from: fileURL)
-        self.stateBook = Self.loadStateBook()
-        scheduleLegacyRecordCleanupIfNeeded()
+        // 后台加载，完成后回主线程发布
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            let url = await self.resolveFileURL()
+            let loaded = await Self.loadEntries(from: url)
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                // 更新真实 fileURL（init 时可能用了 temporaryDirectory 兜底）
+                self.fileURL = url
+                self.entries = loaded
+                self.stateBook = Self.loadStateBook()
+                self.scheduleLegacyRecordCleanupIfNeeded()
+            }
+        }
+    }
+
+    /// 后台解析真实的文件 URL（创建目录）
+    private func resolveFileURL() async -> URL {
+        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        let baseURL = (libraryURL ?? FileManager.default.temporaryDirectory)
+            .appendingPathComponent("MinisChat", isDirectory: true)
+        try? FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true)
+        return baseURL.appendingPathComponent("env-vars.json")
     }
 
     // MARK: - Legacy whole-file record cleanup
@@ -417,10 +440,10 @@ final class EnvVarStore: ObservableObject {
     // MARK: - Validation
 
     /// Valid env var name: starts with a letter, contains only letters, digits, and underscores.
-    static let keyRegex = /^[A-Za-z][A-Za-z0-9_]*$/
-
     static func isValidKey(_ key: String) -> Bool {
-        key.wholeMatch(of: keyRegex) != nil
+        // iOS 15 backport: Regex is iOS 16+
+        let pattern = "^[A-Za-z][A-Za-z0-9_]*$"
+        return key.range(of: pattern, options: .regularExpression) != nil
     }
 
     // MARK: - Value Sanitization

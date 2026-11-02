@@ -69,6 +69,10 @@ struct AssistantBlockView: View {
             ToolCapsuleView(block: block, icon: "brain.head.profile", accentColor: .pink,
                             commandStartTime: commandStartTime, onStop: onStop,
                             toolSnapshots: toolSnapshots, detailBlock: $detailBlock)
+        case .vaultTool:
+            ToolCapsuleView(block: block, icon: "key.fill", accentColor: .blue,
+                            commandStartTime: commandStartTime, onStop: onStop,
+                            toolSnapshots: toolSnapshots, detailBlock: $detailBlock)
         case .userAskTool:
             // [T-user-ask] The interactive question card.
             UserAskCardView(block: block)
@@ -309,6 +313,7 @@ struct ToolCapsuleView: View {
         case .browserTool:   toolName = "browser_use"
         case .readImageTool: toolName = "read_image"
         case .memoryTool:    toolName = "memory"
+        case .vaultTool:     toolName = "vault"
         case .delegateTool:  toolName = SubAgentDefinition.toolName
         case .userAskTool:   toolName = UserAskTool.name
         case .text, .thinking, .info: toolName = "unknown"
@@ -1343,7 +1348,7 @@ struct ThinkingLevelSheetView: View {
     let onSelect: (ThinkingLevel) -> Void
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 thinkingRow(level: .off, isSelected: !currentLevel.isEnabled)
                 Section {
@@ -1372,7 +1377,6 @@ struct ThinkingLevelSheetView: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(.blue)
-                        .fontWeight(.semibold)
                 }
             }
         }

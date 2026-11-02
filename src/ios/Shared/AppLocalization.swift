@@ -135,8 +135,10 @@ enum LocalizedStringCache {
 /// and the in-app language bundle alike. With the label, literals can only
 /// reach the StaticString (plain) or LocalizationValue (interpolated) forms.
 func AppLocalized(resource: LocalizedStringResource) -> String {
-    // A LocalizedStringResource carries its own bundle reference, so it cannot
-    // be re-pointed the way a literal key can. Resolve it as-is rather than
-    // pretending the override applies.
-    String(localized: resource)
+    // iOS 15 backport: LocalizedStringResource is a String typealias in this
+    // backport, so resolve via the current (in-app selected language) bundle
+    // instead of as-is, otherwise in-app language selection has no effect on
+    // iOS 15 and UI stays in English. (Upstream resolves as-is via
+    // `String(localized:)` because a real resource carries its own bundle.)
+    AppBundle.current.localizedString(forKey: resource, value: resource, table: nil)
 }

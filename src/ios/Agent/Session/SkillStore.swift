@@ -84,7 +84,15 @@ struct Skill: Identifiable {
 final class SkillStore: ObservableObject {
     static let shared = SkillStore()
 
-    @Published private(set) var skills: [Skill] = []
+    @Published private(set) var skills: [Skill] = [] {
+        didSet {
+            // [fix-audit-7] 追踪主线程对 skills 的修改，用于 reload() 竞态检测
+            lastSkillsMutation = Date()
+        }
+    }
+    @Published private(set) var isLoading = true
+    /// 主线程最后一次修改 skills 的时间（didSet 自动维护）
+    private var lastSkillsMutation = Date.distantPast
 
     private let fm = FileManager.default
     private var db: OpaquePointer?
@@ -108,11 +116,108 @@ final class SkillStore: ObservableObject {
     }
 
     private init() {
+        // 修复 iOS 15.4 点击技能页 SIGKILL 闪退：
+        // openDatabase/createTables 是毫秒级（sqlite3_open + CREATE IF NOT EXISTS），
+        // 可以在主线程做。loadSkills/installBundledSkills/migrate 是秒级文件 IO，
+        // 必须在后台做。之前 doBackgroundLoad 标了 @MainActor，IO 全在主线程，
+        // 主线程阻塞 3.7 秒被看门狗杀掉。
         openDatabase()
         createTables()
-        loadSkills()
-        installBundledSkills()
-        migrateMarkBundledSkillsDirty()
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            // 先在主线程取 DB 句柄和目录（很快）
+            let ctx: (db: OpaquePointer?, skillsDir: URL, rootfsDir: URL)? = await MainActor.run { [weak self] in
+                guard let self, let db = self.db else { return nil }
+                return (db, self.skillsDir, self.rootfsSkillsDir)
+            }
+            guard let ctx else {
+                await MainActor.run { [weak self] in self?.isLoading = false }
+                return
+            }
+            // 后台：加载 skills 数据（读 DB + 逐个读 SKILL.md 文件，最慢的部分）
+            // static 方法，不触碰 @MainActor 隔离的状态
+            let loaded = Self.loadSkillsDataBackground(
+                db: ctx.db,
+                skillsDir: ctx.skillsDir,
+                rootfsDir: ctx.rootfsDir
+            )
+            // 回主线程：一次性更新 UI
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.skills = loaded
+                self.isLoading = false
+            }
+            // 主线程：安装 bundled skills + 迁移（此时 UI 已显示，
+            // installBundledSkills 只是版本检查很快，migrate 扫目录也很快，
+            // 真正的文件拷贝在 importSkill 内部按需做）
+            await MainActor.run { [weak self] in
+                self?.installBundledSkills()
+                self?.migrateMarkBundledSkillsDirty()
+            }
+        }
+    }
+
+    /// 后台加载 skills 数据（static，不触碰 @MainActor 状态）。
+    /// 做 DB 查询 + 逐个读 SKILL.md 文件，是初始化最慢的部分。
+    /// 注意：不做 discoverNewSkillsOnDisk（orphan 处理），那个在 reload() 时做。
+    nonisolated private static func loadSkillsDataBackground(
+        db: OpaquePointer?,
+        skillsDir: URL,
+        rootfsDir: URL
+    ) -> [Skill] {
+        var result: [Skill] = []
+        let fm = FileManager.default
+        let sql = "SELECT id, name, description, version, import_source, is_enabled, installed_at, updated_at, use_count FROM skills"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
+        defer { sqlite3_finalize(stmt) }
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let id = String(cString: sqlite3_column_text(stmt, 0))
+            let name = String(cString: sqlite3_column_text(stmt, 1))
+            let description = String(cString: sqlite3_column_text(stmt, 2))
+            let version = String(cString: sqlite3_column_text(stmt, 3))
+            let importSourceStr = String(cString: sqlite3_column_text(stmt, 4))
+            let isEnabled = sqlite3_column_int(stmt, 5) != 0
+            let installedAt = Date(timeIntervalSince1970: sqlite3_column_double(stmt, 6))
+            let updatedAt = Date(timeIntervalSince1970: sqlite3_column_double(stmt, 7))
+            let useCount = sqlite3_column_double(stmt, 8)
+
+            let skillFile = skillsDir.appendingPathComponent(id).appendingPathComponent("SKILL.md")
+            var resolvedName = name
+            var resolvedDesc = description
+            var body: String = ""
+            if let content = try? String(contentsOf: skillFile, encoding: .utf8) {
+                let parsed = Self.parse(skillMD: content)
+                body = parsed.body
+                let nameStale = (name == Self.defaultSkillName && parsed.name != Self.defaultSkillName)
+                let descStale = (description == "|" || description == ">" || description.isEmpty)
+                    && !parsed.description.isEmpty
+                if nameStale { resolvedName = parsed.name }
+                if descStale { resolvedDesc = parsed.description }
+                // 注意：后台不做 dbUpdateSkillMeta（需要 MainActor），
+                // stale 数据在 reload() 时修正
+            } else {
+                let rootfsFile = rootfsDir.appendingPathComponent(id).appendingPathComponent("SKILL.md")
+                if let rootfsContent = try? String(contentsOf: rootfsFile, encoding: .utf8) {
+                    let parsed = Self.parse(skillMD: rootfsContent)
+                    body = parsed.body
+                }
+            }
+            let skill = Skill(
+                id: id,
+                name: resolvedName,
+                description: resolvedDesc,
+                version: version,
+                importSource: SkillImportSource.fromDB(importSourceStr),
+                isEnabled: isEnabled,
+                installedAt: installedAt,
+                updatedAt: updatedAt,
+                body: body,
+                useCount: useCount
+            )
+            result.append(skill)
+        }
+        return result
     }
 
     deinit {
@@ -439,7 +544,7 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
         var body: String = ""
     }
 
-    static func parse(skillMD rawContent: String) -> ParsedSkillMD {
+    nonisolated static func parse(skillMD rawContent: String) -> ParsedSkillMD {
         var result = ParsedSkillMD()
         // Normalize line endings before splitting. A SKILL.md written on
         // Windows uses CRLF (classic Mac editors bare CR); splitting on "\n"
@@ -858,34 +963,41 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
     }
 
     @discardableResult
-    func importFromArchive(at url: URL) throws -> Skill {
-        let data = try Data(contentsOf: url)
-        let entries = try Self.readZipEntries(data: data)
+    func importFromArchive(at url: URL) async throws -> Skill {
+        // [T-skill-import-bg-87] Heavy I/O + decompression run off the main
+        // thread. The central directory is scanned for SKILL.md BEFORE
+        // anything is decompressed, so a non-skill archive (e.g. a 150MB
+        // tool bundle) fails fast instead of freezing the UI.
+        let staged = try await Task.detached(priority: .userInitiated) { () -> (skillMDName: String, content: String, entries: [ZipEntry]) in
+            let data = try Data(contentsOf: url)
+            let names = try Self.zipCentralDirectoryNames(data: data)
+            guard let skillMDName = names.first(where: {
+                $0 == "SKILL.md" || ($0.hasSuffix("/SKILL.md") && $0.components(separatedBy: "/").count == 2)
+            }) else {
+                throw SkillError.noSkillMDInArchive
+            }
+            let entries = try Self.readZipEntries(data: data)
+            guard let mdEntry = entries.first(where: { $0.name == skillMDName }),
+                  let content = String(data: mdEntry.data, encoding: .utf8),
+                  !content.isEmpty else {
+                throw SkillError.invalidContent
+            }
+            return (skillMDName, content, entries)
+        }.value
 
-        guard let skillMDEntry = entries.first(where: {
-            let name = $0.name
-            return name == "SKILL.md" || (name.hasSuffix("/SKILL.md") && name.components(separatedBy: "/").count == 2)
-        }) else {
-            throw SkillError.noSkillMDInArchive
-        }
-
-        guard let skillContent = String(data: skillMDEntry.data, encoding: .utf8), !skillContent.isEmpty else {
-            throw SkillError.invalidContent
-        }
-
-        let skill = try importSkill(content: skillContent, source: .file)
+        let skill = try importSkill(content: staged.content, source: .file)
 
         let prefix: String
-        if skillMDEntry.name == "SKILL.md" {
+        if staged.skillMDName == "SKILL.md" {
             prefix = ""
         } else {
-            prefix = String(skillMDEntry.name.dropLast("SKILL.md".count))
+            prefix = String(staged.skillMDName.dropLast("SKILL.md".count))
         }
 
         let skillDir = skillsDir.appendingPathComponent(skill.id)
         let rootfsDir = rootfsSkillsDir.appendingPathComponent(skill.id)
 
-        for entry in entries {
+        for entry in staged.entries {
             guard !entry.isDirectory else { continue }
             var relativePath = entry.name
             if !prefix.isEmpty && relativePath.hasPrefix(prefix) {
@@ -910,7 +1022,7 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
         // Re-mark dirty after all bundled files are written so the sync cycle
         // picks up the complete skill (SKILL.md + scripts/assets).
         // The stability check (isSkillStable) ensures sync waits until writes settle.
-        let hasBundledFiles = entries.contains { !$0.isDirectory && $0.name != "SKILL.md" && !$0.name.hasPrefix(".") }
+        let hasBundledFiles = staged.entries.contains { !$0.isDirectory && $0.name != "SKILL.md" && !$0.name.hasPrefix(".") }
         if hasBundledFiles {
             if let idx = skills.firstIndex(where: { $0.id == skill.id }) {
                 skills[idx].updatedAt = Date()
@@ -1423,7 +1535,36 @@ Do not create extraneous files: README.md, INSTALLATION_GUIDE.md, CHANGELOG.md, 
     /// Re-scan DB and disk for new/updated skills. Call after agent creates a skill file,
     /// or when returning to foreground.
     func reload() {
-        loadSkills()
+        // 修复：reload 也在后台做，避免 Skills 页 onAppear 阻塞主线程
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            // [fix-audit-7] 记录开始时间，用于检测后台加载期间主线程是否有修改
+            let startTime = await MainActor.run { [weak self] in
+                self?.lastSkillsMutation ?? .distantPast
+            }
+            let ctx: (db: OpaquePointer?, skillsDir: URL, rootfsDir: URL)? = await MainActor.run { [weak self] in
+                guard let self, let db = self.db else { return nil }
+                return (db, self.skillsDir, self.rootfsSkillsDir)
+            }
+            guard let ctx else { return }
+            let loaded = Self.loadSkillsDataBackground(
+                db: ctx.db,
+                skillsDir: ctx.skillsDir,
+                rootfsDir: ctx.rootfsDir
+            )
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                // [fix-audit-7] 如果后台加载期间主线程修改过 skills，
+                // 丢弃旧快照，避免覆盖用户的导入/删除操作
+                guard self.lastSkillsMutation <= startTime else { return }
+                self.skills = loaded
+                // [fix-audit-6] 后台加载跳过了 discoverNewSkillsOnDisk，
+                // 这里补上，保证 agent 建完技能后 reload 能发现磁盘新技能。
+                // reconcileOrphanSkill 会自行 append 到 self.skills。
+                let knownIds = Set(loaded.map { $0.id })
+                self.discoverNewSkillsOnDisk(knownIds: knownIds)
+            }
+        }
     }
 
     /// Rescan disk vs the previous in-memory snapshot, then markDirty
@@ -2587,7 +2728,42 @@ extension SkillStore {
         let data: Data
     }
 
-    static func readZipEntries(data: Data) throws -> [ZipEntry] {
+    /// Parse ONLY the central directory of a ZIP archive and return entry names.
+    /// No entry data is decompressed — callers use this to fail fast (e.g.
+    /// missing SKILL.md) before paying for full extraction. [T-skill-import-bg-87]
+    nonisolated static func zipCentralDirectoryNames(data: Data) throws -> [String] {
+        guard data.count >= 22 else { throw SkillError.invalidArchive }
+
+        var eocdOffset = -1
+        let searchStart = max(0, data.count - 65557)
+        for i in stride(from: data.count - 22, through: searchStart, by: -1) {
+            if data[i] == 0x50 && data[i+1] == 0x4B && data[i+2] == 0x05 && data[i+3] == 0x06 {
+                eocdOffset = i
+                break
+            }
+        }
+        guard eocdOffset >= 0 else { throw SkillError.invalidArchive }
+
+        let entryCount = Int(readU16(data, at: eocdOffset + 10))
+        let cdOffset = Int(readU32(data, at: eocdOffset + 16))
+
+        var names: [String] = []
+        names.reserveCapacity(entryCount)
+        var pos = cdOffset
+        for _ in 0..<entryCount {
+            guard pos + 46 <= data.count else { break }
+            guard readU32(data, at: pos) == 0x02014B50 else { break }
+            let nameLen = Int(readU16(data, at: pos + 28))
+            let extraLen = Int(readU16(data, at: pos + 30))
+            let commentLen = Int(readU16(data, at: pos + 32))
+            let nameData = data[pos+46 ..< pos+46+nameLen]
+            names.append(String(data: nameData, encoding: .utf8) ?? "")
+            pos += 46 + nameLen + extraLen + commentLen
+        }
+        return names
+    }
+
+    nonisolated static func readZipEntries(data: Data) throws -> [ZipEntry] {
         guard data.count >= 22 else { throw SkillError.invalidArchive }
 
         var eocdOffset = -1
@@ -2652,18 +2828,18 @@ extension SkillStore {
         return entries
     }
 
-    private static func readU16(_ data: Data, at offset: Int) -> UInt16 {
+    nonisolated private static func readU16(_ data: Data, at offset: Int) -> UInt16 {
         UInt16(data[offset]) | (UInt16(data[offset + 1]) << 8)
     }
 
-    private static func readU32(_ data: Data, at offset: Int) -> UInt32 {
+    nonisolated private static func readU32(_ data: Data, at offset: Int) -> UInt32 {
         UInt32(data[offset]) |
         (UInt32(data[offset + 1]) << 8) |
         (UInt32(data[offset + 2]) << 16) |
         (UInt32(data[offset + 3]) << 24)
     }
 
-    private static func decompress(_ data: Data, expectedSize: Int) -> Data? {
+    nonisolated private static func decompress(_ data: Data, expectedSize: Int) -> Data? {
         guard expectedSize > 0 else { return Data() }
         var decompressed = Data(count: expectedSize)
         let result = decompressed.withUnsafeMutableBytes { destPtr -> Int in
