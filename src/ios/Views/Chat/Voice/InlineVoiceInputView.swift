@@ -594,7 +594,7 @@ struct InlineVoiceInputView: View {
             viewModel.refreshInputProvider()
         }
         .sheet(isPresented: $showModelSelector) {
-            NavigationStack {
+            NavigationView {
                 UnifiedModelPicker(config: .voiceInput())
             }
         }
@@ -794,7 +794,7 @@ struct InlineVoiceInputView: View {
             TextField("", text: Binding(
                 get: { viewModel.transcript },
                 set: { viewModel.setTranscript($0); inputText = $0 }
-            ), axis: .vertical)
+            ))
                 .focused($editFocused)
                 .font(.body)
                 .multilineTextAlignment(.center)
@@ -804,11 +804,6 @@ struct InlineVoiceInputView: View {
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
                         Button {
-                            // [T-voice-panel-gap-after-edit] Focus teardown is
-                            // owned by the isEditingTranscript observer (which
-                            // also force-resigns the responder). Clearing
-                            // `editFocused` here as well would make the observer
-                            // see focus already false and skip that release.
                             viewModel.endEditing(resume: false)
                         } label: {
                             Text("Done", comment: "Finish transcript editing")

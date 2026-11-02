@@ -463,7 +463,7 @@ struct UnifiedModelPicker: View {
     /// re-filters. 120ms sits inside the 100-150ms the issue suggests: long
     /// enough that a burst of typing is one pass, short enough to feel
     /// immediate.
-    private static let searchDebounce: Duration = .milliseconds(120)
+    private static let searchDebounce: TimeInterval = 0.12
 
     /// [T-picker-search-cap] Rows rendered for one search.
     ///
@@ -695,7 +695,7 @@ struct UnifiedModelPicker: View {
                 return
             }
             searchDebounceTask = Task { @MainActor in
-                try? await Task.sleep(for: Self.searchDebounce)
+                try? await Task.sleep(nanoseconds: UInt64(Self.searchDebounce * 1_000_000_000))
                 guard !Task.isCancelled else { return }
                 debouncedSearch = trimmed
             }
@@ -719,12 +719,12 @@ struct UnifiedModelPicker: View {
         }
         .toolbar { toolbarContent }
         .sheet(isPresented: $showCreateGroupSheet) {
-            NavigationStack {
+            NavigationView {
                 UnifiedModelPicker(config: createGroupConfig())
             }
         }
         .sheet(isPresented: $showGroupsManager) {
-            NavigationStack {
+            NavigationView {
                 ModelGroupsView()
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
@@ -763,8 +763,6 @@ struct UnifiedModelPicker: View {
             // model while TestSession still ran the OLD one.
             ModelQuickTestSheet(entry: entry)
                 .id(entry.id)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
         }
     }
 
@@ -857,22 +855,28 @@ struct UnifiedModelPicker: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        if isMulti {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel") { dismiss() }
+        ToolbarItem(placement: .navigationBarLeading) {
+            Button("Cancel") { dismiss() }
+                .opacity(isMulti ? 1 : 0)
+                .disabled(!isMulti)
+        }
+        ToolbarItem(placement: .navigationBarTrailing) {
+            multiDoneButton
+        }
+    }
+
+    private var multiDoneButton: some View {
+        ZStack {
+            Button("Add (\(selectedEntryIds.count))") {
+                config.onAddMulti?(selectedEntryIds)
+                dismiss()
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Add (\(selectedEntryIds.count))") {
-                    config.onAddMulti?(selectedEntryIds)
-                    dismiss()
-                }
-                .font(.body.weight(.semibold))
-                .disabled(selectedEntryIds.isEmpty)
-            }
-        } else {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Done") { dismiss() }
-            }
+            .font(.body.weight(.semibold))
+            .disabled(selectedEntryIds.isEmpty)
+            .opacity(isMulti ? 1 : 0)
+            Button("Done") { dismiss() }
+                .opacity(isMulti ? 0 : 1)
+                .disabled(isMulti)
         }
     }
 

@@ -94,7 +94,7 @@ struct MCPFormSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section {
                     TextField(AppLocalized("Server name"), text: $name)
@@ -115,38 +115,24 @@ struct MCPFormSheet: View {
                 }
 
                 Section(AppLocalized("Note (shown to the agent)")) {
-                    TextField(AppLocalized("Optional description"), text: $note, axis: .vertical)
-                        .lineLimit(1...4)
+                    TextField(AppLocalized("Optional description"), text: $note)
+                        .lineLimit(4)
                 }
             }
             .navigationTitle(Text(isEditing ? "Edit Server" : "Add Server"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(AppLocalized("Cancel")) { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button {
-                            // Defer the side effect to the next runloop tick: on
-                            // iPad the toolbar Menu's own dismissal otherwise races
-                            // the pasteboard write / sheet present and swallows it,
-                            // so the tap appeared to do nothing.
-                            DispatchQueue.main.async { copyJSON() }
-                        } label: {
-                            Label(AppLocalized("Copy JSON"), systemImage: "doc.on.doc")
-                        }
-                        Button {
-                            DispatchQueue.main.async { shareJSON() }
-                        } label: {
-                            Label(AppLocalized("Share JSON"), systemImage: "square.and.arrow.up")
-                        }
+            .navigationBarItems(
+                leading: Button(AppLocalized("Cancel")) { dismiss() },
+                trailing: Menu {
+                    Button {
+                        DispatchQueue.main.async { copyJSON() }
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Label(AppLocalized("Copy JSON"), systemImage: "doc.on.doc")
                     }
-                    .disabled(!canSave)   // need a name + a transport to export anything
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
-            }
+            )
             // Full-width primary Save pinned to the bottom, above the keyboard.
             .safeAreaInset(edge: .bottom) {
                 Button(action: save) {

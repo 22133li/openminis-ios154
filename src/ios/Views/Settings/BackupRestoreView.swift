@@ -177,7 +177,7 @@ struct BackupRestoreView: View {
                     .disabled(isWorking)
                 }
             } header: {
-                Text("Backup Destinations")
+                Text(AppLocalized("Backup Destinations"))
             } footer: {
                 Text("Tap a destination to browse its folders and pick a backup.")
             }
@@ -232,7 +232,7 @@ struct BackupRestoreView: View {
             }
             .disabled(isWorking)
         } header: {
-            Text("Other Sources")
+            Text(AppLocalized("Other Sources"))
         } footer: {
             Text("Pick a .minisbak file from Files, iCloud Drive, or any connected storage — or add a server your backups were saved to.")
         }
@@ -276,7 +276,7 @@ struct BackupRestoreView: View {
                 Button {
                     cancelInspect()
                 } label: {
-                    Text("Cancel")
+                    Text(AppLocalized("Cancel"))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -344,14 +344,14 @@ struct BackupRestoreView: View {
                 clearSelection()
             } label: {
                 Label {
-                    Text("Choose a Different Backup")
+                    Text(AppLocalized("Choose a Different Backup"))
                 } icon: {
                     BackupActionIcon(systemName: "arrow.triangle.2.circlepath", tint: .gray)
                 }
             }
             .disabled(isWorking)
         } header: {
-            Text("Selected Backup")
+            Text(AppLocalized("Selected Backup"))
         }
     }
 
@@ -460,7 +460,7 @@ struct BackupRestoreView: View {
                 }
             }
         } header: {
-            Text("Restore")
+            Text(AppLocalized("Restore"))
         } footer: {
             Text("Merge: items are matched by id. Existing items are only replaced when the backup's copy is newer. Nothing is deleted.")
         }
@@ -476,7 +476,7 @@ struct BackupRestoreView: View {
                 .focused($passphraseFocused)
                 .disabled(isWorking)
         } header: {
-            Text("Encryption")
+            Text(AppLocalized("Encryption"))
         } footer: {
             Text("This backup is encrypted. Without its passphrase it cannot be opened.")
         }
@@ -503,8 +503,7 @@ struct BackupRestoreView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         BackupActionIcon(systemName: "arrow.down.doc.fill", tint: .indigo)
-                        Text("Start Restore")
-                            .fontWeight(.semibold)
+                        Text(AppLocalized("Start Restore"))
                     }
                     Spacer(minLength: 0)
                 }
@@ -589,7 +588,7 @@ struct BackupRestoreView: View {
                 restoreNotice(Text("Rolled back: \(r.rolledBack.joined(separator: ", "))"))
             }
         } header: {
-            Text("Restore Complete")
+            Text(AppLocalized("Restore Complete"))
         } footer: {
             if let prov = r.categories.first(where: { $0.category == BackupCategory.providers.rawValue }) {
                 if prov.credentialsRestored > 0 {
@@ -989,7 +988,7 @@ struct FolderPackageListView: View {
         // the server list detaches its rclone calls.
         let id = folder.id
         let found = await Task.detached(priority: .userInitiated) {
-            BackupDestinations.listPackages(folderId: id)
+            await BackupDestinations.listPackages(folderId: id)
         }.value
         packages = found
         loading = false
@@ -1015,7 +1014,7 @@ struct ServerRestorePickerSheet: View {
     @State private var showAddServer = false
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 if !remotes.isEmpty {
                     Section {
@@ -1032,7 +1031,7 @@ struct ServerRestorePickerSheet: View {
                             }
                         }
                     } header: {
-                        Text("Servers")
+                        Text(AppLocalized("Servers"))
                     }
                 }
 
@@ -1453,7 +1452,7 @@ struct ServerPackageListView: View {
 
     private var downloadSheet: some View {
         VStack(spacing: 20) {
-            Text("Downloading Backup")
+            Text(AppLocalized("Downloading Backup"))
                 .font(.headline)
             Text(downloadingName)
                 .font(.footnote)
@@ -1485,13 +1484,12 @@ struct ServerPackageListView: View {
                 progressText = AppLocalized("Cancelling…")
                 speedText = ""
             } label: {
-                Text("Cancel").frame(maxWidth: .infinity)
+                Text(AppLocalized("Cancel")).frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .disabled(cancelFlag.value)
         }
         .padding(24)
-        .presentationDetents([.height(240)])
         // No swipe-to-dismiss: leaving the sheet would hide a transfer that is
         // still running, which is how the concurrency problem started.
         .interactiveDismissDisabled(true)

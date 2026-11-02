@@ -1,9 +1,7 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
+    "" : {},
     "\"%@\" is due. Open Minis to see whether it ran." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -58026,9 +58024,7 @@
         }
       }
     },
-    "." : {
-
-    },
+    "." : {},
     "“%1$@” (%2$@) will be permanently deleted from this folder. There is no trash to recover it from, and any data only in this backup will be lost. This cannot be undone." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -58707,9 +58703,7 @@
         }
       }
     },
-    "·" : {
-
-    },
+    "·" : {},
     "· Migration backlog" : {
       "localizations" : {
         "de" : {
@@ -60160,12 +60154,8 @@
         }
       }
     },
-    "/" : {
-
-    },
-    "/%@" : {
-
-    },
+    "/" : {},
+    "/%@" : {},
     "/var/minis/mounts/%@" : {
       "localizations" : {
         "de" : {
@@ -60506,9 +60496,7 @@
         }
       }
     },
-    "%@" : {
-
-    },
+    "%@" : {},
     "%@\n%@ → %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -67360,9 +67348,7 @@
         }
       }
     },
-    "•" : {
-
-    },
+    "•" : {},
     "• Reset: Delete everything\n• Backup: Save /root directory\n• Restore: Recover saved data" : {
       "localizations" : {
         "de" : {
@@ -68612,9 +68598,7 @@
         }
       }
     },
-    "✨" : {
-
-    },
+    "✨" : {},
     "❌ Task failed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -69510,9 +69494,7 @@
         }
       }
     },
-    "00:00" : {
-
-    },
+    "00:00" : {},
     "1 MB" : {
       "localizations" : {
         "de" : {
@@ -72214,9 +72196,7 @@
         }
       }
     },
-    "128000" : {
-
-    },
+    "128000" : {},
     "A" : {
       "localizations" : {
         "de" : {
@@ -148382,9 +148362,7 @@
         }
       }
     },
-    "https://…" : {
-
-    },
+    "https://…" : {},
     "I Understand & Agree" : {
       "localizations" : {
         "de" : {
@@ -165311,9 +165289,7 @@
         }
       }
     },
-    "Loop %lld" : {
-
-    },
+    "Loop %lld" : {},
     "Low" : {
       "localizations" : {
         "de" : {
@@ -229802,12 +229778,8 @@
         }
       }
     },
-    "session" : {
-
-    },
-    "sessions" : {
-
-    },
+    "session" : {},
+    "sessions" : {},
     "settings_memory_global_enabled" : {
       "extractionState" : "stale",
       "localizations" : {

@@ -202,7 +202,6 @@ final class SystemVoiceProvider: NSObject, VoiceInputCapable, VoiceOutputCapable
         // the watchdog below, we always resume with the best text we got.
         recognitionRequest.shouldReportPartialResults = true
         recognitionRequest.requiresOnDeviceRecognition = useOnDevice
-        recognitionRequest.addsPunctuation = true          // iOS 16+ auto punctuation
         recognitionRequest.taskHint = .dictation           // optimize for free-form speech
         VoiceLog.log("system ASR loc=\(loc.identifier) onDevice=\(useOnDevice) (wanted=\(request.onDeviceRecognition.map(String.init(describing:)) ?? "auto"), supports=\(recognizer.supportsOnDeviceRecognition))")
         if let prompt = request.prompt {

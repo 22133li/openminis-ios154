@@ -80,7 +80,7 @@ struct RcloneAddServerView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 if connectedRemote == nil {
                     typeSection
@@ -110,22 +110,15 @@ struct RcloneAddServerView: View {
                 set: { if $0 == nil { errorText = nil } }))
             .navigationTitle(connectedRemote == nil ? "Add Server" : "Choose Folder")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { cancelAndDismiss() }
-                }
-                // The confirming action belongs in the top-right slot, where
-                // iOS puts Done/Save everywhere else. As a row at the bottom
-                // of a long directory listing it moved with the scroll and
-                // could sit off-screen entirely in a folder with many
-                // entries — the one control the screen exists to offer.
-                if connectedRemote != nil {
-                    ToolbarItem(placement: .confirmationAction) {
+            .navigationBarItems(
+                leading: Button("Cancel") { cancelAndDismiss() },
+                trailing: Group {
+                    if connectedRemote != nil {
                         Button("Save Here") { saveHere() }
                             .disabled(isListing)
                     }
                 }
-            }
+            )
             .alert("New Folder", isPresented: $showNewFolder) {
                 TextField("Folder name", text: $newFolderName)
                     .textInputAutocapitalization(.never)
@@ -203,7 +196,7 @@ struct RcloneAddServerView: View {
                 }
             }
         } header: {
-            Text("Type")
+            Text(AppLocalized("Type"))
         }
     }
 
@@ -217,7 +210,7 @@ struct RcloneAddServerView: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
             } header: {
-                Text("Name")
+                Text(AppLocalized("Name"))
             } footer: {
                 Text("Shown in the destination list.")
             }
@@ -237,7 +230,7 @@ struct RcloneAddServerView: View {
                                 .font(.footnote.weight(.medium))
                                 .foregroundStyle(.secondary)
                             if f.isOptional {
-                                Text("Optional")
+                                Text(AppLocalized("Optional"))
                                     .font(.caption2)
                                     .foregroundStyle(.tertiary)
                             }
@@ -262,7 +255,7 @@ struct RcloneAddServerView: View {
                     .padding(.vertical, 2)
                 }
             } header: {
-                Text("Connection")
+                Text(AppLocalized("Connection"))
             } footer: {
                 // Say where the password goes. "Stored in the Keychain" is the
                 // difference between this and typing a password into a text
@@ -318,7 +311,7 @@ struct RcloneAddServerView: View {
             if certificateRejected {
                 Toggle(isOn: $allowInsecureTLS) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Trust this certificate")
+                        Text(AppLocalized("Trust this certificate"))
                         Text("The server's certificate isn't signed by a known authority — usual for a NAS using its own certificate.")
                             .font(.caption)
                             .foregroundStyle(.secondary)

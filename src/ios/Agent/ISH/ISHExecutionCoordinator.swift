@@ -327,7 +327,7 @@ actor ISHExecutionCoordinator {
         let effectiveTimeout = timeout ?? 300 // 5 minute default
 
         // Load user-defined env vars (nonisolated, reads from disk + Keychain)
-        let customEnv = EnvVarStore.shared.allAsDict()
+        var customEnv = EnvVarStore.shared.allAsDict()
 
         // Feed the command as a script via stdin pipe to /bin/sh.
         // This avoids shell quoting issues with multi-line or special-char commands.

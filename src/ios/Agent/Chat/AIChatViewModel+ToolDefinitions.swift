@@ -244,6 +244,7 @@ extension AIChatViewModel {
                 required: ["tool_title"],
                 propertyOrdering: ["tool_title", "action", "task", "agent", "model_choice", "context", "max_minutes", "wait", "progress_report", "job_id", "message", "child_session_id"]
             ))
+
         }
 
         // [T-user-ask] Present only when the setting is on AND this run can

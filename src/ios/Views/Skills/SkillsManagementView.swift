@@ -59,7 +59,15 @@ struct SkillsManagementView: View {
 
     var body: some View {
         List {
-            if store.skills.isEmpty {
+            if store.isLoading {
+                Section {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                }
+            } else if store.skills.isEmpty {
                 Section {
                     Text(AppLocalized("No skills installed. Tap + to import a SKILL.md from GitHub or paste one manually."))
                         .foregroundStyle(.secondary)
@@ -112,7 +120,7 @@ struct SkillsManagementView: View {
                     prompt: Text(AppLocalized("Search skills")))
         .onAppear { store.reload() }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 // Sort menu — same structure as the file browser's (sort-key
                 // picker + direction toggle), persisted via AppStorage.
                 Menu {
@@ -135,7 +143,7 @@ struct SkillsManagementView: View {
                     Image(systemName: "arrow.up.arrow.down")
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
                         showImportSheet = true
@@ -271,7 +279,7 @@ private struct ImportSkillSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Picker("Import Method", selection: $importMode) {
                     ForEach(ImportMode.allCases, id: \.self) { mode in
@@ -301,7 +309,7 @@ private struct ImportSkillSheet: View {
                     }
 
                 case .file:
-                    Section(footer: Text(AppLocalized("Supports SKILL.md, .skill, and .zip files."))) {
+                    Section(footer: Text(AppLocalized("Single skill packages only: .zip/.skill must contain SKILL.md."))) {
                         Button(AppLocalized("Choose File…")) {
                             showFilePicker = true
                         }
@@ -318,17 +326,15 @@ private struct ImportSkillSheet: View {
             }
             .navigationTitle(AppLocalized("Import Skill"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(AppLocalized("Cancel")) { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
+            .navigationBarItems(
+                leading: Button(AppLocalized("Cancel")) { dismiss() },
+                trailing: Group {
                     if importMode != .file {
                         Button(AppLocalized("Import")) { performImport() }
                             .disabled(isImporting || (importMode == .url ? urlText.isEmpty : pastedContent.isEmpty))
                     }
                 }
-            }
+            )
             .overlay {
                 if isImporting {
                     ProgressView("Importing…")
@@ -337,20 +343,16 @@ private struct ImportSkillSheet: View {
                 }
             }
             .sheet(isPresented: $showFilePicker) {
-                SkillFileDocumentPicker { result in
-                    do {
-                        switch result {
-                        case .text(let content):
-                            _ = try SkillStore.shared.importSkill(content: content, source: .file)
-                        case .archiveURL(let url):
-                            _ = try SkillStore.shared.importFromArchive(at: url)
-                            try? FileManager.default.removeItem(at: url)
-                        }
-                        dismiss()
-                    } catch {
-                        errorMessage = error.localizedDescription
+                SkillFileDocumentPicker(
+                    onImport: { result in
+                        showFilePicker = false
+                        importPickedFile(result)
+                    },
+                    onError: { message in
+                        showFilePicker = false
+                        errorMessage = message
                     }
-                }
+                )
             }
         }
     }
@@ -376,53 +378,82 @@ private struct ImportSkillSheet: View {
             isImporting = false
         }
     }
+
+    /// [T-skill-import-bg-87] Archive import runs off the main thread with
+    /// progress UI instead of freezing on large files.
+    private func importPickedFile(_ result: SkillFilePickResult) {
+        errorMessage = nil
+        isImporting = true
+        Task { @MainActor in
+            do {
+                switch result {
+                case .text(let content):
+                    _ = try SkillStore.shared.importSkill(content: content, source: .file)
+                case .archiveURL(let url):
+                    _ = try await SkillStore.shared.importFromArchive(at: url)
+                    try? FileManager.default.removeItem(at: url)
+                }
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isImporting = false
+        }
+    }
 }
 
 // MARK: - File Picker
 
 /// Callback receives either a plain-text SKILL.md content string or a file URL for archives.
-private enum SkillFilePickResult {
+private enum SkillFilePickResult: Equatable {
     case text(String)
     case archiveURL(URL)
 }
 
 private struct SkillFileDocumentPicker: UIViewControllerRepresentable {
     let onImport: (SkillFilePickResult) -> Void
+    let onError: (String) -> Void
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        var types: [UTType] = [.plainText, .zip]
-        // .skill files are zip archives with a custom extension
-        if let skillType = UTType(filenameExtension: "skill", conformingTo: .zip) {
-            types.append(skillType)
-        }
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: types)
+        // [T-skill-pick-96] iOS 15.4: forOpeningContentTypes without asCopy
+        // never fires the delegate callback. Chat attachment picker uses
+        // asCopy: true and works. Use the same here.
+        // With asCopy: true the system copies the file to a temp location,
+        // so the delegate gets a regular (non-security-scoped) URL and no
+        // manual copy is needed.
+        let picker = UIDocumentPickerViewController(
+            forOpeningContentTypes: [.zip, .plainText],
+            asCopy: true
+        )
         picker.delegate = context.coordinator
         return picker
     }
 
     func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
 
-    func makeCoordinator() -> Coordinator { Coordinator(onImport: onImport) }
+    func makeCoordinator() -> Coordinator { Coordinator(onImport: onImport, onError: onError) }
 
     class Coordinator: NSObject, UIDocumentPickerDelegate {
         let onImport: (SkillFilePickResult) -> Void
-        init(onImport: @escaping (SkillFilePickResult) -> Void) { self.onImport = onImport }
+        let onError: (String) -> Void
+        init(onImport: @escaping (SkillFilePickResult) -> Void, onError: @escaping (String) -> Void) {
+            self.onImport = onImport
+            self.onError = onError
+        }
 
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
-            let accessed = url.startAccessingSecurityScopedResource()
-            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-
             let ext = url.pathExtension.lowercased()
+
+            // [T-skill-pick-96] asCopy: true means the system already copied
+            // the file to a temp location; url is a regular file URL, not
+            // security-scoped. No manual copy needed, call back directly.
             if ext == "zip" || ext == "skill" {
-                // Copy to temp so we can access after security scope ends
-                let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
-                try? FileManager.default.removeItem(at: tmp)
-                if let _ = try? FileManager.default.copyItem(at: url, to: tmp) {
-                    onImport(.archiveURL(tmp))
-                }
+                onImport(.archiveURL(url))
             } else if let content = try? String(contentsOf: url, encoding: .utf8) {
                 onImport(.text(content))
+            } else {
+                onError("Could not read the selected file.")
             }
         }
     }
@@ -716,14 +747,9 @@ private struct SkillDetailView: View {
         }
         .navigationTitle(skill?.name ?? "Skill")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { shareSkill() } label: {
-                    Image(systemName: "square.and.arrow.up")
-                }
-                .disabled(skill == nil)
-            }
-        }
+        .navigationBarItems(trailing: Button { shareSkill() } label: {
+            Image(systemName: "square.and.arrow.up")
+        }.disabled(skill == nil))
         .onAppear { refreshUpdatedAgo() }
         .sheet(isPresented: Binding(get: { shareZipURL != nil }, set: { if !$0 { cleanupShareZip() } })) {
             if let url = shareZipURL {
@@ -733,20 +759,16 @@ private struct SkillDetailView: View {
             }
         }
         .sheet(isPresented: $showFilePicker) {
-            SkillFileDocumentPicker { result in
-                do {
-                    switch result {
-                    case .text(let newContent):
-                        try store.updateSkillContent(skillId, newContent: newContent)
-                    case .archiveURL(let url):
-                        _ = try store.importFromArchive(at: url)
-                        try? FileManager.default.removeItem(at: url)
-                    }
-                    updateError = nil
-                } catch {
-                    updateError = error.localizedDescription
+            SkillFileDocumentPicker(
+                onImport: { result in
+                    showFilePicker = false
+                    updateFromFile(result)
+                },
+                onError: { message in
+                    showFilePicker = false
+                    updateError = message
                 }
-            }
+            )
         }
         .alert(AppLocalized("Delete Skill"), isPresented: $showDeleteConfirm) {
             Button(AppLocalized("Delete"), role: .destructive) {
@@ -807,6 +829,28 @@ private struct SkillDetailView: View {
             }
             isUpdating = false
             refreshUpdatedAgo()
+        }
+    }
+
+    /// [T-skill-import-bg-87] Archive import runs off the main thread with
+    /// progress UI instead of freezing on large files.
+    private func updateFromFile(_ result: SkillFilePickResult) {
+        isUpdating = true
+        updateError = nil
+        Task { @MainActor in
+            do {
+                switch result {
+                case .text(let newContent):
+                    try store.updateSkillContent(skillId, newContent: newContent)
+                case .archiveURL(let url):
+                    _ = try await store.importFromArchive(at: url)
+                    try? FileManager.default.removeItem(at: url)
+                }
+                updateError = nil
+            } catch {
+                updateError = error.localizedDescription
+            }
+            isUpdating = false
         }
     }
 
@@ -938,13 +982,11 @@ private struct SkillFileDetailView: View {
             }
             .navigationTitle(fileName)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .navigationBarItems(trailing: Group {
                 if hasChanges {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(AppLocalized("Save")) { save() }
-                    }
+                    Button(AppLocalized("Save")) { save() }
                 }
-            }
+            })
             .onAppear {
                 content = store.readSkillFile(skillId, relativePath: relativePath) ?? ""
             }
@@ -970,7 +1012,7 @@ struct MinisSkillsBrowserView: View {
     @StateObject private var coordinator = SkillBrowserCoordinator()
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             ZStack {
                 SkillBrowserWebView(coordinator: coordinator)
                     .ignoresSafeArea(edges: .bottom)
@@ -988,17 +1030,13 @@ struct MinisSkillsBrowserView: View {
             }
             .navigationTitle("Minis Skills")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(AppLocalized("Done")) { dismiss() }
+            .navigationBarItems(
+                leading: Button(AppLocalized("Done")) { dismiss() },
+                trailing: Button(AppLocalized("Import This")) {
+                    coordinator.importCurrentSkill()
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(AppLocalized("Import This")) {
-                        coordinator.importCurrentSkill()
-                    }
-                    .disabled(coordinator.hudState == .importing)
-                }
-            }
+                .disabled(coordinator.hudState == .importing)
+            )
             .alert(AppLocalized("Skill Already Exists"), isPresented: $coordinator.showOverwriteConfirm) {
                 Button(AppLocalized("Update"), role: .destructive) {
                     coordinator.confirmOverwrite()

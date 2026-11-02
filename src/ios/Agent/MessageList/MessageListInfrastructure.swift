@@ -706,6 +706,150 @@ class SelfSizingCell: UICollectionViewCell {
     }
 }
 
+
+// MARK: - Hosting Cell Content (iOS 15 replacement for UIHostingConfiguration)
+
+/// [ios15-backport] `UIHostingConfiguration` is iOS 16+. This pair provides
+/// the same contract through the iOS 13+ mechanism it replaced: a
+/// `UIContentConfiguration` whose content view hosts a SwiftUI view via a
+/// `UIHostingController` pinned to the content view's edges — equivalent to
+/// upstream's `.minSize(width: 0, height: 0).margins(.all, 0)` (zero margins,
+/// no minimum size; sizing flows through `systemLayoutSizeFitting`, which is
+/// exactly what `SelfSizingCell` measures).
+struct HostingCellConfiguration: UIContentConfiguration {
+    var rootView: AnyView
+    /// List view controller the hosting controller is added to as a child,
+    /// so SwiftUI lifecycle callbacks (onAppear/onDisappear) fire as they do
+    /// under UIHostingConfiguration.
+    weak var hostParent: UIViewController?
+
+    func makeContentView() -> UIView & UIContentView {
+        HostingCellContentView(configuration: self)
+    }
+
+    func updated(for state: UIConfigurationState) -> HostingCellConfiguration {
+        self
+    }
+}
+
+final class HostingCellContentView: UIView, UIContentView {
+    private let hostingController: UIHostingController<AnyView>
+    private var currentConfiguration: HostingCellConfiguration
+
+    var configuration: UIContentConfiguration {
+        get { currentConfiguration }
+        set {
+            guard let newConfig = newValue as? HostingCellConfiguration else { return }
+            currentConfiguration = newConfig
+            hostingController.rootView = newConfig.rootView
+            attachIfNeeded(parent: newConfig.hostParent)
+            hostingController.view.invalidateIntrinsicContentSize()
+            setNeedsLayout()
+        }
+    }
+
+    init(configuration: HostingCellConfiguration) {
+        currentConfiguration = configuration
+        hostingController = UIHostingController(rootView: configuration.rootView)
+        super.init(frame: .zero)
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(hostingController.view)
+        NSLayoutConstraint.activate([
+            hostingController.view.leadingAnchor.constraint(equalTo: leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: trailingAnchor),
+            hostingController.view.topAnchor.constraint(equalTo: topAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+        attachIfNeeded(parent: configuration.hostParent)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    /// [ios15-backport] The message list measures every cell through
+    /// `contentView.systemLayoutSizeFitting`. Two failure modes, both seen
+    /// in the on-device log (minis-2026-10-27.log, 366 occurrences):
+    /// UIKit's self-sizing probe passes `layoutFittingExpandedSize`
+    /// (width = greatestFiniteMagnitude) as the target, and any answer
+    /// carrying that sentinel width back is rejected with
+    /// NSInternalInconsistencyException ("Content view returned an invalid
+    /// size"). Upstream's measure wrapper swallows the exception, so the
+    /// cell keeps its estimated height and most cells never get a true
+    /// height — the list renders clipped/blank. A plain UIView's Auto
+    /// Layout answer is ambiguous in width and returns the sentinel; a
+    /// verbatim pass-through of the target does the same.
+    ///
+    /// So: measure through the hosting controller (as UIHostingContentView
+    /// does on iOS 16+) at a finite width — the target width when it is a
+    /// real one, otherwise the width the cell already has — and never
+    /// return a non-finite component.
+    override func systemLayoutSizeFitting(_ targetSize: CGSize,
+                                          withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
+                                          verticalFittingPriority: UILayoutPriority) -> CGSize {
+        let expandedWidth = UIView.layoutFittingExpandedSize.width
+        var measureWidth = targetSize.width
+        if !(measureWidth > 0) || measureWidth >= expandedWidth {
+            measureWidth = bounds.width
+        }
+        guard measureWidth > 0, measureWidth < expandedWidth else {
+            // No real width yet (cell not laid out): return a finite size
+            // rather than the sentinel — UIKit raises on the sentinel.
+            return .zero
+        }
+        // [T-ios15-hostfit-al] Build112 on-device evidence (minis-2026-10-27,
+        // process 10257): the prime did NOT help. Repeated sizeThatFits calls
+        // on a fresh UIHostingController agree with each other yet stay
+        // collapsed - of the first 300 measures none exceeded 78pt, text
+        // blocks whose layout-held height is 151-199pt measure 32pt, and a
+        // cell only reaches its true height (idx=1600: 32 -> 151) after it
+        // has been displayed and re-measured on a later settle pass. So the
+        // failure is the MEASUREMENT MECHANISM, not the timing:
+        // UIHostingController.sizeThatFits reads the representable-driven
+        // content (markdown text views) before their internal layout exists.
+        // Upstream's UIHostingConfiguration does not measure this way - its
+        // UIHostingContentView answers systemLayoutSizeFitting through the
+        // hosting view's own Auto Layout fitting (systemLayoutSizeFitting on
+        // the _UIHostingView), which performs a real layout of the SwiftUI
+        // graph at the target width. Measure that way here (build109's path,
+        // now with the sentinel guard above), keep sizeThatFits as a
+        // fallback. Device data proved this mechanism (build113-115: true
+        // heights at first measure, no collapsed cells); the temporary
+        // [HostFit] A/B diagnostic log was removed in build116.
+        hostingController.view.setNeedsLayout()
+        hostingController.view.layoutIfNeeded()
+        let alTarget = CGSize(width: measureWidth,
+                              height: UIView.layoutFittingCompressedSize.height)
+        let alSize = hostingController.view.systemLayoutSizeFitting(
+            alTarget,
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel)
+        let ctrlHeight = hostingController.sizeThatFits(
+            in: CGSize(width: measureWidth, height: .greatestFiniteMagnitude)).height
+        var height = alSize.height
+        if !(height.isFinite && height > 0 && height < expandedWidth) {
+            height = ctrlHeight
+        }
+        if !(height.isFinite && height > 0 && height < expandedWidth) {
+            height = bounds.height.isFinite ? bounds.height : 0
+        }
+        return CGSize(width: measureWidth, height: height)
+    }
+
+
+    private func attachIfNeeded(parent: UIViewController?) {
+        guard let parent, hostingController.parent !== parent else { return }
+        if hostingController.parent != nil {
+            hostingController.willMove(toParent: nil)
+            hostingController.removeFromParent()
+        }
+        parent.addChild(hostingController)
+        hostingController.didMove(toParent: parent)
+    }
+}
+
+
 // MARK: - NoAnimationCollectionView
 
 /// UICollectionView subclass that strips ALL UIKit implicit animations.
@@ -1235,4 +1379,22 @@ final class CellStateBridgeV2: ObservableObject {
     @Published var usageContentVisible: Bool = false
     /// Compact summary — presented from overlay outside cell tree for animation.
     var onShowCompactSummary: ((String) -> Void)?
+}
+
+// MARK: - Context Menu With Preview (iOS 15 backport)
+
+/// Upstream uses `.contextMenu(menuItems:preview:)`, which is iOS 16+.
+/// On iOS 15 only the menu-only form exists, so fall back to it there;
+/// on iOS 16+ the lifted preview is preserved verbatim.
+extension View {
+    @ViewBuilder func contextMenuWithPreview<MenuItems: View, Preview: View>(
+        @ViewBuilder menuItems: () -> MenuItems,
+        @ViewBuilder preview: () -> Preview
+    ) -> some View {
+        if #available(iOS 16.0, *) {
+            self.contextMenu(menuItems: menuItems, preview: preview)
+        } else {
+            self.contextMenu(menuItems: menuItems)
+        }
+    }
 }

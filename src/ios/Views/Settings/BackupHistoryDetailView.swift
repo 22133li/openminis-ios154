@@ -27,25 +27,15 @@ struct BackupHistoryDetailView: View {
         .navigationTitle(record.startedAt.formatted(date: .abbreviated, time: .shortened))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { keepScreenAwake = BackupScreenAwake.isEnabled }
-        .toolbar {
-            // The list offers this as a swipe action, which is invisible until
-            // discovered — and a record opened from a notification or a deep
-            // link is reachable without ever seeing the list. Deleting from
-            // the screen you are already on is the obvious path.
-            //
-            // Hidden while the run is live: a delete that dropped the record
-            // while the upload kept running would strand a job with nothing
-            // tracking it. Stop it first — this button is then right here.
+        .navigationBarItems(trailing: Group {
             if !isLive {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .destructive) {
-                        showDeleteConfirm = true
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
                 }
             }
-        }
+        })
         // Confirmed, unlike the list's swipe action: a swipe is deliberate and
         // undoable-by-redoing-the-backup, but a toolbar button sits next to
         // Back and is easy to hit by accident on the way out.
@@ -168,7 +158,7 @@ struct BackupHistoryDetailView: View {
                 // solving the width conflict by shrinking the label instead of
                 // wrapping the value.
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text("File")
+                    Text(AppLocalized("File"))
                     Spacer(minLength: 0)
                     Text(name)
                         .multilineTextAlignment(.trailing)
@@ -205,7 +195,7 @@ struct BackupHistoryDetailView: View {
                 Text(e).font(.footnote).foregroundStyle(.red)
             }
         } header: {
-            Text("Summary")
+            Text(AppLocalized("Summary"))
         } footer: {
             Text("Included: \(record.categories.map(displayName).joined(separator: ", "))")
         }
@@ -306,7 +296,7 @@ struct BackupHistoryDetailView: View {
                 }
             }
         } header: {
-            Text("Destinations")
+            Text(AppLocalized("Destinations"))
         }
     }
 

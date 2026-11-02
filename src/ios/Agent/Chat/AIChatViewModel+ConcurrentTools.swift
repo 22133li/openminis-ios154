@@ -1313,6 +1313,7 @@ extension AIChatViewModel {
             cancelled: cancelledHere
         )
     }
+
 }
 
 // MARK: - [T-image-seams] Tool-image steps, callable on their own

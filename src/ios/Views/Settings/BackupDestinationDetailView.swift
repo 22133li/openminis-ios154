@@ -177,7 +177,7 @@ struct BackupDestinationDetailView: View {
     private func loadFolderPackages(_ f: MountedFolderEntry) async {
         let id = f.id
         folderPackages = await Task.detached(priority: .userInitiated) {
-            BackupDestinations.listPackages(folderId: id)
+            await BackupDestinations.listPackages(folderId: id)
         }.value
     }
 
@@ -292,7 +292,7 @@ struct BackupDestinationDetailView: View {
                 }
             }
         } header: {
-            Text("Configuration")
+            Text(AppLocalized("Configuration"))
         } footer: {
             Text("Tap the name or folder to change them, or edit the connection to change the address and password.")
         }
@@ -318,7 +318,7 @@ struct BackupDestinationDetailView: View {
             } label: {
                 HStack {
                     Label {
-                        Text("Test Connection")
+                        Text(AppLocalized("Test Connection"))
                     } icon: {
                         BackupActionIcon(systemName: "bolt.fill", tint: .green)
                     }
@@ -355,7 +355,7 @@ struct BackupDestinationDetailView: View {
                 showDeleteConfirm = true
             } label: {
                 Label {
-                    Text("Remove Destination")
+                    Text(AppLocalized("Remove Destination"))
                 } icon: {
                     BackupActionIcon(systemName: "trash.fill", tint: .red)
                 }
@@ -397,7 +397,7 @@ struct BackupDestinationDetailView: View {
                 }
             }
         } header: {
-            Text("Backups Stored Here")
+            Text(AppLocalized("Backups Stored Here"))
         } footer: {
             // The gesture is invisible until tried, and what it does here is
             // irreversible — so it is stated rather than left to be
@@ -443,7 +443,7 @@ struct BackupDestinationDetailView: View {
             LabeledContent("Added", value: f.createdAt.formatted(date: .abbreviated,
                                                                  time: .shortened))
         } header: {
-            Text("Configuration")
+            Text(AppLocalized("Configuration"))
         } footer: {
             // Says where the folder really lives, since the same row could be
             // a local directory or a server mounted in Files.
@@ -479,7 +479,7 @@ struct BackupDestinationDetailView: View {
                 }
             }
         } header: {
-            Text("Backups Stored Here")
+            Text(AppLocalized("Backups Stored Here"))
         } footer: {
             // The gesture is invisible until tried, and what it does here is
             // irreversible — so it is stated rather than left to be
@@ -587,7 +587,7 @@ struct RcloneFolderBrowser: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section {
                     if !currentDir.isEmpty {
@@ -766,7 +766,7 @@ struct RcloneConnectionEditor: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 if let b = backend {
                     Section {
@@ -777,7 +777,7 @@ struct RcloneConnectionEditor: View {
                                         .font(.footnote.weight(.medium))
                                         .foregroundStyle(.secondary)
                                     if f.isOptional {
-                                        Text("Optional")
+                                        Text(AppLocalized("Optional"))
                                             .font(.caption2)
                                             .foregroundStyle(.tertiary)
                                     }
@@ -796,7 +796,7 @@ struct RcloneConnectionEditor: View {
                             .padding(.vertical, 2)
                         }
                     } header: {
-                        Text("Connection")
+                        Text(AppLocalized("Connection"))
                     }
 
                     if b.fields.contains(where: \.isSecret) {
@@ -806,7 +806,7 @@ struct RcloneConnectionEditor: View {
                                 .disabled(clearSecret)
                             Toggle("No password (anonymous)", isOn: $clearSecret.animation())
                         } header: {
-                            Text("Password")
+                            Text(AppLocalized("Password"))
                         } footer: {
                             Text(clearSecret
                                  ? "The stored password will be removed."

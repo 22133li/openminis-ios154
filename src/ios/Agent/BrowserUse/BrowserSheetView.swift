@@ -10,49 +10,76 @@ struct BrowserSheetView: View {
     @State private var showHistory = false
     @State private var isFullscreen = false
     @FocusState private var addressFocused: Bool
+    /// True after the user taps 接管: the blocking overlay lifts and the
+    /// user gets full control of the page until the sheet is dismissed.
+    @State private var takeoverEngaged = false
 
     private var manager: BrowserUseManager? { pool.activeManager }
 
+    /// Effective busy state driving the overlay + chrome interactivity.
+    ///
+    /// Two fixes over the old frozen `isAgentBusy` snapshot:
+    /// 1. `isAgentBusy` was captured once when the sheet presented. The tab
+    ///    pool's 15s post-action grace window usually expires while the sheet
+    ///    is open, so read `pool.isAgentBrowsing` live instead — otherwise the
+    ///    blocking overlay (and its forever-pulsing pill) could never lift.
+    /// 2. Once the user taps 接管, force false: "hand the user the mouse"
+    ///    means full control, overlay included.
+    private var effectiveBusy: Bool {
+        if takeoverEngaged { return false }
+        // ToolLiveSheet's manual-takeover view passes isAgentBusy=false: the
+        // user is in control there, never show the blocking overlay.
+        guard isAgentBusy else { return false }
+        return pool.isAgentBrowsing
+    }
+
+    /// User tapped 接管: lift the overlay, give full control, and tell the
+    /// vm the user is in charge.
+    private func engageTakeover() {
+        takeoverEngaged = true
+        onTakeover?()
+    }
+
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 0) {
                 if !isFullscreen {
                     // Tab bar
                     tabBar
-                        .allowsHitTesting(!isAgentBusy)
+                        .allowsHitTesting(!effectiveBusy)
 
                     // URL bar
                     HStack(spacing: 8) {
-                        BrowserAddressBarIcon(isLoading: manager?.isLoading ?? false)
+                    BrowserAddressBarIcon(isLoading: manager?.isLoading ?? false)
 
-                        TextField("Search or enter URL", text: $addressText)
-                            .font(.system(size: 13, design: .monospaced))
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .keyboardType(.URL)
-                            .submitLabel(.go)
-                            .focused($addressFocused)
-                            .disabled(isAgentBusy)
-                            .onSubmit {
-                                let trimmed = addressText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                guard !trimmed.isEmpty else { return }
-                                pool.touchActivity()
-                                manager?.loadURL(trimmed)
-                            }
-
-                        if manager?.isLoading ?? false {
-                            Button { manager?.webView.stopLoading() } label: {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(.secondary)
-                            }
-                            .transition(.identity)
+                    TextField("Search or enter URL", text: $addressText)
+                        .font(.system(size: 13, design: .monospaced))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                        .submitLabel(.go)
+                        .focused($addressFocused)
+                        .disabled(effectiveBusy)
+                        .onSubmit {
+                            let trimmed = addressText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !trimmed.isEmpty else { return }
+                            pool.touchActivity()
+                            manager?.loadURL(trimmed)
                         }
+
+                    if manager?.isLoading ?? false {
+                        Button { manager?.webView.stopLoading() } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .transition(.identity)
                     }
+                }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(Color(UIColor.secondarySystemBackground))
-                    .allowsHitTesting(!isAgentBusy)
+                    .allowsHitTesting(!effectiveBusy)
                 }
 
                 // Live webview + agent overlay
@@ -69,8 +96,8 @@ struct BrowserSheetView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
 
-                    if isAgentBusy {
-                        AgentBrowsingOverlay(onTakeover: onTakeover)
+                    if effectiveBusy {
+                        AgentBrowsingOverlay(onTakeover: onTakeover != nil ? { engageTakeover() } : nil)
                             .transition(.opacity)
                     }
 
@@ -95,7 +122,7 @@ struct BrowserSheetView: View {
                         }
                     }
                 }
-                .animation(.easeInOut(duration: 0.3), value: isAgentBusy)
+                .animation(.easeInOut(duration: 0.3), value: effectiveBusy)
 
                 // Download progress banner — visible in both normal and
                 // fullscreen modes so an in-flight download is never silent.
@@ -109,49 +136,50 @@ struct BrowserSheetView: View {
 
                     // Bottom navigation toolbar
                     HStack(spacing: 0) {
-                        Button { pool.touchActivity(); manager?.goBack() } label: {
-                            Image(systemName: "chevron.left")
+                    Button { pool.touchActivity(); manager?.goBack() } label: {
+                        Image(systemName: "chevron.left")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(effectiveBusy || !(manager?.canGoBack ?? false))
+
+                    Button { pool.touchActivity(); manager?.goForward() } label: {
+                        Image(systemName: "chevron.right")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(effectiveBusy || !(manager?.canGoForward ?? false))
+
+                    if manager?.isLoading ?? false {
+                        Button { pool.touchActivity(); manager?.stopLoading() } label: {
+                            Image(systemName: "xmark")
                                 .frame(maxWidth: .infinity)
                         }
-                        .disabled(isAgentBusy || !(manager?.canGoBack ?? false))
-
-                        Button { pool.touchActivity(); manager?.goForward() } label: {
-                            Image(systemName: "chevron.right")
+                        .disabled(effectiveBusy)
+                        .transition(.identity)
+                    } else {
+                        Button { pool.touchActivity(); manager?.reload() } label: {
+                            Image(systemName: "arrow.clockwise")
                                 .frame(maxWidth: .infinity)
                         }
-                        .disabled(isAgentBusy || !(manager?.canGoForward ?? false))
+                        .transition(.identity)
+                        .disabled(effectiveBusy)
+                    }
 
-                        if manager?.isLoading ?? false {
-                            Button { pool.touchActivity(); manager?.stopLoading() } label: {
-                                Image(systemName: "xmark")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .disabled(isAgentBusy)
-                            .transition(.identity)
-                        } else {
-                            Button { pool.touchActivity(); manager?.reload() } label: {
-                                Image(systemName: "arrow.clockwise")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .transition(.identity)
-                            .disabled(isAgentBusy)
-                        }
-
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.25)) { isFullscreen = true }
-                        } label: {
-                            Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .disabled(isAgentBusy)
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) { isFullscreen = true }
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(effectiveBusy)
                     }
                     .font(.system(size: 18))
                     .padding(.vertical, 10)
                     .background(Color(UIColor.secondarySystemBackground))
-                    .allowsHitTesting(!isAgentBusy)
+                    .allowsHitTesting(!effectiveBusy)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(isFullscreen)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 5) {
@@ -169,26 +197,25 @@ struct BrowserSheetView: View {
                     }
                 }
             }
-            .toolbar(isFullscreen ? .hidden : .visible, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     HStack(spacing: 12) {
                         Button {
                             _ = pool.newTab()
                         } label: {
                             Image(systemName: "plus")
                         }
-                        .disabled(isAgentBusy || pool.tabs.count >= BrowserTabPool.maxTabs)
+                        .disabled(effectiveBusy || pool.tabs.count >= BrowserTabPool.maxTabs)
 
                         Button {
                             showHistory = true
                         } label: {
                             Image(systemName: "clock.arrow.circlepath")
                         }
-                        .disabled(isAgentBusy)
+                        .disabled(effectiveBusy)
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItemGroup(placement: .keyboard) {
@@ -274,7 +301,7 @@ struct BrowserSheetView: View {
                     .lineLimit(1)
                     .frame(maxWidth: 120)
 
-                if !isAgentBusy {
+                if !effectiveBusy {
                     Button {
                         _ = pool.closeTab(id: tab.id)
                     } label: {
@@ -507,7 +534,7 @@ struct BrowserDownloadPanelSheet: View {
     let onLocate: (String) -> Void
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Group {
                 let items = center.downloads(for: sessionId)
                     .sorted { $0.startedAt > $1.startedAt }
@@ -556,7 +583,6 @@ struct BrowserDownloadPanelSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
         // Viewing the panel clears the badge; records themselves persist
         // until the user clears them (rows / Clear Completed) — the floating
         // button hides only when the list is actually empty.

@@ -32,6 +32,20 @@ struct AttachmentMeta: Identifiable, Equatable {
         return "minis://\(rel)"
     }
 
+    /// URL for tap handling. Built with URLComponents so CJK/space filenames
+    /// never make `URL(string:)` return nil — a nil URL silently drops the tap
+    /// (`if let url = ...` fails with no feedback). [T-link-encode-89]
+    var fileTapURL: URL? {
+        let rel = path.hasPrefix("/var/minis/") ? String(path.dropFirst("/var/minis/".count)) : path
+        let parts = rel.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard let host = parts.first, !host.isEmpty else { return nil }
+        var comps = URLComponents()
+        comps.scheme = "minis"
+        comps.host = host
+        comps.path = "/" + parts.dropFirst().joined(separator: "/")
+        return comps.url
+    }
+
     var fileName: String {
         displayName ?? (path as NSString).lastPathComponent
     }
@@ -675,6 +689,8 @@ final class AssistantBlock: Identifiable, ObservableObject {
             return (!path.isEmpty && name != "/" && name.contains(".")) ? name : "Read image"
         case .memoryTool(let action):
             return action.isEmpty ? "Memory" : action
+        case .vaultTool(let action):
+            return action.isEmpty ? "Credential Vault" : action
         case .info:
             return ""
         }
@@ -691,6 +707,9 @@ enum AssistantBlockKind: Equatable {
     case browserTool(action: String)
     case readImageTool(path: String)
     case memoryTool(action: String)
+    /// A `vault_list` / `vault_use_secret` call: `action` is the tool_title
+    /// or the credential name. Never carries a secret value.
+    case vaultTool(action: String)
     /// [T-p1-delegate-task] A `delegate_task` call: `title` is the helper's
     /// tool_title. The block's content is a live progress line while the
     /// helper runs and the result JSON afterwards.

@@ -58,8 +58,8 @@ struct LogManagementView: View {
     var body: some View {
         VStack(spacing: 0) {
             Picker("Tab", selection: $tab) {
-                Text("Logs").tag("logs")
-                Text("Config Changes").tag("config-audit")
+                Text(AppLocalized("Logs")).tag("logs")
+                Text(AppLocalized("Config Changes")).tag("config-audit")
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)
@@ -96,8 +96,8 @@ struct LogManagementView: View {
                     Picker("Detail Level", selection: $loggingManager.level) {
                         // Two fixed cases, so the localized keys are literals
                         // (AppLocalized needs a literal, not a runtime String).
-                        Text("Info").tag(AppLogger.Level.info)
-                        Text("Verbose").tag(AppLogger.Level.verbose)
+                        Text(AppLocalized("Info")).tag(AppLogger.Level.info)
+                        Text(AppLocalized("Verbose")).tag(AppLogger.Level.verbose)
                     }
                 }
             } footer: {
@@ -110,7 +110,7 @@ struct LogManagementView: View {
 
             Section("Log Files") {
                 if vm.runningFiles.isEmpty {
-                    Text("No log files")
+                    Text(AppLocalized("No log files"))
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(vm.runningFiles) { file in
@@ -203,9 +203,9 @@ struct LogManagementView: View {
                 }
             }
         }
-        .toolbar {
-            if !vm.logFiles.isEmpty && tab == "logs" {
-                ToolbarItem(placement: .topBarTrailing) {
+        .navigationBarItems(trailing:
+            Group {
+                if !vm.logFiles.isEmpty && tab == "logs" {
                     Button {
                         showShareSheet = true
                     } label: {
@@ -213,7 +213,7 @@ struct LogManagementView: View {
                     }
                 }
             }
-        }
+        )
         .sheet(isPresented: $showShareSheet) {
             LogShareSheet(urls: vm.logFiles.map(\.url))
         }
@@ -236,6 +236,7 @@ struct LogDetailView: View {
     let name: String
     @State private var content: String = ""
     @State private var isLoading = true
+    @State private var showDetailShare = false
 
     var body: some View {
         Group {
@@ -248,9 +249,16 @@ struct LogDetailView: View {
         .navigationTitle(name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                ShareLink(item: url)
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showDetailShare = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
             }
+        }
+        .sheet(isPresented: $showDetailShare) {
+            LogShareSheet(urls: [url])
         }
         .task {
             let fileURL = url
@@ -269,7 +277,7 @@ private struct LogTextView: UIViewRepresentable {
     let text: String
 
     func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView(usingTextLayoutManager: true)
+        let textView = UITextView()
         textView.isEditable = false
         textView.isSelectable = true
         textView.backgroundColor = .clear
