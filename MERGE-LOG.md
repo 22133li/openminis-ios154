@@ -362,3 +362,6 @@
 
 - 本机为 Linux、无 Xcode，未做本地编译；验证手段为：三方试合逐 hunk 核验、每批 git diff 全量复核、关键结构（pbxproj 大括号平衡、拆分文件 brace 平衡、xcstrings JSON 校验）、全树模式复扫、vaultTool 全部引用点一致性核对（ChatModels 定义、+BackgroundTask、+SSEStream ×2、+DebugDumps kind、SubAgentTermination 的 toolWireName、AssistantBlockView、ChatMessageViews 分享段、ToolLiveSheet、BridgedAssistantBlockV3 的 "assistantVaultBlock" 标识，共 10 处）。
 - 构建验证留待 CI（父代理环节）。
+
+## CI 诊断（2026-11-03）
+- run 41462912253 两次尝试均在同一位置静默失败：流式日志停在 SwiftDriverJobDiscovery「Compiling bridging header」，无任何 error 行，xcodebuild 退出码 65。仅改 CI 工作流（非 App 源码）：xcodebuild 输出落盘 build-xcodebuild.log、失败也上传 artifact（含 ~/Library/Logs/DiagnosticReports 拷贝），用于抓真实失败原因。

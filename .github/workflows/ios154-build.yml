@@ -42,9 +42,25 @@ jobs:
       - run: ./deps/build_rclone_ios.sh
       - run: |
           cd src/ios
+          set +e
           xcodebuild -project Minis.xcodeproj -scheme Minis -configuration Release \
             -sdk iphoneos -derivedDataPath ../../build/derived \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM=""
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" \
+            > ../../build-xcodebuild.log 2>&1
+          code=$?
+          echo "xcodebuild exit code: $code"
+          tail -n 200 ../../build-xcodebuild.log
+          cp -R ~/Library/Logs/DiagnosticReports ../../diag-reports 2>/dev/null || true
+          exit $code
+      - name: Upload xcodebuild log and crash reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-diagnostics
+          path: |
+            build-xcodebuild.log
+            diag-reports
+          if-no-files-found: ignore
       - name: Ad-hoc sign app and extensions with project entitlements
         run: |
           APP_PATH=$(find build/derived/Build/Products/Release-iphoneos -name "Minis.app" -maxdepth 1)
