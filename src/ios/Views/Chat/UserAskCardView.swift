@@ -815,9 +815,9 @@ private struct UserAskPendingCard: View {
             if q.multiSelect {
                 if let pos = a.selected.firstIndex(of: i) { a.selected.remove(at: pos) } else { a.selected.append(i) }
             } else {
-                a.selected = [i]
-                a.otherText = nil
-            }
+            a.selected = [i]
+            a.otherText = nil
+        }
             UserAskCenter.shared.updateAnswer(requestId: ask.requestId, index: index, a)
             haptic()
         } label: {
@@ -972,7 +972,10 @@ private struct UserAskPendingCard: View {
             // A long locale at a large font falls back to the pair on its own
             // right-aligned row with Previous below on the left, then to a stack.
             let showsPrevious = PendingAsk.showsPrevious(at: index)
-            ViewThatFits(in: .horizontal) {
+            // [ios15-backport] ViewThatFits is iOS 16+; on 15 use the first
+            // (single-row) candidate unconditionally.
+            if #available(iOS 16.0, *) {
+                ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
                     if showsPrevious {
                         previousButton(fill: false)
@@ -998,6 +1001,26 @@ private struct UserAskPendingCard: View {
                         previousButton(fill: false)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                }
+                }
+            } else {
+                HStack(spacing: 8) {
+                    if showsPrevious {
+                        previousButton(fill: false)
+                    }
+                    Spacer(minLength: 12)
+                    cancelButton
+                    allowOnceButton
+                }
+            }
+ else {
+                HStack(spacing: 8) {
+                if showsPrevious {
+                previousButton(fill: false)
+                }
+                Spacer(minLength: 12)
+                cancelButton
+                allowOnceButton
                 }
             }
         }

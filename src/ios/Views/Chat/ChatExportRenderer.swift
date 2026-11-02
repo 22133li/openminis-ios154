@@ -314,15 +314,23 @@ private struct ChatExportHeaderView: View {
     @ViewBuilder
     private var subtitleLine: some View {
         let font = UIFont.systemFont(ofSize: 13)
-        ViewThatFits(in: .horizontal) {
-            ExportLabel(text: subtitle.joined(separator: " · "), font: font, color: .secondaryLabel, lines: 1)
-                .fixedSize()
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(subtitle.enumerated()), id: \.offset) { i, part in
-                    ExportLabel(text: i < subtitle.count - 1 ? part + " ·" : part,
-                                font: font, color: .secondaryLabel)
+        // [ios15-backport] ViewThatFits is iOS 16+; on 15 use the first
+        // (single-line) candidate unconditionally — the export page width is
+        // fixed and wide enough that the stacked fallback is not needed.
+        if #available(iOS 16.0, *) {
+            ViewThatFits(in: .horizontal) {
+                ExportLabel(text: subtitle.joined(separator: " · "), font: font, color: .secondaryLabel, lines: 1)
+                    .fixedSize()
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(subtitle.enumerated()), id: \.offset) { i, part in
+                        ExportLabel(text: i < subtitle.count - 1 ? part + " ·" : part,
+                                    font: font, color: .secondaryLabel)
+                    }
                 }
             }
+        } else {
+            ExportLabel(text: subtitle.joined(separator: " · "), font: font, color: .secondaryLabel, lines: 1)
+                .fixedSize()
         }
     }
 

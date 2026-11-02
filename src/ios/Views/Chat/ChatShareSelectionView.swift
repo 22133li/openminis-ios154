@@ -428,6 +428,9 @@ private struct ChatSharePreviewSheet: View {
     /// [T-share-link-anchor-crash] The last finished render the ShareLink offered; keeps
     /// the ShareLink (a presented share sheet's anchor) in place while a new one is made.
     @State private var lastShareURL: URL?
+    /// [ios15-backport] ShareLink is iOS 16+; the share button below stores
+    /// the resolved URL here and presents MinisShareSheet (UIKit) instead.
+    @State private var shareSheetURL: URL?
     @State private var rendered: [RenderKey: Rendered] = [:]
     @State private var progress: (done: Int, total: Int)?
     @State private var errorText: String?
@@ -613,9 +616,19 @@ private struct ChatSharePreviewSheet: View {
                     // anything is rendered: removing it under a presented share sheet traps
                     // in SwiftUI when the sheet re-anchors.
                     if let target = ChatShareLinkTarget.resolve(current: rendered[key]?.url, last: lastShareURL) {
-                        ShareLink(item: target.url) { Image(systemName: "square.and.arrow.up") }
+                        // [ios15-backport] ShareLink (iOS 16+) replaced by a
+                        // button presenting the UIKit share sheet wrapper.
+                        Button { shareSheetURL = target.url } label: { Image(systemName: "square.and.arrow.up") }
                             .disabled(!target.enabled)
                     }
+                }
+            }
+            .sheet(isPresented: Binding(
+                get: { shareSheetURL != nil },
+                set: { if !$0 { shareSheetURL = nil } }
+            )) {
+                if let url = shareSheetURL {
+                    MinisShareSheet(url: url)
                 }
             }
             .task(id: key) { await render(key) }
