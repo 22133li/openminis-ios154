@@ -44,7 +44,7 @@ extension ContentView {
             Section {
                 ForEach(entry.ids, id: \.self) { sessionId in
                     if let session = byId["\(entry.deviceId):\(sessionId)"] {
-                        NavigationLink(value: "remote:\(entry.deviceId):\(session.id)") {
+                        NavigationLink(destination: AIChatView(sessionId: session.id, remoteDeviceId: entry.deviceId)) {
                             RemoteSessionRow(session: session)
                         }
                         .listRowInsets(EdgeInsets())

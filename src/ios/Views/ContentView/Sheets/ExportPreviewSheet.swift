@@ -49,7 +49,7 @@ struct ExportPreviewSheet: View {
     private let previewLimit = 10000
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 0) {
                 // Preview — summary for multi-select, full content for single.
                 if let summary {
@@ -109,11 +109,6 @@ struct ExportPreviewSheet: View {
             }
             .navigationTitle(AppLocalized("Export Preview"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(AppLocalized("Done")) { dismiss() }
-                }
-            }
             .sheet(isPresented: $showShareSheet) {
                 if let url = fileURL {
                     ShareSheet(url: url)

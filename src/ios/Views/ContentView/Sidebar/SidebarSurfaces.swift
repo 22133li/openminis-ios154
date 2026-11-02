@@ -135,10 +135,8 @@ private let folderEdgeHighlight = Color(UIColor { traits in
 /// over a separately-drawn shape.
 struct SearchBarSurface: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            // No .clipShape needed — glassEffect(in:) already clips to the
-            // capsule, and no .shadow: the material carries its own.
-            content.glassEffect(.regular, in: .capsule)
+        if false {  // iOS 15 backport: glassEffect is iOS 26+
+            content
         } else {
             content
                 .background(Color(UIColor.secondarySystemBackground))
@@ -162,11 +160,8 @@ struct FABGlassMorphID: ViewModifier {
     let namespace: Namespace.ID
 
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffectID("fabSearch", in: namespace)
-        } else {
-            content
-        }
+        // iOS 15 backport: glassEffectID removed
+        content
     }
 }
 
@@ -205,18 +200,18 @@ private struct FolderSurface: ViewModifier {
             : UIColor(red: 252/255.0, green: 252/255.0, blue: 252/255.0, alpha: 1)
     })
 
-    private var shape: AnyShape {
+    private var shape: BackportAnyShape {
         switch kind {
         case .lone:
-            return AnyShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            return BackportAnyShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         case .top:
-            return AnyShape(UnevenRoundedRectangle(
+            return BackportAnyShape(BackportUnevenRoundedRectangle(
                 topLeadingRadius: 16, bottomLeadingRadius: 0,
                 bottomTrailingRadius: 0, topTrailingRadius: 16, style: .continuous))
         case .middle:
-            return AnyShape(Rectangle())
+            return BackportAnyShape(Rectangle())
         case .bottom:
-            return AnyShape(UnevenRoundedRectangle(
+            return BackportAnyShape(BackportUnevenRoundedRectangle(
                 topLeadingRadius: 0, bottomLeadingRadius: 16,
                 bottomTrailingRadius: 16, topTrailingRadius: 0, style: .continuous))
         }
@@ -285,12 +280,12 @@ struct FolderCardBackground: ViewModifier {
     let isDropTarget: Bool
     let isExpanded: Bool
 
-    private var dropShape: AnyShape {
+    private var dropShape: BackportAnyShape {
         isExpanded
-            ? AnyShape(UnevenRoundedRectangle(
+            ? BackportAnyShape(BackportUnevenRoundedRectangle(
                 topLeadingRadius: 16, bottomLeadingRadius: 0,
                 bottomTrailingRadius: 0, topTrailingRadius: 16, style: .continuous))
-            : AnyShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            : BackportAnyShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     func body(content: Content) -> some View {

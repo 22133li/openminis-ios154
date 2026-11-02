@@ -87,7 +87,7 @@ struct FolderPickerSheet: View {
     private var sessionCount: Int { sessionIds.count }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 Section {
                     HStack {
@@ -100,8 +100,8 @@ struct FolderPickerSheet: View {
                     // One-sentence auto-grouping context (≤100 chars). Typed
                     // here or prefilled by AI Suggest; never shown in the
                     // list, editable later from Rename Group.
-                    TextField("Description (optional, guides auto-grouping)", text: $newFolderDesc, axis: .vertical)
-                        .lineLimit(1...2)
+                    TextField("Description (optional, guides auto-grouping)", text: $newFolderDesc)
+                        .lineLimit(2)
                         .font(.subheadline)
                         .onChange(of: newFolderDesc) { v in
                             if v.count > 100 { newFolderDesc = String(v.prefix(100)) }
@@ -134,7 +134,6 @@ struct FolderPickerSheet: View {
                         Spacer()
                         Button("Create", action: createIfNamed)
                             .buttonStyle(.borderless)
-                            .fontWeight(.semibold)
                             .disabled(trimmedName.isEmpty || duplicateFolder != nil)
                     }
                     // [T-folder-duplicate-name] Name already taken. Says so, and
@@ -272,11 +271,7 @@ struct FolderPickerSheet: View {
                              ? LocalizedStringKey("Change Group for \(sessionCount)")
                              : LocalizedStringKey("Move \(sessionCount) to Group"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarItems(trailing: Button("Cancel") { dismiss() })
         }
     }
 

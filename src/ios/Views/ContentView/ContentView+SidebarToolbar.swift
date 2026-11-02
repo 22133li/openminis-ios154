@@ -337,7 +337,7 @@ extension ContentView {
                 .frame(maxWidth: .infinity, alignment: .center)
             }
         }
-        ToolbarItem(placement: .topBarLeading) {
+        ToolbarItem(placement: .navigationBarLeading) {
             if isSelecting {
                 Button("Cancel") {
                     isSelecting = false
@@ -351,7 +351,7 @@ extension ContentView {
                 }
             }
         }
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .navigationBarTrailing) {
             if isSelecting {
                 Button(selectedIds.count == sessions.count ? "Deselect All" : "Select All") {
                     if selectedIds.count == sessions.count {
@@ -369,7 +369,7 @@ extension ContentView {
                 }
             }
         }
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .navigationBarTrailing) {
             if !isSelecting {
                 Menu {
                     Button {

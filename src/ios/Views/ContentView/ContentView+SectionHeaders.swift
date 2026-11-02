@@ -10,6 +10,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 extension ContentView {
     // MARK: - Selectable Row
@@ -88,19 +89,23 @@ extension ContentView {
             // Dropping on a date-bucket header moves the sessions OUT of any
             // folder — the drag gesture works both directions, otherwise
             // moving out would still require a trip through the menu.
-            .dropDestination(for: String.self) { sessionIds, _ in
-                Task { @MainActor in
-                    await ChatStore.shared.setFolder(nil, forSessions: sessionIds)
-                    refreshSessionList()
+            // [ios15-backport] `.dropDestination(for:)` is iOS 17+; onDrop
+            // with a DropDelegate is the iOS 14+ equivalent.
+            .onDrop(of: [UTType.text], delegate: SessionFolderDropDelegate(
+                onDrop: { sessionIds in
+                    Task { @MainActor in
+                        await ChatStore.shared.setFolder(nil, forSessions: sessionIds)
+                        refreshSessionList()
+                    }
+                },
+                onTargeted: { over in
+                    if over {
+                        dropTargetFolderId = ""
+                    } else if dropTargetFolderId == "" {
+                        dropTargetFolderId = nil
+                    }
                 }
-                return true
-            } isTargeted: { over in
-                if over {
-                    dropTargetFolderId = ""
-                } else if dropTargetFolderId == "" {
-                    dropTargetFolderId = nil
-                }
-            }
+            ))
         }
     }
 
@@ -323,20 +328,24 @@ extension ContentView {
         // ScrollViewReader anchor for the mini-bar's "back to header" jump.
         .id("folderHeader-\(group.folderId ?? "")")
         .listRowInsets(EdgeInsets())
-        .dropDestination(for: String.self) { sessionIds, _ in
-            guard let fid = group.folderId else { return false }
-            Task { @MainActor in
-                await ChatStore.shared.setFolder(fid, forSessions: sessionIds)
-                refreshSessionList()
+        // [ios15-backport] `.dropDestination(for:)` is iOS 17+; onDrop with
+        // a DropDelegate is the iOS 14+ equivalent.
+        .onDrop(of: [UTType.text], delegate: SessionFolderDropDelegate(
+            onDrop: { sessionIds in
+                guard let fid = group.folderId else { return }
+                Task { @MainActor in
+                    await ChatStore.shared.setFolder(fid, forSessions: sessionIds)
+                    refreshSessionList()
+                }
+            },
+            onTargeted: { over in
+                if over {
+                    dropTargetFolderId = group.folderId
+                } else if dropTargetFolderId == group.folderId {
+                    dropTargetFolderId = nil
+                }
             }
-            return true
-        } isTargeted: { over in
-            if over {
-                dropTargetFolderId = group.folderId
-            } else if dropTargetFolderId == group.folderId {
-                dropTargetFolderId = nil
-            }
-        }
+        ))
         .contextMenu {
             if let fid = group.folderId, let folder = folders.first(where: { $0.id == fid }) {
                 Button {
@@ -444,5 +453,54 @@ extension ContentView {
             deleteInfo = info
             isComputingDelete = false
         }
+    }
+}
+
+// MARK: - Session drag & drop (iOS 15 replacement for .dropDestination)
+
+/// [ios15-backport] Upstream uses `.dropDestination(for: String.self)`
+/// (iOS 17+) on the folder and date-bucket headers. This DropDelegate is the
+/// iOS 14+ equivalent: it validates text items, reports the targeted state
+/// (driving the same `dropTargetFolderId` highlight upstream used), and
+/// delivers the dropped session ids once every provider has loaded.
+final class SessionFolderDropDelegate: DropDelegate {
+    private let onDrop: ([String]) -> Void
+    private let onTargeted: (Bool) -> Void
+
+    init(onDrop: @escaping ([String]) -> Void, onTargeted: @escaping (Bool) -> Void) {
+        self.onDrop = onDrop
+        self.onTargeted = onTargeted
+    }
+
+    func validateDrop(info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [UTType.text])
+    }
+
+    func dropEntered(info: DropInfo) { onTargeted(true) }
+    func dropExited(info: DropInfo) { onTargeted(false) }
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
+
+    func performDrop(info: DropInfo) -> Bool {
+        onTargeted(false)
+        let providers = info.itemProviders(for: [UTType.text])
+        guard !providers.isEmpty else { return false }
+        var ids: [String] = []
+        let group = DispatchGroup()
+        let lock = NSLock()
+        for provider in providers {
+            group.enter()
+            provider.loadObject(ofClass: NSString.self) { obj, _ in
+                if let str = obj as? String {
+                    lock.lock()
+                    ids.append(str)
+                    lock.unlock()
+                }
+                group.leave()
+            }
+        }
+        group.notify(queue: .main) { [onDrop] in
+            if !ids.isEmpty { onDrop(ids) }
+        }
+        return true
     }
 }

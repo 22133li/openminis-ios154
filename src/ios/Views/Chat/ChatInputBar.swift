@@ -645,13 +645,13 @@ struct AttachmentPreviewSheet: View {
     var body: some View {
         let start = Self.previewStartIndex(of: initialID, in: attachments.map(\.id))
         let shown = index ?? start
-        NavigationStack {
+        NavigationView {
             AttachmentPreviewView(urls: attachments.map(\.cacheURL), initialIndex: start,
                                   onIndexChange: { index = $0 })
                 .navigationTitle(attachments.indices.contains(shown) ? attachments[shown].fileName : "")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .navigationBarTrailing) {
                         Button("Done") { onDone() }
                     }
                 }

@@ -94,13 +94,6 @@ struct MacOS27OpaqueNavigationBar<S: ShapeStyle>: ViewModifier {
     let background: S
 
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *), MacOS27GlassWorkaround.isActive {
-            content
-                .scrollEdgeEffectHidden(true, for: .top)
-                .toolbarBackground(background, for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
-        } else {
-            content
-        }
+        content
     }
 }

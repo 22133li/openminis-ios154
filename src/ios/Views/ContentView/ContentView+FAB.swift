@@ -162,10 +162,6 @@ extension ContentView {
         if #available(iOS 26.0, *) {
             icon()
                 .frame(width: 56, height: 56)
-                .glassEffect(
-                    tint.map { Glass.regular.tint($0) } ?? Glass.regular,
-                    in: .circle
-                )
                 // [T-fab-glass-contextmenu-regression] Without this the long-press
                 // menu on the new-chat FAB stops opening.
                 //

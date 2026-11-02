@@ -49,6 +49,28 @@ struct SessionStackRow: View {
     let isLastInFolder: Bool
     let menuActions: SessionMenuActionChannel
 
+    /// WeChat-style swipe actions for a session row: Delete + Select.
+    /// Reuses the context menu's action channel so delete goes through the
+    /// same confirmation sheet flow. Captures the channel (stable lifetime)
+    /// and session id, not self, to avoid the contextMenu UAF pattern.
+    private var sessionSwipeActionButtons: some View {
+        let actions = menuActions
+        let sid = session.id
+        return Group {
+            Button(role: .destructive) {
+                actions.send(.delete(sid))
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            Button {
+                actions.send(.select(sid))
+            } label: {
+                Label("Select", systemImage: "checkmark.circle")
+            }
+            .tint(.blue)
+        }
+    }
+
     var body: some View {
         let _ = HomeListPerf.rowBuilt()
         Button { [menuActions, sid = session.id] in
@@ -70,7 +92,13 @@ struct SessionStackRow: View {
         .buttonStyle(SessionRowPressStyle())
         // Entry D: long-press then move drags the session id; the system
         // arbitrates against .contextMenu on the same press.
-        .draggable(session.id)
+        // [ios15-backport] `.draggable(session.id)` is iOS 16+; onDrag
+        // with an NSString provider is the iOS 14+ equivalent.
+        .onDrag { NSItemProvider(object: session.id as NSString) }
+        // [T-ios-swipe-delete] WeChat-style swipe-left to delete + select.
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            sessionSwipeActionButtons
+        }
         .overlay {
             if isRegeneratingTitle {
                 ZStack {
@@ -117,6 +145,28 @@ struct SessionSplitRow: View {
 
     private static let highlightFill = Color(red: 183/255.0, green: 175/255.0, blue: 150/255.0).opacity(0.3)
 
+    /// WeChat-style swipe actions for a session row: Delete + Select.
+    /// Reuses the context menu's action channel so delete goes through the
+    /// same confirmation sheet flow. Captures the channel (stable lifetime)
+    /// and session id, not self, to avoid the contextMenu UAF pattern.
+    private var sessionSwipeActionButtons: some View {
+        let actions = menuActions
+        let sid = session.id
+        return Group {
+            Button(role: .destructive) {
+                actions.send(.delete(sid))
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            Button {
+                actions.send(.select(sid))
+            } label: {
+                Label("Select", systemImage: "checkmark.circle")
+            }
+            .tint(.blue)
+        }
+    }
+
     var body: some View {
         let _ = HomeListPerf.rowBuilt()
         SessionRow(
@@ -128,7 +178,13 @@ struct SessionSplitRow: View {
             matchSnippet: matchSnippet
         )
         .equatable()
-        .draggable(session.id)
+        // [ios15-backport] `.draggable(session.id)` is iOS 16+; onDrag
+        // with an NSString provider is the iOS 14+ equivalent.
+        .onDrag { NSItemProvider(object: session.id as NSString) }
+        // [T-ios-swipe-delete] WeChat-style swipe-left to delete + select.
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            sessionSwipeActionButtons
+        }
         .overlay {
             if isRegeneratingTitle {
                 ZStack {
@@ -158,7 +214,7 @@ struct SessionSplitRow: View {
                     // Flush selection band inside the group; the last member's
                     // band takes the container's bottom radii.
                     if isHighlighted {
-                        UnevenRoundedRectangle(
+                        BackportUnevenRoundedRectangle(
                             topLeadingRadius: 0,
                             bottomLeadingRadius: isLastInFolder ? 16 : 0,
                             bottomTrailingRadius: isLastInFolder ? 16 : 0,

@@ -29,10 +29,12 @@ extension ContentView {
         // session-switch / tap lag is a separate issue (ChatSession Array `==`
         // in SwiftUI's transaction flush; an A/B test confirmed the font
         // injection is not its cause), so per-column injection is safe here.
-        NavigationSplitView(columnVisibility: $columnVisibility) {
+        // iOS 15 backport: NavigationSplitView -> HStack (iPad layout)
+        HStack(spacing: 0) {
             sessionList(useNavigationLinks: false)
                 .appFontScale()
-        } detail: {
+                .frame(width: 320)
+            Divider()
             detailView
                 .appFontScale()
         }
@@ -41,9 +43,27 @@ extension ContentView {
     // MARK: - Stack Layout (iPhone / narrow window)
 
     var stackLayout: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationView {
             sessionList(useNavigationLinks: true)
-                .navigationDestination(for: String.self) { id in
+                .background(
+                    NavigationLink(
+                        destination: stackDestinationView,
+                        isActive: Binding(
+                            get: { !navigationPath.isEmpty },
+                            set: { if !$0 { navigationPath = [] } }
+                        )
+                    ) {
+                        EmptyView()
+                    }
+                )
+        }
+        .navigationViewStyle(.stack)
+    }
+
+    /// iOS 15 backport: replaces `.navigationDestination(for: String.self)`.
+    @ViewBuilder
+    private var stackDestinationView: some View {
+        if let id = navigationPath.first {
                     // `.id(id)` mirrors detailView (iPad): navigationDestination
                     // views are identified by stack depth, not path value, so
                     // replacing the top element in place (menu "New Chat" swaps
@@ -88,7 +108,8 @@ extension ContentView {
                                 HangDetector.mark("chat disappear")  // [T-main-stall-marks]
                             }
                     }
-                }
+        } else {
+            EmptyView()
         }
     }
 
@@ -115,7 +136,7 @@ extension ContentView {
                     .font(.system(size: 48))
                     .foregroundStyle(.secondary)
                 Text("No Conversation Selected")
-                    .font(.title3.bold())
+                    .font(.title3).bold()
                 Text("Select a conversation or start a new one")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

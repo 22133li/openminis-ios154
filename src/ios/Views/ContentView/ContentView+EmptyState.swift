@@ -44,7 +44,7 @@ extension ContentView {
 
             VStack(spacing: 8) {
                 Text("Welcome to Minis")
-                    .font(.title2.bold())
+                    .font(.title2).bold()
                 Text("Your first On-Device Agent is almost ready.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -124,12 +124,12 @@ extension ContentView {
         .frame(maxHeight: .infinity)
         .padding(.horizontal, 32)
         .sheet(isPresented: $showAddProvider) {
-            NavigationStack {
+            NavigationView {
                 AddProviderView()
             }
         }
         .sheet(isPresented: $showSelectModels) {
-            NavigationStack {
+            NavigationView {
                 OnboardingModelSelectionView()
             }
         }
@@ -138,13 +138,11 @@ extension ContentView {
             // the Restore tab. Not auto-dismissed on success — the result
             // report is worth reading; the steps above refresh on their own
             // (restore reloads ProviderConfigStore and the session list).
-            NavigationStack {
+            NavigationView {
                 BackupAndRestoreView(initialTab: .restore)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Close") { showRestoreBackup = false }
-                        }
-                    }
+                    .navigationBarItems(
+                        leading: Button("Close") { showRestoreBackup = false }
+                    )
             }
         }
     }

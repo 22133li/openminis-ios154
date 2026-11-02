@@ -19,7 +19,7 @@ struct DeleteConfirmSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 0) {
                 if isLoading || info == nil {
                     Spacer()
@@ -43,7 +43,7 @@ struct DeleteConfirmSheet: View {
                             if info.totalFileCount > 0 {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Associated Files")
-                                        .font(.subheadline.bold())
+                                        .font(.subheadline).bold()
                                         .foregroundStyle(.primary)
                                     ForEach(info.fileNames, id: \.self) { name in
                                         HStack(spacing: 6) {
@@ -79,7 +79,7 @@ struct DeleteConfirmSheet: View {
                             dismiss()
                         } label: {
                             Text("Delete (\(info.formattedSize))")
-                                .font(.body.bold())
+                                .font(.body).bold()
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                         }
@@ -107,7 +107,7 @@ struct DeleteConfirmSheet: View {
     private func infoRow(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.subheadline.bold())
+                .font(.subheadline).bold()
                 .foregroundStyle(.primary)
             Text(value)
                 .font(.subheadline)

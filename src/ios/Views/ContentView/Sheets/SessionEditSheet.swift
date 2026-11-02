@@ -41,7 +41,7 @@ struct SessionEditSheet: View {
     ]
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 Section("Title") {
                     TextField("Session title", text: $editTitle)
@@ -93,20 +93,15 @@ struct SessionEditSheet: View {
             }
             .navigationTitle("Edit Session")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+            .navigationBarItems(
+                leading: Button("Cancel") { dismiss() },
+                trailing: Button("Save") {
+                    let title = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !title.isEmpty else { return }
+                    onSave(title, editCategory.isEmpty ? nil : editCategory)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let title = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !title.isEmpty else { return }
-                        onSave(title, editCategory.isEmpty ? nil : editCategory)
-                    }
-                    .bold()
-                    .disabled(editTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
+                .disabled(editTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            )
             .onAppear {
                 editTitle = session.title ?? ""
                 editCategory = session.category ?? ""

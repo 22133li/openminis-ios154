@@ -317,9 +317,9 @@ extension ContentView {
                 try handle.write(contentsOf: Data(("\n\n" + String(repeating: "=", count: 60) + "\n\n").utf8))
             }
             var header = "# \(session.title ?? "Untitled")\n"
+            header += String(repeating: "-", count: 40) + "\n"
             header += "Model: \(session.modelId)\n"
             header += "Created: \(dateFmt.string(from: session.createdAt))\n"
-            header += String(repeating: "-", count: 40) + "\n"
             try handle.write(contentsOf: Data(header.utf8))
 
             let allMessages = await ChatStore.shared.loadMessages(sessionId: session.id)

@@ -66,6 +66,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 private let shareLog = AppLogger(category: "Share")
 private let draftLog = AppLogger(category: "DraftSession")
@@ -365,7 +366,6 @@ struct ContentView: View {
     /// Whether the initial session load has completed (prevents showing the list before we decide to auto-navigate).
     @State var didInitialLoad = false
     /// Controls sidebar visibility on iPad (automatic handles iPhone collapse).
-    @State var columnVisibility: NavigationSplitViewVisibility = .automatic
 
     /// Launch screen preference: 0=Auto, 1=Last Session, 2=New Chat.
     @AppStorage("launchScreen") private var launchScreen: Int = 0
@@ -456,7 +456,7 @@ struct ContentView: View {
     /// Whether the current window is wide enough for two-column layout.
     @State var isWideLayout = false
     /// Navigation path for stack (compact) layout.
-    @State var navigationPath = NavigationPath()
+    @State var navigationPath: [String] = []
     /// Tracks the session ID currently visible on the compact navigation stack.
     @State var currentStackSessionId: String?
     /// [T-ios-stacknav-transition-attributegraph-race] Compact-layout analogue
@@ -537,7 +537,7 @@ struct ContentView: View {
     ///
     /// Carries the deferral instant so a stale request can be dropped rather
     /// than flushed — see `pendingBackgroundNavigationTTL`.
-    @State var pendingBackgroundNavigation: (path: NavigationPath, deferredAt: Date)?
+    @State var pendingBackgroundNavigation: (path: [String], deferredAt: Date)?
 
     /// [T-ios-bg-nav-push-watchdog] How long a deferred push stays valid.
     ///
@@ -771,7 +771,7 @@ struct ContentView: View {
             }
         }
         .fullScreenCover(isPresented: $showTerminal) {
-            NavigationStack {
+            NavigationView {
                 ISHTerminalView(showCloseButton: true)
             }
         }
@@ -793,28 +793,20 @@ struct ContentView: View {
             case .settings:
                 SettingsSheet(showTerminal: $showTerminal)
             case .rootfsManagement:
-                NavigationStack {
+                NavigationView {
                     RootfsManagementView()
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button("Done") { activeToolSheet = nil }
-                            }
-                        }
+                        .navigationBarItems(trailing: Button("Done") { activeToolSheet = nil })
                 }
             case .browser:
                 BrowserSheetView(pool: browserPool)
             case .browserManagement:
-                NavigationStack {
+                NavigationView {
                     BrowserManagementView(pool: browserPool)
                 }
             case .syncMigrationDetail:
-                NavigationStack {
+                NavigationView {
                     SyncMigrationDetailView()
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button("Done") { activeToolSheet = nil }
-                            }
-                        }
+                        .navigationBarItems(trailing: Button("Done") { activeToolSheet = nil })
                 }
             }
         }
@@ -837,7 +829,6 @@ struct ContentView: View {
             .onAppear {
                 print("[DELETE] Sheet appeared. singleDeleteInfo is \(singleDeleteInfo == nil ? "nil" : "non-nil, sessionCount=\(singleDeleteInfo!.sessionCount)")")
             }
-            .presentationDetents([.medium])
         }
         .sheet(item: $sessionToEdit) { session in
             SessionEditSheet(session: session) { newTitle, newCategory in
@@ -849,7 +840,6 @@ struct ContentView: View {
                 }
                 sessionToEdit = nil
             }
-            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showDeleteConfirm, onDismiss: {
             if deleteInfo == nil {
@@ -866,7 +856,6 @@ struct ContentView: View {
                 deleteSelectedSessions()
                 showDeleteConfirm = false
             }
-            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showExportPreview) {
             ExportPreviewSheet(fileURL: exportFileURL, previewURL: exportPreviewURL, summary: exportSummary)
@@ -901,7 +890,6 @@ struct ContentView: View {
                 if req.fromMultiSelect { folderMoveApplied = true }
                 folderPickerRequest = nil
             }
-            .presentationDetents([.medium, .large])
         }
         .modifier(FolderAlertsModifier(
             folderToRename: $folderToRename,
@@ -1226,9 +1214,7 @@ struct ContentView: View {
             // iPhone (only the launch / share / notification paths append), so
             // name every page: a ghost page under a new chat shows up here.
             if navigationPath.count > 1 {
-                let ids = navigationPath.codable
-                    .flatMap { try? JSONEncoder().encode($0) }
-                    .map { String(decoding: $0, as: UTF8.self) } ?? "?"
+                let ids = navigationPath.joined(separator: ",")
                 shareLog.warning("[NavStack] depth=\(navigationPath.count) top=\(currentStackSessionId ?? "nil") path=\(ids)")
             }
             if navigationPath.isEmpty { CrashBreadcrumbs.setSlot("page", value: "home") }

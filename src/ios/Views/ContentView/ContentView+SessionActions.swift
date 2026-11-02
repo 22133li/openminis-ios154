@@ -102,7 +102,7 @@ extension ContentView {
                 selectedSessionId = nil
             }
             if !isWideLayout, let current = currentStackSessionId, ids.contains(current) {
-                navigationPath = NavigationPath()
+                navigationPath = []
                 currentStackSessionId = nil
             }
             sessions.removeAll { ids.contains($0.id) }
