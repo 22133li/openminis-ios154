@@ -79,7 +79,6 @@ struct NavBarStyleModifier: ViewModifier {
             // starting below the bar.
             content
                 .ignoresSafeArea(.container, edges: .top)
-                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
                 // [T-macos27-liquid-glass-navbar] See MacOS27GlassWorkaround in
                 // ContentView. `toolbarBackgroundVisibility(.visible)` only
                 // declares "there should be a backdrop"; the material is still
@@ -95,8 +94,6 @@ struct NavBarStyleModifier: ViewModifier {
         } else {
             // iOS 16–18: opaque navbar background
             content
-                .toolbarBackground(ChatColors.background, for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
                 .overlay(alignment: .top) {
                     if measuresSafeArea {
                         // [T-ios-geometry-observer-crash] onGeometryChange
@@ -107,7 +104,7 @@ struct NavBarStyleModifier: ViewModifier {
                         // before, and the action's initial fire covers the old
                         // onAppear seed.
                         Color.clear
-                            .onGeometryChange(for: CGFloat.self) { proxy in
+                            .onGeometryChangeBackport(for: CGFloat.self) { proxy in
                                 proxy.safeAreaInsets.top
                             } action: { topSafeAreaInset = $0 }
                             .ignoresSafeArea()

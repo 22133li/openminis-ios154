@@ -186,7 +186,6 @@ extension AIChatView {
                 // reserves the top/bottom share.
                 .padding(Self.popupRowInset)
             }
-            .scrollIndicators(.visible)
             .frame(height: Self.slashPickerFixedHeight)
         }
     }
@@ -257,8 +256,7 @@ extension AIChatView {
                         // [T-slash-picker-fixed-height] Match slash popup:
                         // exactly 4 rows tall, scrolls on overflow with the
                         // visible indicator above.
-                        .scrollIndicators(.visible)
-                        .frame(height: Self.slashPickerFixedHeight)
+                                    .frame(height: Self.slashPickerFixedHeight)
                         .onChange(of: vm.mentionSelectedIndex) { newIndex in
                             guard newIndex >= 0, newIndex < rows.count else { return }
                             withAnimation(.easeOut(duration: 0.12)) {
@@ -327,7 +325,6 @@ extension AIChatView {
         func body(content: Content) -> some View {
             if #available(iOS 26.0, *) {
                 content
-                    .glassEffect(.regular, in: shape)
                     .clipShape(shape)
             } else {
                 content

@@ -150,12 +150,78 @@ extension AIChatView {
         return img
     }
 
+    /// Normalize a `file://` URL or a bare `/var/minis/...` path link to its
+    /// `minis://` equivalent (`minis://<ns>/<path>` ↔ `/var/minis/<ns>/<path>`).
+    /// URLComponents percent-encodes the result, so unencoded CJK filenames
+    /// are handled too. Returns nil when the path isn't under /var/minis/.
+    private static func minisURL(fromFileLink url: URL) -> URL? {
+        var path = url.path
+        if path.isEmpty, url.scheme == nil {
+            path = url.absoluteString
+        }
+        let prefix = "/var/minis/"
+        guard path.hasPrefix(prefix) else { return nil }
+        let rest = String(path.dropFirst(prefix.count))
+        guard let slash = rest.firstIndex(of: "/") else { return nil }
+        let host = String(rest[..<slash])
+        let subPath = String(rest[rest.index(after: slash)...])
+        guard !host.isEmpty, !subPath.isEmpty else { return nil }
+        var comps = URLComponents()
+        comps.scheme = "minis"
+        comps.host = host
+        comps.path = "/" + subPath
+        return comps.url
+    }
+
+    /// Map a scheme-less relative link target (bare filename or relative path)
+    /// into the minis:// namespace: `x.deb` → `minis://attachments/x.deb`,
+    /// `attachments/x.deb` → `minis://attachments/x.deb`. URLComponents
+    /// percent-encodes the result so unencoded CJK filenames are handled too.
+    private static func minisURL(fromRelativeLink rawPath: String) -> URL? {
+        let segments = rawPath.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard !segments.isEmpty else { return nil }
+        var comps = URLComponents()
+        comps.scheme = "minis"
+        if segments.count > 1 {
+            comps.host = segments[0]
+            comps.path = "/" + segments[1...].joined(separator: "/")
+        } else {
+            comps.host = "attachments"
+            comps.path = "/" + segments[0]
+        }
+        return comps.url
+    }
+
     func handleMinisURLTap(_ url: URL) -> OpenURLAction.Result {
         if let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" {
             withAnimation { safariURL = url }
             return .handled
         }
-        guard url.scheme == "minis" else { return .systemAction }
+        // [T-link-fallback-86] Models sometimes emit file:// URLs or bare
+        // /var/minis/... paths instead of minis:// links (e.g. third-party
+        // models that don't follow the minis:// convention). Normalize those
+        // to a minis:// URL so the tap opens the share/preview sheet instead
+        // of falling through to .systemAction, which silently ignores
+        // device-local file URLs.
+        let scheme = url.scheme?.lowercased()
+        if scheme == "file" || scheme == nil {
+            // Absolute /var/minis/... path (or file:// URL) → minis:// equivalent.
+            if let normalized = Self.minisURL(fromFileLink: url) {
+                return handleMinisURLTap(normalized)
+            }
+            // Bare filename or relative/absolute path → minis://attachments/.
+            // Leading "/" is stripped so "/x.deb" doesn't fall through to
+            // .systemAction below. [T-link-relative-89]
+            if scheme == nil {
+                var rawPath = url.path
+                if rawPath.isEmpty { rawPath = url.absoluteString }
+                let stripped = rawPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                if !stripped.isEmpty, let synthetic = Self.minisURL(fromRelativeLink: stripped) {
+                    return handleMinisURLTap(synthetic)
+                }
+            }
+        }
+        guard scheme == "minis" else { return .systemAction }
 
         // Terminal deep link: minis://open_terminal?init_command=...
         if url.host == "open_terminal" {
@@ -217,12 +283,35 @@ extension AIChatView {
             }
         } else {
             // File doesn't exist on disk — likely deleted, from a pruned
-            // session, or iCloud sync hasn't brought it down yet. Surface
-            // a dismissable alert so the tap isn't silently ignored.
+            // session, or sync hasn't brought it down yet. Surface a UIKit
+            // alert (not the SwiftUI .alert modifier: AIChatView stacks 8
+            // .alert modifiers and on iOS 15 the file-missing one never
+            // presents, swallowing the tap silently). [T-link-alert-89]
             let name = url.lastPathComponent.removingPercentEncoding ?? url.lastPathComponent
-            missingMinisFileName = name.isEmpty ? url.absoluteString : name
+            presentFileMissingAlert(name: name.isEmpty ? url.absoluteString : name)
         }
         return .handled
+    }
+
+    /// Present the "file not found" feedback via UIKit. AIChatView carries 8
+    /// stacked SwiftUI `.alert` modifiers; on iOS 15 only one of them presents
+    /// reliably, so the SwiftUI alert for a missing file was silently dropped
+    /// and file taps appeared dead. A directly-presented UIAlertController has
+    /// no such conflict. [T-link-alert-89]
+    private func presentFileMissingAlert(name: String) {
+        let alert = UIAlertController(
+            title: AppLocalized("File Not Found"),
+            message: AppLocalized("\(name) is unavailable. It may have been deleted or not yet synced."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: AppLocalized("OK"), style: .cancel))
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let root = scene.windows.first?.rootViewController else { return }
+        var presenter = root
+        while let presented = presenter.presentedViewController { presenter = presented }
+        // Don't stack on an already-presented alert/sheet.
+        guard presenter.presentedViewController == nil else { return }
+        presenter.present(alert, animated: true)
     }
 
     /// [T-minis-folder-link] Open a folder link in the in-app file browser,

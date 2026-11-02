@@ -72,7 +72,7 @@ struct MoveToSessionSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 if !isSearching {
                     Button {

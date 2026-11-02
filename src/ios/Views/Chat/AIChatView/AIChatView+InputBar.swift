@@ -124,7 +124,7 @@ extension AIChatView {
                     // [T-ios-geometry-observer-crash] traced an async-renderer
                     // SIGTRAP to that scaffold, and this file already
                     // standardised on the observer for exactly that reason.
-                    .onGeometryChange(for: CGFloat.self) { proxy in
+                    .onGeometryChangeBackport(for: CGFloat.self) { proxy in
                         proxy.size.width
                     } action: { w in
                         guard w > 0, abs(w - inputBottomRowWidth) > 0.5 else { return }
@@ -185,7 +185,7 @@ extension AIChatView {
             // floating-bar site). Fires with the initial value too, so the
             // old onAppear seeding AND its diagnostic log are preserved as
             // a single unified line.
-            .onGeometryChange(for: CGRect.self) { proxy in
+            .onGeometryChangeBackport(for: CGRect.self) { proxy in
                 proxy.frame(in: .global)
             } action: { frame in
                 let newH = frame.size.height
@@ -269,7 +269,7 @@ extension AIChatView {
                     // is taken; we only re-read what onGeometryChange reported.
                     let voiceAtSeed = voiceInputActive
                     inputBarHeightDebounce = Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(380))
+                        try? await Task.sleep(nanoseconds: 380000000)
                         guard !Task.isCancelled, voiceAtSeed == voiceInputActive else { return }
                         let settled = latestInputBarFrameH
                         if settled > 0, abs(settled - newH) > 0.5 {
@@ -300,7 +300,7 @@ extension AIChatView {
                     // 200ms, which is stale), so the timer routinely expired
                     // while the panel was still moving and SwiftUI's final
                     // geometry callback had not landed yet.
-                    try? await Task.sleep(for: .milliseconds(380))
+                    try? await Task.sleep(nanoseconds: 380000000)
                     guard !Task.isCancelled else { return }
                     // [T-voice-inputbar-branch-swap] During rapid streaming
                     // re-renders, voiceInputActive can glitch for one frame,
@@ -327,7 +327,7 @@ extension AIChatView {
                     // height, which is the bottom-gap symptom. No new
                     // measurement is taken: we only re-read what
                     // onGeometryChange already reported.
-                    try? await Task.sleep(for: .milliseconds(320))
+                    try? await Task.sleep(nanoseconds: 320000000)
                     guard !Task.isCancelled else { return }
                     guard voiceAtCapture == voiceInputActive else { return }
                     let settled = latestInputBarFrameH

@@ -413,7 +413,6 @@ struct AIChatView: View {
     @State private var providerImportResult: String?
     /// [T-multi-select-share] The open share picker (long-press "Share…" or "…" → Share…).
     @State var shareRequest: ChatShareRequest?
-    @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State var attachmentGridHeight: CGFloat = 0
     @State var transcriptHeight: CGFloat = 0
     /// Tracks how much of recognizedText has already been appended to inputText.
@@ -500,6 +499,99 @@ struct AIChatView: View {
             || showPhotoPicker || showDocumentPicker || showModelPicker
     }
 
+    /// iOS 15.4: 处理 PHPicker 选择结果，复刻原 PhotosPicker 的 placeholder 流程
+    private func handlePHPickerResults(_ results: [PHPickerResult]) {
+        guard !results.isEmpty else { return }
+        // 1) 为每个选择项立即插入 loading placeholder
+        let kinds = results.map { result -> InputAttachment.Kind in
+            result.itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) ? .video : .image
+        }
+        let placeholderIDs = vm.addLoadingPlaceholders(kinds: kinds)
+
+        // 2) 并发加载每个 item 的数据
+        Task {
+            await withTaskGroup(of: Void.self) { group in
+                for (index, result) in results.enumerated() {
+                    let pid = placeholderIDs[index]
+                    let provider = result.itemProvider
+                    let isVideo = provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier)
+                    group.addTask {
+                        if isVideo {
+                            // 视频：加载文件 URL
+                            if let url = await loadVideoFileURL(from: provider) {
+                                await MainActor.run {
+                                    vm.finalizeVideoPlaceholder(id: pid, from: url, originalDate: nil)
+                                }
+                            } else {
+                                await MainActor.run { vm.markPlaceholderFailed(id: pid) }
+                            }
+                        } else {
+                            // 图片：加载原始数据（保留 PNG 透明、HEIC、GIF、EXIF）
+                            if let data = await loadImageData(from: provider) {
+                                let ext = provider.registeredTypeIdentifiers
+                                    .compactMap { UTType($0)?.preferredFilenameExtension }
+                                    .first
+                                await MainActor.run {
+                                    vm.finalizeImagePlaceholder(id: pid, data: data, fileExtension: ext, originalDate: nil)
+                                }
+                            } else {
+                                await MainActor.run { vm.markPlaceholderFailed(id: pid) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 从 NSItemProvider 加载视频文件 URL
+    /// iOS 15.4 修复（build104）：① 必须用 provider 注册的具体类型标识
+    /// （如 com.apple.quicktime-movie / public.mpeg-4），泛类型 public.movie
+    /// 取不到文件、url 恒为 nil；② loadFileRepresentation 给的是临时文件，
+    /// 回调返回后系统即可删除，必须在回调内先拷贝到自有临时目录再返回
+    /// —— 与上游 VideoFileTransferable 在 importing 闭包内拷贝的做法一致。
+    private func loadVideoFileURL(from provider: NSItemProvider) async -> URL? {
+        let typeId = provider.registeredTypeIdentifiers.first(where: { id in
+            UTType(id)?.conforms(to: .movie) == true
+        }) ?? UTType.movie.identifier
+        return await withCheckedContinuation { continuation in
+            provider.loadFileRepresentation(forTypeIdentifier: typeId) { url, error in
+                if let error = error {
+                    minisLogger.error("[PhotoPicker] loadFileRepresentation(\(typeId)) error: \(error.localizedDescription)")
+                }
+                guard let url = url else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let ext = url.pathExtension.isEmpty ? "mov" : url.pathExtension
+                let dest = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("picked_video_\(UUID().uuidString.prefix(8)).\(ext)")
+                do {
+                    try FileManager.default.copyItem(at: url, to: dest)
+                    continuation.resume(returning: dest)
+                } catch {
+                    minisLogger.error("[PhotoPicker] copy picked video failed: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+
+    /// 从 NSItemProvider 加载图片原始数据
+    private func loadImageData(from provider: NSItemProvider) async -> Data? {
+        // 优先尝试加载原始数据
+        for typeId in provider.registeredTypeIdentifiers {
+            if let data = await withCheckedContinuation({ continuation in
+                provider.loadDataRepresentation(forTypeIdentifier: typeId) { data, error in
+                    continuation.resume(returning: data)
+                }
+            }) {
+                return data
+            }
+        }
+        return nil
+    }
+
     /// Tracks whether this ChatView is the currently visible screen.
     /// Set to false in onDisappear (e.g. when another page is pushed),
     /// used to suppress auto-focus so the keyboard doesn't pop up behind other pages.
@@ -524,10 +616,6 @@ struct AIChatView: View {
     @State var safariURL: URL?
     @State var fullBrowserURL: URL?
     @State private var fullBrowserIsLocal = false
-    /// Filename to show in the "file missing" alert. Set by `handleMinisURLTap`
-    /// when `resolveMinisFileURL` returns nil for a tapped `minis://` link
-    /// (file was deleted, the session was pruned, or iCloud hasn't synced yet).
-    @State var missingMinisFileName: String?
 
     var body: some View {
         // [T-ios-chat-body-stack-erase] Type-erase the page's content before
@@ -753,8 +841,15 @@ struct AIChatView: View {
             kernelBootOverlay
         })
         .background(ChatColors.background)
+        // [T-ios154-drop-crash] Disabled on iOS 15: NSItemProvider drop handling
+        // throws uncaught ObjC exception (SIGABRT) on 15.4. File attachment
+        // via + button (fileImporter) remains available.
         .onDrop(of: [.image, .movie, .fileURL, .data], isTargeted: $isDropTargeted) { providers in
-            handleDropProviders(providers)
+            if #available(iOS 16, *) {
+                handleDropProviders(providers)
+            } else {
+                minisLogger.warning("[Drop] disabled on iOS 15 (crash workaround)")
+            }
             return true
         }
         .overlay {
@@ -778,7 +873,7 @@ struct AIChatView: View {
         // view, so this body re-renders only when its height changes.
         .safeAreaInset(edge: .top, spacing: 0) {
             topBanners
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                .onGeometryChangeBackport(for: CGFloat.self) { $0.size.height } action: { height in
                     if abs(height - topBannersHeight) > 0.5 { topBannersHeight = height }
                 }
         }
@@ -869,7 +964,7 @@ struct AIChatView: View {
         }
         .sheet(item: $locateDownloadTarget) { target in
             if let sid = vm.sessionId {
-                NavigationStack {
+                NavigationView {
                     FileBrowserView(
                         rootPath: AIChatViewModel.minisWorkspacePersistentDir(for: sid),
                         rootLabel: "/var/minis/workspace",
@@ -978,18 +1073,6 @@ struct AIChatView: View {
         .fullScreenCover(item: $previewImageFile) { fileURL in
             MinisImageFilePreviewView(fileURL: fileURL)
         }
-        .alert(
-            AppLocalized("File Not Found"),
-            isPresented: Binding(
-                get: { missingMinisFileName != nil },
-                set: { if !$0 { missingMinisFileName = nil } }
-            ),
-            presenting: missingMinisFileName
-        ) { _ in
-            Button(AppLocalized("OK"), role: .cancel) { missingMinisFileName = nil }
-        } message: { name in
-            Text(AppLocalized("\(name) is unavailable. It may have been deleted or not yet synced from iCloud."))
-        }
         .fullScreenCover(item: $imageGallery) { presentation in
             MessageImageGallery(items: presentation.items, startIndex: presentation.startIndex)
         }
@@ -1012,8 +1095,6 @@ struct AIChatView: View {
         }
         .sheet(item: $previewAudioFile) { fileURL in
             MinisAudioPreviewView(fileURL: fileURL)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.hidden)
         }
         .sheet(item: $previewTextFile) { fileURL in
             MinisTextPreviewView(fileURL: fileURL)
@@ -1097,27 +1178,29 @@ struct AIChatView: View {
             })
         }
         .sheet(isPresented: $showFileBrowser) {
-            NavigationStack {
+            NavigationView {
                 let base = RootfsManager.shared.dataPath
                 FileBrowserView(rootPath: base, initialPath: base.appendingPathComponent("var/minis"), rootLabel: "/")
             }
         }
-        .sheet(isPresented: $showBrowserSheet) {
+        .sheet(isPresented: $showBrowserSheet, onDismiss: {
+            // Ends a manual takeover when the sheet is dismissed.
+            // No-op when no takeover is in flight.
+            vm.resumeFromBrowserTakeover()
+        }) {
             BrowserSheetView(pool: vm.browserTabPool, isAgentBusy: vm.browserTabPool.isAgentBrowsing, onTakeover: {
                 vm.browserTakeoverActive = true
             })
         }
         .sheet(isPresented: $showModelPicker) {
-            NavigationStack {
+            NavigationView {
                 SessionModelPicker(sessionId: vm.sessionId) {
                     await vm.ensureSessionReturningId()
                 }
             }
-            .presentationDetents([.large])
         }
         .sheet(isPresented: $showTokenUsage) {
             TokenUsageSheet(vm: cached.vm)
-                .presentationDetents([.fraction(0.8), .large])
         }
         .sheet(item: $shareRequest) { request in
             ChatShareSelectionView(request: request)
@@ -1211,7 +1294,7 @@ struct AIChatView: View {
         .fullScreenCover(isPresented: $showTerminal) {
             terminalInitCommand = nil
         } content: {
-            NavigationStack {
+            NavigationView {
                 ISHTerminalView(sessionId: vm.sessionId, showCloseButton: true, initCommand: terminalInitCommand)
                     .onAppear {
                         if let sid = vm.sessionId {
@@ -1255,78 +1338,32 @@ struct AIChatView: View {
                 }
             )
         }
-        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotoItems,
-                      maxSelectionCount: 50, matching: .any(of: [.images, .videos]))
-        .onChange(of: selectedPhotoItems) { items in
-            guard !items.isEmpty else { return }
-            // [T-ios-photo-pick-placeholder] 1) Insert a loading placeholder chip
-            // for every picked item RIGHT NOW (one main-actor batch update), so the
-            // user immediately sees how many they picked instead of watching photos
-            // trickle in one-by-one. 2) Load all of them CONCURRENTLY via a
-            // TaskGroup. 3) Resolve each placeholder in place as its bytes arrive
-            // (success → real thumbnail, failure → error chip). The send button is
-            // gated on `hasLoadingAttachments` until every item settles.
-            let kinds = items.map { item -> InputAttachment.Kind in
-                item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) ? .video : .image
-            }
-            let placeholderIDs = vm.addLoadingPlaceholders(kinds: kinds)
-
-            // Snapshot per-item metadata synchronously (PHAsset fetch + UTI) so the
-            // concurrent loaders don't touch SwiftUI state or PhotosUI mid-flight.
-            struct PickJob { let id: UUID; let item: PhotosPickerItem; let isVideo: Bool; let ext: String?; let date: Date? }
-            let jobs: [PickJob] = zip(placeholderIDs, items).map { pid, item in
-                let isVideo = item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) })
-                var assetDate: Date?
-                if let aid = item.itemIdentifier,
-                   let asset = PHAsset.fetchAssets(withLocalIdentifiers: [aid], options: nil).firstObject {
-                    assetDate = asset.creationDate
+        .sheet(isPresented: $showPhotoPicker) {
+            MinisPHPicker(
+                onComplete: { results in
+                    showPhotoPicker = false
+                    handlePHPickerResults(results)
+                },
+                onCancel: {
+                    showPhotoPicker = false
                 }
-                let ext = item.supportedContentTypes
-                    .first(where: { $0.conforms(to: .image) })?
-                    .preferredFilenameExtension
-                return PickJob(id: pid, item: item, isVideo: isVideo, ext: ext, date: assetDate)
-            }
-            selectedPhotoItems = []
-
-            Task {
-                await withTaskGroup(of: Void.self) { group in
-                    for job in jobs {
-                        group.addTask {
-                            if job.isVideo {
-                                if let videoURL = try? await job.item.loadTransferable(type: VideoFileTransferable.self) {
-                                    await MainActor.run {
-                                        vm.finalizeVideoPlaceholder(id: job.id, from: videoURL.url, originalDate: job.date)
-                                    }
-                                } else {
-                                    await MainActor.run { vm.markPlaceholderFailed(id: job.id) }
-                                }
-                            } else if let data = try? await job.item.loadTransferable(type: Data.self) {
-                                // Preserve original encoded bytes (PNG transparency,
-                                // HEIC, animated GIFs, EXIF) — written verbatim.
-                                await MainActor.run {
-                                    vm.finalizeImagePlaceholder(id: job.id, data: data, fileExtension: job.ext, originalDate: job.date)
-                                }
-                            } else {
-                                await MainActor.run { vm.markPlaceholderFailed(id: job.id) }
-                            }
-                        }
-                    }
-                }
-            }
+            )
         }
-        .fileImporter(
-            isPresented: $showDocumentPicker,
-            allowedContentTypes: [.image, .pdf, .plainText, .json, .sourceCode, .presentation, .spreadsheet, .data],
-            allowsMultipleSelection: true
-        ) { result in
-            switch result {
-            case .success(let urls):
-                for url in urls {
-                    vm.addFileAttachment(from: url)
+        .sheet(isPresented: $showDocumentPicker) {
+            // [T-ios154-fileimporter] UIKit wrapper instead of .fileImporter
+            // (SwiftUI presentation bug on iOS 15.4 — completion never fires).
+            MinisDocumentPicker(
+                allowedContentTypes: [.image, .pdf, .plainText, .json, .sourceCode, .presentation, .spreadsheet, .data],
+                onComplete: { urls in
+                    showDocumentPicker = false
+                    for url in urls {
+                        vm.addFileAttachment(from: url)
+                    }
+                },
+                onCancel: {
+                    showDocumentPicker = false
                 }
-            case .failure(let error):
-                minisLogger.error("File import failed: \(error.localizedDescription)")
-            }
+            )
         }
         // [T-minisurl-wrong-active-session] A draft opened from the UI has
         // sessionId nil at onAppear; when send() creates the real session,
@@ -1690,7 +1727,7 @@ struct AIChatView: View {
                 inputBarHealthProbe?.cancel()
                 let probeBaseline = inputBarGeometryTick
                 inputBarHealthProbe = Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(900))
+                    try? await Task.sleep(nanoseconds: 900000000)
                     guard !Task.isCancelled else { return }
                     let ticked = inputBarGeometryTick != probeBaseline
                     let age = inputBarLastGeometryAt.map { CFAbsoluteTimeGetCurrent() - $0 } ?? -1
@@ -1831,5 +1868,93 @@ struct AIChatView: View {
         // descendants (e.g. ToolCapsuleView's long-press menu) can react to
         // `vm.isProcessing` without threading the vm through every level.
         .environmentObject(vm)
+    }
+}
+
+// MARK: - iOS 15.4 Photo Picker (PHPickerViewController fallback)
+
+/// PHPickerViewController wrapper for iOS 15.4 (SwiftUI .photosPicker is iOS 16+).
+/// Supports multi-select of images and videos, matching the original PhotosPicker behavior.
+struct MinisPHPicker: UIViewControllerRepresentable {
+    var onComplete: ([PHPickerResult]) -> Void
+    var onCancel: () -> Void
+    /// iOS 15 backport parity: callers that need single-image (e.g. SOUL
+    /// avatar) override these; the chat attachment picker keeps the defaults.
+    var selectionLimit: Int = 50
+    var filter: PHPickerFilter = .any(of: [.images, .videos])
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.selectionLimit = selectionLimit
+        config.filter = filter
+        config.preferredAssetRepresentationMode = .current
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onComplete: onComplete, onCancel: onCancel)
+    }
+
+    final class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let onComplete: ([PHPickerResult]) -> Void
+        let onCancel: () -> Void
+
+        init(onComplete: @escaping ([PHPickerResult]) -> Void, onCancel: @escaping () -> Void) {
+            self.onComplete = onComplete
+            self.onCancel = onCancel
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            if results.isEmpty {
+                onCancel()
+            } else {
+                onComplete(results)
+            }
+        }
+    }
+}
+
+// [T-ios154-fileimporter] UIKit UIDocumentPickerViewController wrapper.
+// SwiftUI .fileImporter does not call its completion on iOS 15.4 when attached
+// to a view with multiple sheet/fullScreenCover modifiers (presentation bug).
+// This bypasses SwiftUI's presentation and uses UIKit directly.
+struct MinisDocumentPicker: UIViewControllerRepresentable {
+    var allowedContentTypes: [UTType]
+    var onComplete: ([URL]) -> Void
+    var onCancel: () -> Void
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedContentTypes, asCopy: true)
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = true
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onComplete: onComplete, onCancel: onCancel)
+    }
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onComplete: ([URL]) -> Void
+        let onCancel: () -> Void
+
+        init(onComplete: @escaping ([URL]) -> Void, onCancel: @escaping () -> Void) {
+            self.onComplete = onComplete
+            self.onCancel = onCancel
+        }
+
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            onComplete(urls)
+        }
+
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            onCancel()
+        }
     }
 }

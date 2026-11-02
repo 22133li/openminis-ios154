@@ -61,7 +61,6 @@ struct FloatingCircleButtonSurface: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             content
-                .glassEffect(.regular.interactive(), in: .circle)
                 .contentShape(Circle())
         } else {
             content
@@ -106,7 +105,6 @@ struct ComposerSurface: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             content
-                .glassEffect(.regular, in: shape)
                 .clipShape(shape)
         } else {
             content

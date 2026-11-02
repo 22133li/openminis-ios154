@@ -26,7 +26,7 @@ struct TokenUsageSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             List {
                 let s = vm.sessionTokenStats
 
@@ -82,7 +82,7 @@ struct TokenUsageSheet: View {
             .navigationTitle("Session Token Usage")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
                 }
             }
