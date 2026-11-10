@@ -827,11 +827,46 @@ final class HostingCellContentView: UIView, UIContentView {
             verticalFittingPriority: .fittingSizeLevel)
         let ctrlHeight = hostingController.sizeThatFits(
             in: CGSize(width: measureWidth, height: .greatestFiniteMagnitude)).height
-        var height = alSize.height
-        if !(height.isFinite && height > 0 && height < expandedWidth) {
+        let alHeight = alSize.height
+        let alValid = alHeight.isFinite && alHeight > 0 && alHeight < expandedWidth
+        let ctrlValid = ctrlHeight.isFinite && ctrlHeight > 0 && ctrlHeight < expandedWidth
+        var height: CGFloat
+        if alValid && ctrlValid {
+            // [T-ios15-hostfit-disagree] 2026-11-10 device log: first-pass
+            // measures on this path still commit SHORT heights that later
+            // passes correct - [invalidateCell] FIRST-MEASURE CORRECTION
+            // cellH=12.0 newH=22.0 (twice), header decel-inv 26 -> 33,
+            // [CellSizing] INVALIDATE est=32 -> pref=533 at stream end.
+            // A short frame is the overlap/clipping the user photographs:
+            // following cells stack from the short frame while the hosted
+            // content draws at its real height. When the two independent
+            // fits of the SAME content at the SAME width disagree by more
+            // than rounding (> 4pt), the graph had not finished its
+            // internal layout when the first fit read it - force one more
+            // layout pass, re-fit, and adopt the LARGEST of the three.
+            // A too-tall answer only leaves a gap the settle pass shrinks
+            // (the trade upstream's own TextKit corrector makes); a
+            // too-short one overlaps neighbours, which is the report.
+            // Logged so the next device log shows which fit was short.
+            if abs(alHeight - ctrlHeight) > 4 {
+                hostingController.view.setNeedsLayout()
+                hostingController.view.layoutIfNeeded()
+                let alRetry = hostingController.view.systemLayoutSizeFitting(
+                    alTarget,
+                    withHorizontalFittingPriority: .required,
+                    verticalFittingPriority: .fittingSizeLevel).height
+                let retryValid = alRetry.isFinite && alRetry > 0 && alRetry < expandedWidth
+                height = max(alHeight, ctrlHeight, retryValid ? alRetry : 0)
+                AppLogger(category: "CellSizing").info(
+                    "[HostFit] DISAGREE al=\(String(format: "%.1f", alHeight)) ctrl=\(String(format: "%.1f", ctrlHeight)) retry=\(String(format: "%.1f", alRetry)) adopted=\(String(format: "%.1f", height)) w=\(String(format: "%.0f", measureWidth))")
+            } else {
+                height = alHeight
+            }
+        } else if alValid {
+            height = alHeight
+        } else if ctrlValid {
             height = ctrlHeight
-        }
-        if !(height.isFinite && height > 0 && height < expandedWidth) {
+        } else {
             height = bounds.height.isFinite ? bounds.height : 0
         }
         return CGSize(width: measureWidth, height: height)
