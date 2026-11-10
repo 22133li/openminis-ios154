@@ -218,12 +218,19 @@ extension ChatStore {
     /// Extract a snippet around the first keyword match, up to maxLength characters.
     private static func keywordSnippet(from text: String, keywords: [String], maxLength: Int) -> String {
         guard !text.isEmpty else { return "" }
-        let lower = text.lowercased()
 
         // Find earliest keyword match position
+        // [fix-2026-11-10] Crash fix (device crash-20261110-174243, build
+        // 1.39): this used to search a lowercased COPY of the text and then
+        // apply the copy's indices to the original string. Lowercasing can
+        // change the character count (e.g. U+0130 expands to two scalars),
+        // so a position taken from the copy can exceed the original's
+        // length and index(offsetBy:) traps. Search the original string
+        // case-insensitively instead, so every index below belongs to
+        // `text`. Match semantics are unchanged (case-insensitive search).
         var earliest = text.count
         for kw in keywords {
-            if let range = lower.range(of: kw.lowercased()) {
+            if let range = text.range(of: kw, options: .caseInsensitive) {
                 let pos = text.distance(from: text.startIndex, to: range.lowerBound)
                 earliest = min(earliest, pos)
             }
